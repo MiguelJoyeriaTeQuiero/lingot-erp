@@ -4,12 +4,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { ClientsTable } from "./clients-table";
-import { requireRole } from "@/lib/require-role";
-
 export const dynamic = "force-dynamic";
 
 export default async function ClientesPage() {
-  await requireRole(["admin"]);
   const supabase = createTypedClient();
 
   const { data: clients, error } = await supabase

@@ -44,7 +44,7 @@ const sections: NavSection[] = [
   {
     label: "Operación",
     items: [
-      { href: "/clientes",   label: "Clientes",   icon: Users,          hint: "02", roles: ["admin"] },
+      { href: "/clientes",   label: "Clientes",   icon: Users,          hint: "02" },
       { href: "/inventario", label: "Inventario", icon: Package,        hint: "03" },
       { href: "/documentos", label: "Documentos", icon: FileText,       hint: "04" },
       { href: "/libro",      label: "Libro",      icon: BookOpen,       hint: "05", roles: ["admin"] },

@@ -9,8 +9,6 @@ import { createTypedClient } from "@/lib/supabase/typed";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ClientInput } from "@/lib/validations/client";
 import { ClientForm } from "../client-form";
-import { requireRole } from "@/lib/require-role";
-
 export const dynamic = "force-dynamic";
 
 const statusToBadge: Record<string, BadgeVariant> = {
@@ -27,7 +25,6 @@ export default async function ClienteDetailPage({
 }: {
   params: { id: string };
 }) {
-  await requireRole(["admin"]);
   const supabase = createTypedClient();
 
   const { data: client, error } = await supabase
