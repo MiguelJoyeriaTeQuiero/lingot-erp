@@ -5,10 +5,12 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { requireRole } from "@/lib/require-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  await requireRole(["admin"]);
   const supabase = createTypedClient();
 
   const [docsRes, clientsRes, productsRes, spots] = await Promise.all([

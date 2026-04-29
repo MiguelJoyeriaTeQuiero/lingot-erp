@@ -3,10 +3,12 @@ import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
 import type { CompanySettingsInput } from "@/lib/validations/company";
 import { CompanyForm } from "./company-form";
+import { requireRole } from "@/lib/require-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfiguracionPage() {
+  await requireRole(["admin"]);
   const supabase = createTypedClient();
 
   const [companyRes, spots] = await Promise.all([

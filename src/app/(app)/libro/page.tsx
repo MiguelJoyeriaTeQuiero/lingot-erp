@@ -1,10 +1,12 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { LibroView } from "./libro-view";
+import { requireRole } from "@/lib/require-role";
 
 export const dynamic = "force-dynamic";
 
 export default async function LibroPage() {
+  await requireRole(["admin"]);
   const supabase = createTypedClient();
 
   const [docsResult, clientsResult] = await Promise.all([

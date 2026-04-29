@@ -17,21 +17,26 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { LingotWordmark } from "./lingot-wordmark";
 
+type Role = "admin" | "contabilidad";
+
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   hint?: string;
+  roles?: Role[]; // si se omite, visible para todos los roles
 };
 
 type NavSection = {
   label: string;
+  roles?: Role[];
   items: NavItem[];
 };
 
 const sections: NavSection[] = [
   {
     label: "Visión",
+    roles: ["admin"],
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, hint: "01" },
     ],
@@ -39,14 +44,15 @@ const sections: NavSection[] = [
   {
     label: "Operación",
     items: [
-      { href: "/clientes", label: "Clientes", icon: Users, hint: "02" },
-      { href: "/inventario", label: "Inventario", icon: Package, hint: "03" },
-      { href: "/documentos", label: "Documentos", icon: FileText,   hint: "04" },
-      { href: "/libro",      label: "Libro",      icon: BookOpen,   hint: "05" },
+      { href: "/clientes",   label: "Clientes",   icon: Users,          hint: "02", roles: ["admin"] },
+      { href: "/inventario", label: "Inventario", icon: Package,        hint: "03" },
+      { href: "/documentos", label: "Documentos", icon: FileText,       hint: "04" },
+      { href: "/libro",      label: "Libro",      icon: BookOpen,       hint: "05", roles: ["admin"] },
     ],
   },
   {
     label: "Sistema",
+    roles: ["admin"],
     items: [
       { href: "/configuracion", label: "Configuración", icon: Settings, hint: "06" },
     ],
@@ -119,7 +125,14 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <ul className="space-y-6">
-          {sections.map((section) => (
+          {sections
+            .filter((s) => !s.roles || s.roles.includes(role))
+            .map((section) => {
+              const visibleItems = section.items.filter(
+                (i) => !i.roles || i.roles.includes(role)
+              );
+              if (visibleItems.length === 0) return null;
+              return (
             <li key={section.label}>
               <div className="mb-2 px-3">
                 <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-text-dim">
@@ -127,7 +140,7 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
                 </span>
               </div>
               <ul className="space-y-0.5">
-                {section.items.map((item) => {
+                {visibleItems.map((item) => {
                   const active =
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");
@@ -182,7 +195,8 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
                 })}
               </ul>
             </li>
-          ))}
+              );
+            })}
         </ul>
       </nav>
 

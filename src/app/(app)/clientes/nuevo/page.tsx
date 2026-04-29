@@ -1,7 +1,9 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { ClientForm } from "../client-form";
+import { requireRole } from "@/lib/require-role";
 
-export default function NuevoClientePage() {
+export default async function NuevoClientePage() {
+  await requireRole(["admin"]);
   return (
     <div className="space-y-8">
       <PageHeader
