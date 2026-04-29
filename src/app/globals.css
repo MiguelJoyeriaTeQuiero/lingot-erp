@@ -1,0 +1,255 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand */
+  --color-primary: #0a3746;
+  --color-primary-soft: #14546a;
+  --color-primary-deep: #062632;
+  --color-gold: #b88a3d;
+  --color-gold-soft: #d4ae6e;
+  --color-gold-deep: #8b6628;
+
+  /* Paper surfaces — warm, layered, premium */
+  --color-ink: #f6f2ea;            /* page background, cream paper */
+  --color-surface: #fbf8f1;        /* base surface */
+  --color-surface-raised: #ffffff; /* elevated cards */
+  --color-surface-sunken: #efe9dc; /* sunken / quiet zone */
+  --color-elevated: #ffffff;
+
+  /* Hairlines */
+  --color-border: #e3dccb;
+  --color-border-strong: #cbc1aa;
+  --color-hairline: rgba(10, 55, 70, 0.08);
+
+  /* Ink type */
+  --color-text: #0a2530;
+  --color-text-muted: #5b6e76;
+  --color-text-dim: #8a9aa0;
+
+  /* Status */
+  --color-danger: #b14338;
+  --color-success: #3e8160;
+  --color-warning: #c08a2a;
+
+  /* Motion */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+
+/*
+ * Numerales grandes y elegantes — Montserrat ultraligero con tracking ceñido.
+ * Reemplaza al antiguo Instrument Serif manteniendo la misma "voz" editorial.
+ */
+.font-editorial {
+  font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.035em;
+  font-feature-settings: "tnum";
+}
+
+/*
+ * Etiquetas, eyebrows, IDs, columnas tabulares.
+ * Montserrat 500 con tracking ancho da una "voz" técnica sin recurrir a mono.
+ */
+.font-mono {
+  font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  font-feature-settings: "tnum", "zero";
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-ink);
+}
+
+/* Scrollbar editorial */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 0;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
+
+/* Autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface-raised) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ---------- Ambient atmosphere — paper warmth ---------- */
+.ambient-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ambient-canvas::before,
+.ambient-canvas::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(140px);
+}
+
+.ambient-canvas::before {
+  width: 720px;
+  height: 720px;
+  top: -260px;
+  left: -200px;
+  background: radial-gradient(closest-side, rgba(184, 138, 61, 0.16), transparent 70%);
+  opacity: 0.7;
+}
+
+.ambient-canvas::after {
+  width: 900px;
+  height: 900px;
+  bottom: -340px;
+  right: -260px;
+  background: radial-gradient(closest-side, rgba(10, 55, 70, 0.12), transparent 70%);
+  opacity: 0.6;
+}
+
+/* Subtle paper grain — darker speckle on cream */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.15 0 0 0 0 0.18 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ---------- Reveal animations ---------- */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hairline-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.reveal {
+  animation: reveal-up 0.7s var(--ease-out-expo) both;
+}
+.reveal-fade {
+  animation: reveal-fade 0.9s var(--ease-out-quart) both;
+}
+.hairline-anim {
+  transform-origin: left;
+  animation: hairline-draw 0.9s var(--ease-out-expo) 0.1s both;
+}
+.delay-0 { animation-delay: 0ms; }
+.delay-1 { animation-delay: 60ms; }
+.delay-2 { animation-delay: 120ms; }
+.delay-3 { animation-delay: 180ms; }
+.delay-4 { animation-delay: 240ms; }
+.delay-5 { animation-delay: 300ms; }
+.delay-6 { animation-delay: 360ms; }
+.delay-7 { animation-delay: 420ms; }
+
+/* ---------- Editorial helpers ---------- */
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    var(--color-gold) 0%,
+    var(--color-gold) 28px,
+    var(--color-border) 28px,
+    var(--color-border) 100%
+  );
+}
+
+.ring-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--color-ink), 0 0 0 3px var(--color-gold);
+}
+
+.nav-underline {
+  position: relative;
+}
+.nav-underline::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 1px;
+  background: var(--color-gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-out-expo);
+}
+.nav-underline:hover::after {
+  transform: scaleX(1);
+}

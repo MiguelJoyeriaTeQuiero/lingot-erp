@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Read(//c/Users/itjoy/.claude/skills/**)",
+      "Read(//c/Users/itjoy/.claude/plugins/**)"
+    ]
+  }
+}
