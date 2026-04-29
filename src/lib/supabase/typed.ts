@@ -131,6 +131,8 @@ type ComputeProductPriceArgs = Functions["compute_product_price"]["Args"];
 type ComputeProductPriceReturn = Functions["compute_product_price"]["Returns"];
 type RecordMetalPriceArgs = Functions["record_metal_price"]["Args"];
 type RecordMetalPriceReturn = Functions["record_metal_price"]["Returns"];
+type CreateRectificationArgs = { original_id: string };
+type CreateRectificationReturn = Tables["documents"]["Row"];
 
 export interface TypedSupabase {
   auth: {
@@ -167,6 +169,10 @@ export interface TypedSupabase {
     fn: "record_metal_price",
     args: RecordMetalPriceArgs
   ): SingleResult<RecordMetalPriceReturn>;
+  rpc(
+    fn: "create_rectification_invoice",
+    args: CreateRectificationArgs
+  ): SingleResult<CreateRectificationReturn>;
 }
 
 export function createTypedClient(): TypedSupabase {

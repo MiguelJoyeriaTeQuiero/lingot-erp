@@ -223,7 +223,8 @@ export interface Database {
             | "pagado"
             | "vencido"
             | "cancelado"
-            | "convertido";
+            | "convertido"
+            | "rectificada";
           series_id: string | null;
           number: number | null;
           code: string | null;
@@ -236,6 +237,7 @@ export interface Database {
           total: number;
           converted_to_invoice_id: string | null;
           source_albaran_id: string | null;
+          rectification_of_invoice_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -249,7 +251,8 @@ export interface Database {
             | "pagado"
             | "vencido"
             | "cancelado"
-            | "convertido";
+            | "convertido"
+            | "rectificada";
           client_id: string;
           issue_date?: string;
           due_date?: string | null;
@@ -257,6 +260,7 @@ export interface Database {
           subtotal?: number;
           igic_total?: number;
           total?: number;
+          rectification_of_invoice_id?: string | null;
           created_by?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["documents"]["Insert"]>;
@@ -346,7 +350,8 @@ export interface Database {
         | "pagado"
         | "vencido"
         | "cancelado"
-        | "convertido";
+        | "convertido"
+        | "rectificada";
       movement_type: "entrada" | "salida" | "ajuste";
       metal_type: "oro" | "plata";
     };

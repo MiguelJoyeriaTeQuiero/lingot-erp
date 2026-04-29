@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
@@ -8,6 +10,7 @@ import type { DocumentInput } from "@/lib/validations/document";
 import { DocumentEditor } from "../document-editor";
 import { DownloadPdfButton } from "./download-pdf-button";
 import { ConvertButton } from "./convert-button";
+import { RectifyButton } from "./rectify-button";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +21,7 @@ const statusToBadge: Record<string, BadgeVariant> = {
   vencido: "vencido",
   cancelado: "cancelado",
   convertido: "convertido",
+  rectificada: "rectificada",
 };
 
 export default async function DocumentoDetailPage({
@@ -35,6 +39,8 @@ export default async function DocumentoDetailPage({
 
   if (error || !doc) notFound();
 
+  const docRow = doc as typeof doc & { rectification_of_invoice_id?: string | null };
+
   const [
     linesResult,
     clientsResult,
@@ -42,6 +48,8 @@ export default async function DocumentoDetailPage({
     categoriesResult,
     companyResult,
     spots,
+    originalResult,
+    rectificationResult,
   ] = await Promise.all([
     supabase
       .from("document_lines")
@@ -62,6 +70,22 @@ export default async function DocumentoDetailPage({
       .select("id, name, igic_rate, created_at, updated_at"),
     supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),
     getLatestSpots(),
+    // Si este documento ES una rectificativa, cargamos la factura original
+    docRow.rectification_of_invoice_id
+      ? supabase
+          .from("documents")
+          .select("*")
+          .eq("id", docRow.rectification_of_invoice_id)
+          .single()
+      : Promise.resolve({ data: null, error: null }),
+    // Si esta factura fue RECTIFICADA, buscamos la rectificativa
+    doc.status === "rectificada"
+      ? supabase
+          .from("documents")
+          .select("*")
+          .eq("rectification_of_invoice_id", doc.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const globalMarkupPct = Number(
@@ -78,6 +102,12 @@ export default async function DocumentoDetailPage({
     doc.doc_type === "albaran" &&
     doc.status === "emitido" &&
     !doc.converted_to_invoice_id;
+  const canRectify =
+    doc.doc_type === "factura" &&
+    (doc.status === "emitido" || doc.status === "pagado");
+
+  const originalDoc = originalResult.data as typeof doc | null;
+  const rectificationDoc = rectificationResult.data as typeof doc | null;
 
   const initial: DocumentInput = {
     doc_type: doc.doc_type,
@@ -123,6 +153,7 @@ export default async function DocumentoDetailPage({
           <div className="flex items-center gap-3">
             <Badge variant={statusToBadge[doc.status] ?? "neutral"} />
             {canConvert && <ConvertButton documentId={doc.id} />}
+            {canRectify && <RectifyButton documentId={doc.id} />}
             {canDownload && docClient && (
               <DownloadPdfButton
                 payload={{
@@ -136,6 +167,38 @@ export default async function DocumentoDetailPage({
           </div>
         }
       />
+
+      {/* Banner: este documento es una rectificativa */}
+      {originalDoc && (
+        <div className="flex items-center gap-3 rounded-none border border-purple-700/25 bg-purple-50/60 px-5 py-3">
+          <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-purple-700" strokeWidth={1.5} />
+          <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-purple-700">
+            Factura rectificativa de
+          </span>
+          <Link
+            href={`/documentos/${originalDoc.id}`}
+            className="font-mono text-[11px] font-medium tracking-[0.18em] text-purple-800 underline-offset-2 hover:underline"
+          >
+            {originalDoc.code ?? "factura original"}
+          </Link>
+        </div>
+      )}
+
+      {/* Banner: esta factura ya fue rectificada */}
+      {rectificationDoc && (
+        <div className="flex items-center gap-3 rounded-none border border-purple-700/25 bg-purple-50/60 px-5 py-3">
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-purple-700" strokeWidth={1.5} />
+          <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-purple-700">
+            Esta factura fue rectificada —
+          </span>
+          <Link
+            href={`/documentos/${rectificationDoc.id}`}
+            className="font-mono text-[11px] font-medium tracking-[0.18em] text-purple-800 underline-offset-2 hover:underline"
+          >
+            ver rectificativa {rectificationDoc.code ?? "(borrador)"}
+          </Link>
+        </div>
+      )}
 
       <div className="rounded-md border border-border bg-surface p-6">
         <DocumentEditor

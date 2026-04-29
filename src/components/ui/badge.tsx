@@ -8,6 +8,7 @@ export type BadgeVariant =
   | "vencido"
   | "cancelado"
   | "convertido"
+  | "rectificada"
   | "neutral";
 
 const variantClasses: Record<BadgeVariant, string> = {
@@ -17,6 +18,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   vencido: "border-danger/40 bg-danger/10 text-danger",
   cancelado: "border-border bg-surface text-text-dim",
   convertido: "border-gold/50 bg-gold/10 text-gold-deep",
+  rectificada: "border-purple-700/30 bg-purple-50 text-purple-800",
   neutral: "border-border bg-surface text-text-muted",
 };
 
@@ -27,6 +29,7 @@ const dotClasses: Record<BadgeVariant, string> = {
   vencido: "bg-danger shadow-[0_0_6px_rgba(177,67,56,0.6)]",
   cancelado: "bg-text-dim",
   convertido: "bg-gold shadow-[0_0_6px_rgba(184,138,61,0.7)]",
+  rectificada: "bg-purple-700 shadow-[0_0_6px_rgba(126,34,206,0.4)]",
   neutral: "bg-text-dim",
 };
 
@@ -37,6 +40,7 @@ const labels: Record<BadgeVariant, string> = {
   vencido: "Vencido",
   cancelado: "Cancelado",
   convertido: "Convertido",
+  rectificada: "Rectificada",
   neutral: "—",
 };
 

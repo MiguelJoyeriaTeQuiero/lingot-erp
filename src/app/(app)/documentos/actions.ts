@@ -241,6 +241,27 @@ export async function convertAlbaranToFactura(
   return { success: true, id: newId ?? id };
 }
 
+export async function createRectificationInvoice(
+  originalId: string
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "Sesión no válida" };
+
+  const { data, error } = await supabase.rpc("create_rectification_invoice", {
+    original_id: originalId,
+  });
+  if (error) return { success: false, error: error.message };
+
+  const newId =
+    (data as unknown as { id?: string } | null)?.id ?? undefined;
+
+  revalidatePath("/documentos");
+  revalidatePath(`/documentos/${originalId}`);
+  if (newId) revalidatePath(`/documentos/${newId}`);
+
+  return { success: true, id: newId ?? originalId };
+}
+
 export async function updateDocumentMeta(
   id: string,
   raw: unknown
