@@ -149,7 +149,7 @@ export default async function ProductoDetailPage({
                 Aún no hay movimientos registrados.
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[560px]">
                 <THead>
                   <TR>
                     <TH>Fecha</TH>

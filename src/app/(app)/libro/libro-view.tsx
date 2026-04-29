@@ -114,7 +114,7 @@ export function LibroView({
     <div className="space-y-8">
 
       {/* Resumen acumulado */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           { label: "Base imponible acumulada", value: grandSubtotal },
           { label: "IGIC acumulado",           value: grandIgic },
@@ -208,23 +208,29 @@ export function LibroView({
                   <div
                     key={doc.id}
                     onClick={() => router.push(`/documentos/${doc.id}`)}
-                    className="grid cursor-pointer grid-cols-12 items-center gap-4 px-2 py-3.5 transition-colors hover:bg-surface-sunken/50"
+                    className="flex cursor-pointer flex-col gap-1.5 px-2 py-3 transition-colors hover:bg-surface-sunken/50 sm:grid sm:grid-cols-12 sm:items-center sm:gap-4 sm:py-3.5"
                   >
-                    <div className="col-span-1 font-mono text-[10px] tabular text-text-dim">
+                    <div className="hidden sm:block sm:col-span-1 font-mono text-[10px] tabular text-text-dim">
                       {format(new Date(doc.issue_date), "dd/MM")}
                     </div>
-                    <div className="col-span-3">
+                    <div className="flex items-center justify-between sm:block sm:col-span-3">
                       <span className="font-mono text-[12px] font-medium tracking-wider text-gold-deep">
                         {doc.code ?? <span className="italic text-text-dim">borrador</span>}
                       </span>
+                      <span className="font-mono text-[10px] tabular text-text-dim sm:hidden">
+                        {format(new Date(doc.issue_date), "dd/MM")}
+                      </span>
                     </div>
-                    <div className="col-span-4 truncate text-sm text-text">
+                    <div className="sm:col-span-4 truncate text-sm text-text">
                       {clientMap[doc.client_id] ?? "—"}
                     </div>
-                    <div className="col-span-2">
+                    <div className="flex items-center justify-between sm:block sm:col-span-2">
                       <Badge variant={statusToBadge[doc.status] ?? "neutral"} />
+                      <span className="font-mono text-[13px] tabular text-primary sm:hidden">
+                        {formatCurrency(Number(doc.total ?? 0))}
+                      </span>
                     </div>
-                    <div className="col-span-2 text-right">
+                    <div className="hidden sm:block sm:col-span-2 text-right">
                       <span className="font-mono text-[13px] tabular text-primary">
                         {formatCurrency(Number(doc.total ?? 0))}
                       </span>

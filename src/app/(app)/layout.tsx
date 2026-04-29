@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createTypedClient } from "@/lib/supabase/typed";
-import { Sidebar } from "@/components/layout/sidebar";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({
   children,
@@ -31,14 +31,13 @@ export default async function AppLayout({
       <div className="grain-overlay" aria-hidden />
 
       <div className="relative z-10 flex min-h-screen">
-        <Sidebar
+        <AppShell
           email={profile?.email ?? user.email ?? ""}
           fullName={profile?.full_name ?? null}
           role={(profile?.role as "admin" | "contabilidad") ?? "contabilidad"}
-        />
-        <main className="ml-[260px] flex-1">
-          <div className="mx-auto max-w-7xl px-10 py-12">{children}</div>
-        </main>
+        >
+          {children}
+        </AppShell>
       </div>
     </div>
   );

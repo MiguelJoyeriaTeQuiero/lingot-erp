@@ -76,7 +76,7 @@ export function ProductsTable({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_160px_180px_auto_auto]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-[1fr_160px_180px_auto_auto]">
         <div className="relative">
           <Search
             aria-hidden
@@ -131,7 +131,7 @@ export function ProductsTable({
       </div>
 
       <div className="border border-border bg-surface-raised shadow-paper">
-        <Table>
+        <Table className="min-w-[640px]">
           <THead>
             <TR>
               <TH>Pieza</TH>

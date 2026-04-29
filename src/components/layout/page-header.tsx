@@ -33,9 +33,9 @@ export function PageHeader({
         </span>
       </div>
 
-      <div className="flex items-end justify-between gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[44px] font-medium leading-[0.95] tracking-[-0.02em] text-primary">
+          <h1 className="font-display text-[32px] font-medium leading-[0.95] tracking-[-0.02em] text-primary sm:text-[44px]">
             {title}
           </h1>
           {description && (
@@ -44,7 +44,7 @@ export function PageHeader({
             </p>
           )}
         </div>
-        {action && <div className="shrink-0 pb-1">{action}</div>}
+        {action && <div className="shrink-0 sm:pb-1">{action}</div>}
       </div>
     </header>
   );

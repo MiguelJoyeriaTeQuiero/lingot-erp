@@ -10,6 +10,7 @@ import {
   BookOpen,
   Settings,
   LogOut,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -56,9 +57,11 @@ interface SidebarProps {
   email: string;
   fullName: string | null;
   role: "admin" | "contabilidad";
+  open?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ email, fullName, role }: SidebarProps) {
+export function Sidebar({ email, fullName, role, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -77,12 +80,30 @@ export function Sidebar({ email, fullName, role }: SidebarProps) {
     .join("");
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-20 flex w-[260px] flex-col border-r border-border bg-surface-sunken/80 backdrop-blur-xl">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-border bg-surface-sunken/95 backdrop-blur-xl transition-transform duration-300 ease-out-expo",
+        "lg:translate-x-0 lg:z-20",
+        open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}
+    >
       {/* Vertical hairline gold accent on the right edge */}
       <span
         aria-hidden
         className="pointer-events-none absolute right-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent"
       />
+
+      {/* Mobile close button */}
+      {onClose && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-primary lg:hidden"
+        >
+          <X className="h-4 w-4" strokeWidth={1.5} />
+        </button>
+      )}
 
       {/* Brand */}
       <div className="px-6 pb-6 pt-8">
@@ -116,6 +137,7 @@ export function Sidebar({ email, fullName, role }: SidebarProps) {
                       <Link
                         href={item.href}
                         aria-current={active ? "page" : undefined}
+                        onClick={onClose}
                         className={cn(
                           "group relative flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-300 ease-out-expo",
                           active

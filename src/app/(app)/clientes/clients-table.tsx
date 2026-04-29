@@ -46,7 +46,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px_180px_auto]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-[1fr_180px_180px_auto]">
         <div className="relative">
           <Search
             aria-hidden
@@ -93,7 +93,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
       </div>
 
       <div className="rounded-md border border-border bg-surface">
-        <Table>
+        <Table className="min-w-[620px]">
           <THead>
             <TR>
               <TH>Nombre</TH>

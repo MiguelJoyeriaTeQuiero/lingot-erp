@@ -148,14 +148,14 @@ export default async function DashboardPage() {
               </div>
 
               <div className="mt-10">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-editorial text-[112px] font-normal leading-[0.85] tracking-[-0.04em] text-primary tabular">
+                <div className="flex items-baseline gap-2 sm:gap-3">
+                  <span className="font-editorial text-[60px] font-normal leading-[0.85] tracking-[-0.04em] text-primary tabular sm:text-[88px] lg:text-[112px]">
                     {Math.floor(monthRevenue).toLocaleString("es-ES")}
                   </span>
-                  <span className="font-editorial text-[44px] italic leading-none text-gold-deep">
+                  <span className="font-editorial text-[28px] italic leading-none text-gold-deep sm:text-[36px] lg:text-[44px]">
                     ,{monthRevenue.toFixed(2).split(".")[1] ?? "00"}
                   </span>
-                  <span className="ml-2 font-mono text-xs uppercase tracking-[0.3em] text-text-dim">
+                  <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.3em] text-text-dim sm:ml-2 sm:text-xs">
                     EUR
                   </span>
                 </div>
@@ -329,26 +329,29 @@ export default async function DashboardPage() {
                 <Link
                   key={doc.id}
                   href={`/documentos/${doc.id}`}
-                  className="group grid grid-cols-12 items-center gap-4 border-b border-hairline px-2 py-5 transition-colors hover:bg-surface-sunken/60"
+                  className="group flex flex-col gap-2 border-b border-hairline px-2 py-4 transition-colors hover:bg-surface-sunken/60 sm:grid sm:grid-cols-12 sm:items-center sm:gap-4 sm:py-5"
                 >
-                  <div className="col-span-1 font-mono text-[11px] tabular tracking-wider text-text-dim">
+                  <div className="hidden sm:block sm:col-span-1 font-mono text-[11px] tabular tracking-wider text-text-dim">
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div className="col-span-3">
+                  <div className="flex items-center justify-between sm:block sm:col-span-3">
                     <div className="font-mono text-[12px] tabular tracking-wider text-gold-deep">
                       {doc.code ?? "—"}
                     </div>
-                    <div className="mt-0.5 text-[11px] uppercase tracking-widest text-text-dim">
+                    <div className="mt-0 text-[11px] uppercase tracking-widest text-text-dim sm:mt-0.5">
                       {doc.doc_type}
                     </div>
                   </div>
-                  <div className="col-span-4 truncate text-[14px] text-primary">
+                  <div className="sm:col-span-4 truncate text-[14px] text-primary">
                     {client?.name ?? "Cliente sin asignar"}
                   </div>
-                  <div className="col-span-2">
+                  <div className="flex items-center justify-between sm:block sm:col-span-2">
                     <Badge variant={statusToBadge[doc.status] ?? "neutral"} />
+                    <div className="font-mono text-[13px] tabular tracking-wide text-primary sm:hidden">
+                      {formatCurrency(Number(doc.total ?? 0))}
+                    </div>
                   </div>
-                  <div className="col-span-2 text-right">
+                  <div className="hidden sm:block sm:col-span-2 text-right">
                     <div className="font-mono text-[14px] tabular tracking-wide text-primary">
                       {formatCurrency(Number(doc.total ?? 0))}
                     </div>
@@ -365,14 +368,14 @@ export default async function DashboardPage() {
 
       {/* Brand caption */}
       <section className="reveal delay-4">
-        <div className="grid grid-cols-12 items-end gap-6 border-t border-border pt-10">
-          <div className="col-span-8 flex items-center gap-3">
+        <div className="flex flex-col gap-4 border-t border-border pt-10 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-3">
             <Sparkle className="h-3 w-3 text-gold" strokeWidth={1.5} />
-            <span className="font-editorial text-[28px] italic leading-none text-text-muted">
+            <span className="font-editorial text-[22px] italic leading-none text-text-muted sm:text-[28px]">
               precisión orfebre, gestión cotidiana.
             </span>
           </div>
-          <div className="col-span-4 text-right">
+          <div className="sm:text-right">
             <span className="font-mono text-[10px] uppercase tracking-[0.32em] text-text-dim">
               Lingot · Te Quiero Group · {now.getFullYear()}
             </span>
@@ -446,7 +449,7 @@ function SpotCardLarge({
       </div>
 
       <div className="mt-6 flex items-baseline gap-3">
-        <span className="font-editorial text-[88px] font-light leading-[0.85] tracking-[-0.04em] text-primary tabular">
+        <span className="font-editorial text-[56px] font-light leading-[0.85] tracking-[-0.04em] text-primary tabular sm:text-[72px] lg:text-[88px]">
           {price != null ? price.toFixed(2) : "—"}
         </span>
         <span className="font-mono text-sm uppercase tracking-[0.3em] text-text-muted">
