@@ -7,6 +7,7 @@ import {
   Users,
   Package,
   FileText,
+  BookOpen,
   Settings,
   LogOut,
   type LucideIcon,
@@ -39,13 +40,14 @@ const sections: NavSection[] = [
     items: [
       { href: "/clientes", label: "Clientes", icon: Users, hint: "02" },
       { href: "/inventario", label: "Inventario", icon: Package, hint: "03" },
-      { href: "/documentos", label: "Documentos", icon: FileText, hint: "04" },
+      { href: "/documentos", label: "Documentos", icon: FileText,   hint: "04" },
+      { href: "/libro",      label: "Libro",      icon: BookOpen,   hint: "05" },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "05" },
+      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "06" },
     ],
   },
 ];

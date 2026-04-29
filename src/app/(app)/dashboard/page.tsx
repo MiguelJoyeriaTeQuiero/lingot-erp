@@ -136,7 +136,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <Link
-                  href="/documentos"
+                  href="/libro"
                   className="group inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-text-muted transition-colors hover:text-primary"
                 >
                   Ver libro
