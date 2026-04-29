@@ -37,11 +37,34 @@ async function requireUser() {
   return { supabase, user };
 }
 
+async function requireAdmin(): Promise<
+  | { supabase: ReturnType<typeof createTypedClient>; user: NonNullable<Awaited<ReturnType<ReturnType<typeof createTypedClient>["auth"]["getUser"]>>["data"]["user"]>; ok: true }
+  | { ok: false; error: string }
+> {
+  const supabase = createTypedClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión no válida" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const role = (profile as { role?: string } | null)?.role;
+  if (role !== "admin") {
+    return { ok: false, error: "Solo los administradores pueden modificar productos" };
+  }
+  return { supabase, user, ok: true };
+}
+
 export async function createProductAction(
   raw: unknown
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireUser();
-  if (!user) return { success: false, error: "Sesión no válida" };
+  const guard = await requireAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+  const { supabase } = guard;
 
   const parsed = productSchema.safeParse(raw);
   if (!parsed.success) {
@@ -67,8 +90,9 @@ export async function updateProductAction(
   id: string,
   raw: unknown
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireUser();
-  if (!user) return { success: false, error: "Sesión no válida" };
+  const guard = await requireAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+  const { supabase } = guard;
 
   const parsed = productSchema.safeParse(raw);
   if (!parsed.success) {
@@ -92,8 +116,9 @@ export async function toggleProductActive(
   id: string,
   active: boolean
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireUser();
-  if (!user) return { success: false, error: "Sesión no válida" };
+  const guard = await requireAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+  const { supabase } = guard;
 
   const { error } = await supabase
     .from("products")

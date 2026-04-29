@@ -4,11 +4,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
+import { requireRole } from "@/lib/require-role";
 import { ProductsTable } from "./products-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function InventarioPage() {
+  const { role } = await requireRole(["admin", "contabilidad"]);
+  const isAdmin = role === "admin";
   const supabase = createTypedClient();
 
   const [productsResult, categoriesResult, companyResult, spots] =
@@ -44,12 +47,14 @@ export default async function InventarioPage() {
                 Iniciar conteo
               </Button>
             </Link>
-            <Link href="/inventario/nuevo">
-              <Button>
-                <Plus className="h-4 w-4" />
-                Nueva pieza
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link href="/inventario/nuevo">
+                <Button>
+                  <Plus className="h-4 w-4" />
+                  Nueva pieza
+                </Button>
+              </Link>
+            )}
           </div>
         }
       />

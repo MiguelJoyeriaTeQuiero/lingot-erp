@@ -1,11 +1,15 @@
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
+import { requireRole } from "@/lib/require-role";
 import { ProductForm } from "../product-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NuevoProductoPage() {
+  const { role } = await requireRole(["admin", "contabilidad"]);
+  if (role !== "admin") redirect("/inventario");
   const supabase = createTypedClient();
 
   const [categoriesRes, companyRes, spots] = await Promise.all([
