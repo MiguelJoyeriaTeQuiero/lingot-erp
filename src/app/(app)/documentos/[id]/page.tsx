@@ -11,6 +11,7 @@ import { DocumentEditor } from "../document-editor";
 import { DownloadPdfButton } from "./download-pdf-button";
 import { ConvertButton } from "./convert-button";
 import { RectifyButton } from "./rectify-button";
+import { DeleteDocumentButton } from "./delete-button";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,12 @@ export default async function DocumentoDetailPage({
   if (error || !doc) notFound();
 
   const docRow = doc as typeof doc & { rectification_of_invoice_id?: string | null };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("id, email, full_name, role").eq("id", user.id).single()
+    : { data: null };
+  const isAdmin = (profile as { role?: string } | null)?.role === "admin";
 
   const [
     linesResult,
@@ -150,7 +157,7 @@ export default async function DocumentoDetailPage({
           doc.total
         )}`}
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Badge variant={statusToBadge[doc.status] ?? "neutral"} />
             {canConvert && <ConvertButton documentId={doc.id} />}
             {canRectify && <RectifyButton documentId={doc.id} />}
@@ -163,6 +170,9 @@ export default async function DocumentoDetailPage({
                   company,
                 }}
               />
+            )}
+            {isAdmin && (
+              <DeleteDocumentButton documentId={doc.id} docCode={doc.code} />
             )}
           </div>
         }

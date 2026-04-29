@@ -262,6 +262,19 @@ export async function createRectificationInvoice(
   return { success: true, id: newId ?? originalId };
 }
 
+export async function deleteDocumentAction(id: string): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "Sesión no válida" };
+
+  const { error } = await supabase.rpc("delete_document", { doc_id: id });
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/documentos");
+  revalidatePath("/libro");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 export async function updateDocumentMeta(
   id: string,
   raw: unknown

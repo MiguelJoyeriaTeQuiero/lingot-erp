@@ -133,6 +133,7 @@ type RecordMetalPriceArgs = Functions["record_metal_price"]["Args"];
 type RecordMetalPriceReturn = Functions["record_metal_price"]["Returns"];
 type CreateRectificationArgs = { original_id: string };
 type CreateRectificationReturn = Tables["documents"]["Row"];
+type DeleteDocumentArgs = { doc_id: string };
 
 export interface TypedSupabase {
   auth: {
@@ -173,6 +174,10 @@ export interface TypedSupabase {
     fn: "create_rectification_invoice",
     args: CreateRectificationArgs
   ): SingleResult<CreateRectificationReturn>;
+  rpc(
+    fn: "delete_document",
+    args: DeleteDocumentArgs
+  ): Promise<{ data: null; error: PostgrestError | null }>;
 }
 
 export function createTypedClient(): TypedSupabase {
