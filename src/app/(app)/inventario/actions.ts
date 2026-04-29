@@ -109,7 +109,8 @@ export async function toggleProductActive(
 
 export async function recordStockMovementAction(
   productId: string,
-  raw: unknown
+  raw: unknown,
+  invoiceUrl?: string | null
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
@@ -125,6 +126,7 @@ export async function recordStockMovementAction(
     p_movement_type: parsed.data.movement_type,
     p_quantity: parsed.data.quantity,
     p_reason: parsed.data.reason,
+    p_invoice_url: invoiceUrl ?? null,
   });
 
   if (error) return { success: false, error: error.message };

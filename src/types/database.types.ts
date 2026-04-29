@@ -196,6 +196,7 @@ export interface Database {
           quantity: number;
           document_id: string | null;
           reason: string | null;
+          invoice_url: string | null;
           created_by: string | null;
           created_at: string;
         };
@@ -206,6 +207,7 @@ export interface Database {
           quantity: number;
           document_id?: string | null;
           reason?: string | null;
+          invoice_url?: string | null;
           created_by?: string | null;
         };
         Update: Partial<
@@ -314,6 +316,7 @@ export interface Database {
           p_quantity: number;
           p_reason?: string | null;
           p_document_id?: string | null;
+          p_invoice_url?: string | null;
         };
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"];
       };

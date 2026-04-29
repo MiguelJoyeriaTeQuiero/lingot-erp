@@ -22,6 +22,7 @@ const statusToBadge: Record<string, BadgeVariant> = {
   vencido: "vencido",
   cancelado: "cancelado",
   convertido: "convertido",
+  rectificada: "rectificada",
 };
 
 export function DocumentsTable({ documents, clients }: DocumentsTableProps) {
@@ -87,6 +88,7 @@ export function DocumentsTable({ documents, clients }: DocumentsTableProps) {
           <option value="vencido">Vencido</option>
           <option value="convertido">Convertido</option>
           <option value="cancelado">Cancelado</option>
+          <option value="rectificada">Rectificada</option>
         </Select>
       </div>
 

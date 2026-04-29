@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, RefreshCw, Receipt } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
@@ -157,6 +157,7 @@ export default async function ProductoDetailPage({
                     <TH className="text-right">Cantidad</TH>
                     <TH>Motivo</TH>
                     <TH>Documento</TH>
+                    <TH>Factura compra</TH>
                   </TR>
                 </THead>
                 <TBody>
@@ -187,6 +188,21 @@ export default async function ProductoDetailPage({
                             </span>
                           ) : (
                             "—"
+                          )}
+                        </TD>
+                        <TD>
+                          {(m as typeof m & { invoice_url?: string | null }).invoice_url ? (
+                            <a
+                              href={(m as typeof m & { invoice_url?: string | null }).invoice_url!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs text-gold-deep underline-offset-2 hover:underline"
+                            >
+                              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              Ver factura
+                            </a>
+                          ) : (
+                            <span className="text-text-dim">—</span>
                           )}
                         </TD>
                       </TR>

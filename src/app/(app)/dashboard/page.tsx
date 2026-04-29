@@ -114,11 +114,11 @@ export default async function DashboardPage() {
               {/* corner accent */}
               <span
                 aria-hidden
-                className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-gold/15 via-gold/5 to-transparent blur-2xl"
+                className="pointer-events-none absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-gold/15 via-gold/5 to-transparent blur-2xl"
               />
               <span
                 aria-hidden
-                className="absolute bottom-0 left-0 h-px w-1/3 bg-gradient-to-r from-gold to-transparent"
+                className="pointer-events-none absolute bottom-0 left-0 h-px w-1/3 bg-gradient-to-r from-gold to-transparent"
               />
               <div className="flex items-start justify-between">
                 <div>
