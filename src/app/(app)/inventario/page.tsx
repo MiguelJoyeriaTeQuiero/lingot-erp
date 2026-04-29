@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, ScanLine } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { createTypedClient } from "@/lib/supabase/typed";
@@ -37,12 +37,20 @@ export default async function InventarioPage() {
         title="Inventario"
         description="Piezas con precio dinámico vinculado al spot del metal."
         action={
-          <Link href="/inventario/nuevo">
-            <Button>
-              <Plus className="h-4 w-4" />
-              Nueva pieza
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/inventario/conteo">
+              <Button variant="secondary">
+                <ScanLine className="h-4 w-4" strokeWidth={1.5} />
+                Iniciar conteo
+              </Button>
+            </Link>
+            <Link href="/inventario/nuevo">
+              <Button>
+                <Plus className="h-4 w-4" />
+                Nueva pieza
+              </Button>
+            </Link>
+          </div>
         }
       />
 

@@ -107,6 +107,31 @@ export async function toggleProductActive(
   return { success: true, id };
 }
 
+export async function applyInventoryCountAction(
+  items: { productId: string; delta: number }[]
+): Promise<ActionResult & { appliedCount?: number }> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "Sesión no válida" };
+
+  const changes = items.filter((i) => i.delta !== 0);
+  if (changes.length === 0) return { success: true, appliedCount: 0 };
+
+  for (const item of changes) {
+    const { error } = await supabase.rpc("record_stock_movement", {
+      p_product_id: item.productId,
+      p_movement_type: "ajuste",
+      p_quantity: item.delta,
+      p_reason: "Conteo de inventario",
+      p_invoice_url: null,
+    });
+    if (error) return { success: false, error: error.message };
+  }
+
+  revalidatePath("/inventario");
+  revalidatePath("/inventario/conteo");
+  return { success: true, appliedCount: changes.length };
+}
+
 export async function recordStockMovementAction(
   productId: string,
   raw: unknown,
