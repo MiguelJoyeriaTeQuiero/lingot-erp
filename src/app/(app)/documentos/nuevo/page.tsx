@@ -15,7 +15,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
   const supabase = createTypedClient();
 
-  const [clientsResult, productsResult, categoriesResult, companyResult, spots] =
+  const [clientsResult, productsResult, categoriesResult, companyResult, spots, lotsResult] =
     await Promise.all([
       supabase
         .from("clients")
@@ -32,6 +32,7 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
         .select("id, name, igic_rate, created_at, updated_at"),
       supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),
       getLatestSpots(),
+      supabase.from("stock_lots").select("*").order("order_date", { ascending: false }),
     ]);
 
   const preselectedType =
@@ -56,6 +57,8 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
         unit_price: 0,
         discount_pct: 0,
         igic_rate: 0,
+        lot_id: null,
+        unit_cost: null,
       },
     ],
   };
@@ -73,6 +76,7 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
         clients={clientsResult.data ?? []}
         products={productsResult.data ?? []}
         categories={categoriesResult.data ?? []}
+        lots={lotsResult.data ?? []}
         spotByMetal={{
           oro: spots.oro?.price_eur_per_g ?? null,
           plata: spots.plata?.price_eur_per_g ?? null,

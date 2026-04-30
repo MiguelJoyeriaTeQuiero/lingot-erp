@@ -8,6 +8,7 @@ import {
   Package,
   FileText,
   BookOpen,
+  TrendingUp,
   Settings,
   LogOut,
   X,
@@ -47,14 +48,15 @@ const sections: NavSection[] = [
       { href: "/clientes",   label: "Clientes",   icon: Users,          hint: "02" },
       { href: "/inventario", label: "Inventario", icon: Package,        hint: "03" },
       { href: "/documentos", label: "Documentos", icon: FileText,       hint: "04" },
-      { href: "/libro",      label: "Libro",      icon: BookOpen,       hint: "05", roles: ["admin"] },
+      { href: "/libro",         label: "Libro",         icon: BookOpen,   hint: "05", roles: ["admin"] },
+      { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp, hint: "06", roles: ["admin"] },
     ],
   },
   {
     label: "Sistema",
     roles: ["admin"],
     items: [
-      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "06" },
+      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "07" },
     ],
   },
 ];

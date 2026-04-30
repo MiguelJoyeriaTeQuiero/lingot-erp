@@ -63,6 +63,20 @@ export const documentLineSchema = z.object({
   unit_price: numFromInput(),
   discount_pct: numFromInput({ min: 0, max: 100 }),
   igic_rate: numFromInput({ min: 0, max: 100 }),
+  // Trazabilidad de lote (identificación específica). No editable manualmente.
+  lot_id: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((v) => (v === "" || v == null ? null : v)),
+  unit_cost: z
+    .union([z.number(), z.string(), z.null()])
+    .optional()
+    .transform((v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = typeof v === "number" ? v : Number(v);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }),
 });
 
 export type DocumentLineInput = z.infer<typeof documentLineSchema>;

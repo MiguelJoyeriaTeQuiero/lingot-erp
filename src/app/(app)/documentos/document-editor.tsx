@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/components/ui/toast";
 import { useRole } from "@/lib/hooks/useRole";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { computeUnitPrice } from "@/lib/pricing";
 import {
   computeLine,
@@ -21,6 +21,7 @@ import type {
   ClientRow,
   ProductRow,
   ProductCategoryRow,
+  StockLotRow,
 } from "@/lib/supabase/typed";
 import {
   createAndEmitDocument,
@@ -38,6 +39,7 @@ interface DocumentEditorProps {
   clients: ClientRow[];
   products: ProductRow[];
   categories: ProductCategoryRow[];
+  lots: StockLotRow[];
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
 }
@@ -51,6 +53,8 @@ const emptyLine = {
   unit_price: 0,
   discount_pct: 0,
   igic_rate: 0,
+  lot_id: null as string | null,
+  unit_cost: null as number | null,
 };
 
 const emptyDoc = (
@@ -73,6 +77,7 @@ export function DocumentEditor({
   clients,
   products,
   categories,
+  lots,
   spotByMetal,
   globalMarkupPct,
 }: DocumentEditorProps) {
@@ -141,6 +146,22 @@ export function DocumentEditor({
     return m;
   }, [categories]);
 
+  const lotsByProduct = useMemo(() => {
+    const m = new Map<string, StockLotRow[]>();
+    for (const l of lots) {
+      const arr = m.get(l.product_id) ?? [];
+      arr.push(l);
+      m.set(l.product_id, arr);
+    }
+    return m;
+  }, [lots]);
+
+  const lotById = useMemo(() => {
+    const m = new Map<string, StockLotRow>();
+    for (const l of lots) m.set(l.id, l);
+    return m;
+  }, [lots]);
+
   // Precio según spot vigente — depende sólo del producto, no del cliente.
   function priceForProduct(p: ProductRow): number | null {
     const spot = spotByMetal[p.metal];
@@ -167,6 +188,9 @@ export function DocumentEditor({
 
   function applyProductToLine(idx: number, productId: string | null) {
     setValue(`lines.${idx}.product_id`, productId, { shouldDirty: true });
+    // Limpiar lote al cambiar de producto
+    setValue(`lines.${idx}.lot_id`, null, { shouldDirty: true });
+    setValue(`lines.${idx}.unit_cost`, null, { shouldDirty: true });
     if (!productId) return;
     const p = productById.get(productId);
     if (!p) return;
@@ -178,6 +202,20 @@ export function DocumentEditor({
     setValue(`lines.${idx}.igic_rate`, igicForProduct(p), {
       shouldDirty: true,
     });
+  }
+
+  function applyLotToLine(idx: number, lotId: string | null) {
+    setValue(`lines.${idx}.lot_id`, lotId, { shouldDirty: true });
+    if (!lotId) {
+      setValue(`lines.${idx}.unit_cost`, null, { shouldDirty: true });
+      return;
+    }
+    const lot = lotById.get(lotId);
+    if (lot) {
+      setValue(`lines.${idx}.unit_cost`, Number(lot.cost_per_unit), {
+        shouldDirty: true,
+      });
+    }
   }
 
   function onClientChange(newId: string | null) {
@@ -418,11 +456,23 @@ export function DocumentEditor({
           <div className="divide-y divide-border">
             {fields.map((field, idx) => {
               const lineTotal = totals.perLine[idx]?.line_total ?? 0;
+              const currentProductId = lines[idx]?.product_id ?? null;
+              const currentLotId = lines[idx]?.lot_id ?? null;
+              const currentProduct = currentProductId ? productById.get(currentProductId) : null;
+              const isPhysical = currentProduct?.type === "producto";
+              const productLots = currentProductId
+                ? (lotsByProduct.get(currentProductId) ?? []).filter(
+                    (l) => Number(l.quantity_remaining) > 0 || l.id === currentLotId
+                  )
+                : [];
+              const hasLots = isPhysical && productLots.length > 0;
+
               return (
                 <div
                   key={field.id}
                   className="grid grid-cols-1 gap-2 px-3 py-3 md:grid-cols-[1.4fr_2fr_90px_120px_90px_90px_120px_40px] md:items-start"
                 >
+                  <div className="space-y-1.5">
                   <Controller
                     control={control}
                     name={`lines.${idx}.product_id`}
@@ -438,6 +488,28 @@ export function DocumentEditor({
                       />
                     )}
                   />
+                  {hasLots && (
+                    <Controller
+                      control={control}
+                      name={`lines.${idx}.lot_id`}
+                      render={({ field: lf }) => (
+                        <Combobox
+                          options={productLots.map((l) => ({
+                            value: l.id,
+                            label: `${formatDate(l.order_date)} · ${formatCurrency(Number(l.cost_per_unit))}/u`,
+                            hint: `${Number(l.quantity_remaining)} u disp.`,
+                          }))}
+                          value={lf.value ?? null}
+                          onChange={(v) => applyLotToLine(idx, v)}
+                          placeholder="Lote (opcional)…"
+                          emptyText="Sin lotes disponibles"
+                          allowClear
+                          disabled={readOnly}
+                        />
+                      )}
+                    />
+                  )}
+                  </div>
                   <Input
                     placeholder="Descripción"
                     {...register(`lines.${idx}.description` as const)}

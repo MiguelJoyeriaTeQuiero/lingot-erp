@@ -35,6 +35,10 @@ export type CompanySettingsRow = Tables["company_settings"]["Row"];
 export type MetalPriceRow = Tables["metal_prices"]["Row"];
 export type MetalPriceInsert = Tables["metal_prices"]["Insert"];
 export type MetalType = "oro" | "plata";
+export type PurchaseOrderRow = Tables["purchase_orders"]["Row"];
+export type PurchaseOrderInsert = Tables["purchase_orders"]["Insert"];
+export type StockLotRow = Tables["stock_lots"]["Row"];
+export type StockLotInsert = Tables["stock_lots"]["Insert"];
 
 type PostgrestError = { message: string; code?: string; details?: string };
 type SingleResult<T> = Promise<{
@@ -121,6 +125,18 @@ interface MetalPricesTable {
   select(cols?: string): SelectBuilder<MetalPriceRow>;
 }
 
+interface PurchaseOrdersTable {
+  select(cols?: string): SelectBuilder<PurchaseOrderRow>;
+  insert(values: PurchaseOrderInsert): {
+    select(cols?: string): { single: () => SingleResult<{ id: string }> };
+  };
+}
+
+interface StockLotsTable {
+  select(cols?: string): SelectBuilder<StockLotRow>;
+  insert(values: StockLotInsert): Promise<{ error: PostgrestError | null }>;
+}
+
 type RecordStockMovementArgs = Functions["record_stock_movement"]["Args"];
 type RecordStockMovementReturn = Functions["record_stock_movement"]["Returns"];
 type EmitDocumentArgs = Functions["emit_document"]["Args"];
@@ -150,6 +166,8 @@ export interface TypedSupabase {
   from(table: "stock_movements"): StockMovementsTable;
   from(table: "company_settings"): CompanySettingsTable;
   from(table: "metal_prices"): MetalPricesTable;
+  from(table: "purchase_orders"): PurchaseOrdersTable;
+  from(table: "stock_lots"): StockLotsTable;
   rpc(
     fn: "record_stock_movement",
     args: RecordStockMovementArgs

@@ -9,6 +9,14 @@ import { formatDate } from "@/lib/utils";
 import type { ProductInput } from "@/lib/validations/product";
 import { ProductForm } from "../product-form";
 import { StockAdjustForm } from "./stock-adjust-form";
+import {
+  PurchaseOrderSection,
+  type PurchaseOrderEntry,
+} from "./purchase-order-section";
+import {
+  ProfitabilitySection,
+  type LotProfitRow,
+} from "./profitability-section";
 
 export const dynamic = "force-dynamic";
 
@@ -42,14 +50,115 @@ export default async function ProductoDetailPage({
     (company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4
   );
 
-  const { data: movements } = await supabase
-    .from("stock_movements")
-    .select(
-      "id, product_id, movement_type, quantity, document_id, reason, created_by, created_at"
-    )
+  const [{ data: movements }, { data: rawOrders }] = await Promise.all([
+    supabase
+      .from("stock_movements")
+      .select(
+        "id, product_id, movement_type, quantity, document_id, reason, created_by, created_at"
+      )
+      .eq("product_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("purchase_orders")
+      .select(
+        "id, order_date, supplier_name, quantity, cost_per_gram, spot_price_per_g, total_cost, notes, created_at, invoice_url"
+      )
+      .eq("product_id", params.id)
+      .order("order_date", { ascending: true }),
+  ]);
+
+  // Calcular fluctuación entre pedidos consecutivos
+  const sortedOrders = (rawOrders ?? []).slice().sort((a, b) => {
+    const d = new Date(a.order_date).getTime() - new Date(b.order_date).getTime();
+    return d !== 0 ? d : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+  const ordersWithDelta: PurchaseOrderEntry[] = sortedOrders
+    .map((order, i) => {
+      if (i === 0) return { ...order, delta: null, deltaPct: null };
+      const prev = sortedOrders[i - 1]!;
+      const delta = Number(order.cost_per_gram) - Number(prev.cost_per_gram);
+      const deltaPct = (delta / Number(prev.cost_per_gram)) * 100;
+      return { ...order, delta, deltaPct };
+    })
+    .reverse();
+
+  // Rentabilidad por lotes
+  const { data: rawLots } = await supabase
+    .from("stock_lots")
+    .select("*")
     .eq("product_id", params.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
+    .order("order_date", { ascending: false });
+
+  let lotProfitRows: LotProfitRow[] = (rawLots ?? []).map((l) => ({
+    id: l.id,
+    order_date: l.order_date,
+    supplier_name: null as string | null,
+    quantity_total: Number(l.quantity_total),
+    quantity_remaining: Number(l.quantity_remaining),
+    cost_per_gram: Number(l.cost_per_gram),
+    cost_per_unit: Number(l.cost_per_unit),
+    qtySold: 0,
+    revenue: 0,
+    cogs: 0,
+  }));
+
+  if (lotProfitRows.length > 0) {
+    const lotIds = lotProfitRows.map((l) => l.id);
+    const { data: saleLines } = await supabase
+      .from("document_lines")
+      .select("lot_id, quantity, line_subtotal, document_id")
+      .in("lot_id", lotIds);
+
+    if (saleLines && saleLines.length > 0) {
+      const docIds = [...new Set(saleLines.map((l) => l.document_id))];
+      const { data: docs } = await supabase
+        .from("documents")
+        .select("id, status")
+        .in("id", docIds);
+
+      const emittedIds = new Set(
+        (docs ?? [])
+          .filter((d) => d.status !== "borrador" && d.status !== "cancelado")
+          .map((d) => d.id)
+      );
+
+      const salesByLot = new Map<string, { qtySold: number; revenue: number }>();
+      for (const line of saleLines) {
+        if (!line.lot_id || !emittedIds.has(line.document_id)) continue;
+        const s = salesByLot.get(line.lot_id) ?? { qtySold: 0, revenue: 0 };
+        s.qtySold += Number(line.quantity);
+        s.revenue += Number(line.line_subtotal);
+        salesByLot.set(line.lot_id, s);
+      }
+
+      // COGS siempre = unidades vendidas × coste/unidad del lote (no de la línea)
+      // para que el margen sea siempre precio venta por unidad vs coste de compra por unidad
+      lotProfitRows = lotProfitRows.map((row) => {
+        const s = salesByLot.get(row.id);
+        if (!s) return row;
+        return {
+          ...row,
+          qtySold: s.qtySold,
+          revenue: s.revenue,
+          cogs: s.qtySold * row.cost_per_unit,
+        };
+      });
+    }
+
+    // Enriquecer con nombre del proveedor desde purchase_orders
+    if (rawOrders && rawOrders.length > 0) {
+      const orderById = new Map(rawOrders.map((o) => [o.id, o]));
+      lotProfitRows = lotProfitRows.map((row) => {
+        const lot = (rawLots ?? []).find((l) => l.id === row.id);
+        if (lot?.purchase_order_id) {
+          const order = orderById.get(lot.purchase_order_id);
+          return { ...row, supplier_name: order?.supplier_name ?? null };
+        }
+        return row;
+      });
+    }
+  }
 
   const formDefaults: Partial<ProductInput> = {
     type: product.type,
@@ -136,6 +245,20 @@ export default async function ProductoDetailPage({
             />
           </div>
         </section>
+      )}
+
+      {isPhysical && product.metal && (
+        <PurchaseOrderSection
+          productId={product.id}
+          weightG={Number(product.weight_g ?? 0)}
+          metal={product.metal as "oro" | "plata"}
+          currentSpotPerG={spots[product.metal as "oro" | "plata"]?.price_eur_per_g ?? null}
+          orders={ordersWithDelta}
+        />
+      )}
+
+      {isPhysical && (
+        <ProfitabilitySection rows={lotProfitRows} />
       )}
 
       {isPhysical && (

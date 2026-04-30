@@ -35,6 +35,8 @@ function buildLineInserts(documentId: string, input: DocumentInput) {
       line_subtotal: computed.line_subtotal,
       line_igic: computed.line_igic,
       line_total: computed.line_total,
+      lot_id: line.lot_id ?? null,
+      unit_cost: line.unit_cost ?? null,
     };
   });
 }

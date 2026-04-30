@@ -55,13 +55,14 @@ export default async function DocumentoDetailPage({
     categoriesResult,
     companyResult,
     spots,
+    lotsResult,
     originalResult,
     rectificationResult,
   ] = await Promise.all([
     supabase
       .from("document_lines")
       .select(
-        "id, document_id, position, product_id, description, quantity, unit_price, discount_pct, igic_rate, line_subtotal, line_igic, line_total, created_at"
+        "id, document_id, position, product_id, description, quantity, unit_price, discount_pct, igic_rate, line_subtotal, line_igic, line_total, lot_id, unit_cost, created_at"
       )
       .eq("document_id", doc.id)
       .order("position"),
@@ -77,6 +78,7 @@ export default async function DocumentoDetailPage({
       .select("id, name, igic_rate, created_at, updated_at"),
     supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),
     getLatestSpots(),
+    supabase.from("stock_lots").select("*").order("order_date", { ascending: false }),
     // Si este documento ES una rectificativa, cargamos la factura original
     docRow.rectification_of_invoice_id
       ? supabase
@@ -104,6 +106,7 @@ export default async function DocumentoDetailPage({
   const allClients = clientsResult.data ?? [];
   const docClient = allClients.find((c) => c.id === doc.client_id) ?? null;
   const company = companyResult.data ?? null;
+  const allLots = lotsResult.data ?? [];
   const canDownload = doc.status !== "borrador" && docClient !== null;
   const canConvert =
     doc.doc_type === "albaran" &&
@@ -131,6 +134,8 @@ export default async function DocumentoDetailPage({
             unit_price: l.unit_price,
             discount_pct: l.discount_pct,
             igic_rate: l.igic_rate,
+            lot_id: l.lot_id ?? null,
+            unit_cost: l.unit_cost != null ? Number(l.unit_cost) : null,
           }))
         : [
             {
@@ -140,6 +145,8 @@ export default async function DocumentoDetailPage({
               unit_price: 0,
               discount_pct: 0,
               igic_rate: 0,
+              lot_id: null,
+              unit_cost: null,
             },
           ],
   };
@@ -219,6 +226,7 @@ export default async function DocumentoDetailPage({
           clients={allClients}
           products={productsResult.data ?? []}
           categories={categoriesResult.data ?? []}
+          lots={allLots}
           spotByMetal={{
             oro: spots.oro?.price_eur_per_g ?? null,
             plata: spots.plata?.price_eur_per_g ?? null,

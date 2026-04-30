@@ -119,6 +119,37 @@ export const stockMovementSchema = z.object({
 
 export type StockMovementInput = z.infer<typeof stockMovementSchema>;
 
+const positiveNumber = numberFromAny(0).refine(
+  (v) => Number.isFinite(v) && v > 0,
+  { message: "Debe ser mayor a 0" }
+);
+
+const optionalPositiveNumber = z
+  .union([z.string(), z.number()])
+  .nullish()
+  .transform((v) => {
+    if (v === undefined || v === null || v === "") return null;
+    const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  });
+
+export const purchaseOrderSchema = z.object({
+  order_date: z
+    .string({ required_error: "La fecha es obligatoria" })
+    .trim()
+    .min(1, "La fecha es obligatoria"),
+  supplier_name: optionalString,
+  quantity: positiveNumber,
+  // El usuario introduce el precio total por unidad (ej. precio del lingote)
+  // cost_per_gram se deriva en la acción como cost_per_unit / weight_g
+  cost_per_unit: positiveNumber,
+  spot_price_per_g: optionalPositiveNumber,
+  total_cost: optionalPositiveNumber,
+  notes: optionalString,
+});
+
+export type PurchaseOrderInput = z.infer<typeof purchaseOrderSchema>;
+
 /**
  * Valores comunes de ley para el selector del formulario.
  */

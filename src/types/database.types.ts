@@ -268,6 +268,62 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["documents"]["Insert"]>;
         Relationships: Relationship[];
       };
+      stock_lots: {
+        Row: {
+          id: string;
+          product_id: string;
+          purchase_order_id: string | null;
+          quantity_total: number;
+          quantity_remaining: number;
+          cost_per_gram: number;
+          cost_per_unit: number;
+          order_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          purchase_order_id?: string | null;
+          quantity_total: number;
+          quantity_remaining: number;
+          cost_per_gram: number;
+          cost_per_unit: number;
+          order_date?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stock_lots"]["Insert"]>;
+        Relationships: Relationship[];
+      };
+      purchase_orders: {
+        Row: {
+          id: string;
+          product_id: string;
+          order_date: string;
+          supplier_name: string | null;
+          quantity: number;
+          cost_per_gram: number;
+          spot_price_per_g: number | null;
+          total_cost: number | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          invoice_url: string | null;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          order_date?: string;
+          supplier_name?: string | null;
+          quantity: number;
+          cost_per_gram: number;
+          spot_price_per_g?: number | null;
+          total_cost?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+          invoice_url?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchase_orders"]["Insert"]>;
+        Relationships: Relationship[];
+      };
       document_lines: {
         Row: {
           id: string;
@@ -282,6 +338,8 @@ export interface Database {
           line_subtotal: number;
           line_igic: number;
           line_total: number;
+          lot_id: string | null;
+          unit_cost: number | null;
           created_at: string;
         };
         Insert: {
@@ -297,6 +355,8 @@ export interface Database {
           line_subtotal?: number;
           line_igic?: number;
           line_total?: number;
+          lot_id?: string | null;
+          unit_cost?: number | null;
         };
         Update: Partial<
           Database["public"]["Tables"]["document_lines"]["Insert"]
