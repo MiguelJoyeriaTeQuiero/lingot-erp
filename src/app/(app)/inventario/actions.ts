@@ -161,7 +161,7 @@ export async function applyInventoryCountAction(
 export async function createPurchaseOrderAction(
   productId: string,
   raw: unknown,
-  invoiceUrl?: string | null
+  invoiceUrls?: string[]
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
@@ -199,7 +199,8 @@ export async function createPurchaseOrderAction(
       total_cost: totalCost,
       notes: parsed.data.notes,
       created_by: user.id,
-      invoice_url: invoiceUrl ?? null,
+      invoice_url: invoiceUrls?.[0] ?? null,
+      invoice_urls: invoiceUrls ?? [],
     })
     .select("id")
     .single();

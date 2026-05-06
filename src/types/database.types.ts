@@ -307,6 +307,7 @@ export interface Database {
           created_by: string | null;
           created_at: string;
           invoice_url: string | null;
+          invoice_urls: string[];
         };
         Insert: {
           id?: string;
@@ -320,6 +321,7 @@ export interface Database {
           notes?: string | null;
           created_by?: string | null;
           invoice_url?: string | null;
+          invoice_urls?: string[];
         };
         Update: Partial<Database["public"]["Tables"]["purchase_orders"]["Insert"]>;
         Relationships: Relationship[];

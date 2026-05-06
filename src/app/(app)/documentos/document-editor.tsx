@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/components/ui/toast";
-import { useRole } from "@/lib/hooks/useRole";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { computeUnitPrice } from "@/lib/pricing";
 import {
@@ -83,14 +82,12 @@ export function DocumentEditor({
 }: DocumentEditorProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { role } = useRole();
   const [submitting, setSubmitting] = useState(false);
   const [emitting, setEmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const isDraft = mode === "create" || status === "borrador";
-  const readOnly =
-    !isDraft || (mode === "edit" && role !== null && role !== "admin");
+  const readOnly = !isDraft;
 
   const {
     control,
@@ -107,7 +104,7 @@ export function DocumentEditor({
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
 
-  const lines = watch("lines");
+  const lines = useWatch({ control, name: "lines" });
   const clientId = watch("client_id");
 
   const clientOptions = useMemo(
@@ -354,9 +351,7 @@ export function DocumentEditor({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {readOnly && mode === "edit" && (
         <div className="rounded-md border border-border bg-surface-raised px-4 py-3 text-sm text-text-muted">
-          {!isDraft
-            ? "Este documento ya no está en borrador, no se puede editar."
-            : "Tu rol actual es sólo lectura."}
+          Este documento ya no está en borrador, no se puede editar.
         </div>
       )}
 

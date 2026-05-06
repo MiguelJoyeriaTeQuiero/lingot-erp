@@ -39,6 +39,7 @@ export interface PurchaseOrderEntry {
   delta: number | null;
   deltaPct: number | null;
   invoice_url?: string | null;
+  invoice_urls?: string[] | null;
 }
 
 interface Props {
@@ -66,7 +67,7 @@ export function PurchaseOrderSection({
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -94,24 +95,29 @@ export function PurchaseOrderSection({
   const cpgDisplay = cpu > 0 && weightG > 0 ? cpu / weightG : null;
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const picked = e.target.files?.[0] ?? null;
-    if (!picked) { setFile(null); return; }
-    if (picked.size > MAX_MB * 1024 * 1024) {
-      toast({ variant: "error", title: "Archivo demasiado grande", description: `Máximo ${MAX_MB} MB.` });
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length === 0) return;
+    const oversized = picked.filter((f) => f.size > MAX_MB * 1024 * 1024);
+    if (oversized.length > 0) {
+      toast({ variant: "error", title: "Archivo demasiado grande", description: `Máximo ${MAX_MB} MB por archivo.` });
       return;
     }
-    setFile(picked);
-  }
-
-  function clearFile() {
-    setFile(null);
+    setFiles((prev) => {
+      const existing = new Set(prev.map((f) => f.name + f.size));
+      const added = picked.filter((f) => !existing.has(f.name + f.size));
+      return [...prev, ...added];
+    });
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function uploadInvoice(f: File): Promise<string> {
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function uploadFile(f: File): Promise<string> {
     const supabase = createClient();
     const ext = f.name.split(".").pop() ?? "pdf";
-    const path = `orders/${productId}/${Date.now()}.${ext}`;
+    const path = `orders/${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { data: up, error: upErr } = await supabase.storage
       .from("purchase-invoices")
       .upload(path, f, { contentType: f.type, upsert: false });
@@ -122,19 +128,18 @@ export function PurchaseOrderSection({
   async function onSubmit(values: PurchaseOrderInput) {
     setSubmitting(true);
 
-    let invoiceUrl: string | null = null;
-    if (file) {
+    let invoiceUrls: string[] = [];
+    if (files.length > 0) {
       try {
-        invoiceUrl = await uploadInvoice(file);
+        invoiceUrls = await Promise.all(files.map(uploadFile));
       } catch (err) {
-        toast({ variant: "error", title: "Error subiendo factura", description: String(err) });
+        toast({ variant: "error", title: "Error subiendo documentos", description: String(err) });
         setSubmitting(false);
         return;
       }
     }
 
-    const payload = { ...values };
-    const result = await createPurchaseOrderAction(productId, payload, invoiceUrl);
+    const result = await createPurchaseOrderAction(productId, values, invoiceUrls);
     setSubmitting(false);
 
     if (!result.success) {
@@ -156,7 +161,7 @@ export function PurchaseOrderSection({
       total_cost: null,
       notes: null,
     });
-    setFile(null);
+    setFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsOpen(false);
     router.refresh();
@@ -260,36 +265,38 @@ export function PurchaseOrderSection({
               placeholder="Observaciones del pedido"
             />
 
-            {/* Factura del proveedor */}
+            {/* Documentos del proveedor */}
             <div>
               <div className="mb-1.5 text-[13px] font-medium text-primary">
-                Factura del proveedor (opcional)
+                Documentos del proveedor (opcional)
               </div>
-              {file ? (
-                <div className="flex items-center gap-3 rounded-md border border-border bg-surface-raised px-3 py-2 text-sm">
-                  <Receipt className="h-4 w-4 shrink-0 text-gold-deep" strokeWidth={1.5} />
-                  <span className="flex-1 truncate text-text-muted">{file.name}</span>
-                  <button
-                    type="button"
-                    onClick={clearFile}
-                    className="text-text-muted hover:text-danger"
-                  >
-                    <X className="h-3.5 w-3.5" strokeWidth={2} />
-                  </button>
-                </div>
-              ) : (
+              <div className="space-y-1.5">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-md border border-border bg-surface-raised px-3 py-2 text-sm">
+                    <Receipt className="h-4 w-4 shrink-0 text-gold-deep" strokeWidth={1.5} />
+                    <span className="flex-1 truncate text-text-muted">{f.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="text-text-muted hover:text-danger"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                ))}
                 <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2.5 text-sm text-text-muted transition-colors hover:border-gold/50 hover:text-primary">
                   <Paperclip className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                  Adjuntar factura PDF o imagen
+                  {files.length === 0 ? "Adjuntar facturas o imágenes" : "Añadir otro documento"}
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept={ACCEPTED}
+                    multiple
                     className="sr-only"
                     onChange={handleFileChange}
                   />
                 </label>
-              )}
+              </div>
             </div>
 
             <div className="flex justify-end">
@@ -344,19 +351,7 @@ export function PurchaseOrderSection({
                     <FluctuationCell delta={order.delta} deltaPct={order.deltaPct} />
                   </TD>
                   <TD>
-                    {order.invoice_url ? (
-                      <a
-                        href={order.invoice_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-gold-deep underline-offset-2 hover:underline"
-                      >
-                        <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        Ver
-                      </a>
-                    ) : (
-                      <span className="text-text-dim text-xs">—</span>
-                    )}
+                    <OrderDocuments order={order} />
                   </TD>
                 </TR>
               ))}
@@ -365,6 +360,32 @@ export function PurchaseOrderSection({
         )}
       </div>
     </section>
+  );
+}
+
+function OrderDocuments({ order }: { order: PurchaseOrderEntry }) {
+  const urls: string[] = [];
+  if (order.invoice_urls && order.invoice_urls.length > 0) {
+    urls.push(...order.invoice_urls);
+  } else if (order.invoice_url) {
+    urls.push(order.invoice_url);
+  }
+  if (urls.length === 0) return <span className="text-text-dim text-xs">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {urls.map((url, i) => (
+        <a
+          key={i}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-gold-deep underline-offset-2 hover:underline"
+        >
+          <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Doc {urls.length > 1 ? i + 1 : ""}
+        </a>
+      ))}
+    </div>
   );
 }
 

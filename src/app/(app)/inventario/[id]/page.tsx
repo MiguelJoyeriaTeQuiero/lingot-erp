@@ -62,7 +62,7 @@ export default async function ProductoDetailPage({
     supabase
       .from("purchase_orders")
       .select(
-        "id, order_date, supplier_name, quantity, cost_per_gram, spot_price_per_g, total_cost, notes, created_at, invoice_url"
+        "id, order_date, supplier_name, quantity, cost_per_gram, spot_price_per_g, total_cost, notes, created_at, invoice_url, invoice_urls"
       )
       .eq("product_id", params.id)
       .order("order_date", { ascending: true }),
