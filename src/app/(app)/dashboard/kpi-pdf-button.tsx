@@ -488,8 +488,8 @@ async function generatePdf(data: KpiReportData) {
 export function KpiPdfButton() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState(isoMonthStart);
-  const [to, setTo] = useState(isoToday);
+  const [from, setFrom] = useState(() => isoMonthStart());
+  const [to, setTo] = useState(() => isoToday());
   const [loading, setLoading] = useState(false);
 
   async function handleGenerate() {
@@ -513,7 +513,7 @@ export function KpiPdfButton() {
   }
 
   return (
-    <div className="relative">
+    <div className="flex flex-col items-end gap-0">
       <Button
         type="button"
         variant="secondary"
@@ -521,62 +521,87 @@ export function KpiPdfButton() {
       >
         <Download className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
         Exportar informe
+        <CalendarRange className="ml-2 h-3.5 w-3.5 opacity-60" strokeWidth={1.5} />
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 border border-border bg-surface-raised shadow-vault">
+        <div className="mt-3 w-80 border border-border bg-surface-raised shadow-vault">
+          {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <CalendarRange className="h-3.5 w-3.5 text-gold-deep" strokeWidth={1.5} />
               <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
-                Rango del informe
+                Período del informe
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setOpen(false)}
-              className="text-text-dim hover:text-primary"
+              className="text-text-dim transition-colors hover:text-primary"
             >
               <X className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </div>
 
-          <div className="space-y-3 p-4">
-            <Input
-              label="Desde"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input
-              label="Hasta"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-
-            <div className="flex gap-2 border-t border-border pt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const d = new Date();
-                  setFrom(`${d.getFullYear()}-01-01`);
-                  setTo(isoToday());
-                }}
-                className="flex-1 border border-border px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted transition-colors hover:border-primary hover:text-primary"
-              >
-                Año actual
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFrom(isoMonthStart());
-                  setTo(isoToday());
-                }}
-                className="flex-1 border border-border px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted transition-colors hover:border-primary hover:text-primary"
-              >
-                Este mes
-              </button>
+          <div className="p-4 space-y-4">
+            {/* Quick presets */}
+            <div className="flex gap-2">
+              {[
+                {
+                  label: "Este mes",
+                  action: () => { setFrom(isoMonthStart()); setTo(isoToday()); },
+                },
+                {
+                  label: "Año actual",
+                  action: () => { setFrom(`${new Date().getFullYear()}-01-01`); setTo(isoToday()); },
+                },
+                {
+                  label: "Todo",
+                  action: () => { setFrom("2020-01-01"); setTo(isoToday()); },
+                },
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={p.action}
+                  className="flex-1 border border-border bg-surface px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-text-muted transition-colors hover:border-gold/60 hover:text-primary"
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
+
+            {/* Date inputs */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.22em] text-text-dim">
+                  Desde
+                </label>
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="block w-full border border-border bg-surface px-3 py-2 font-mono text-[12px] text-primary focus:border-gold focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.22em] text-text-dim">
+                  Hasta
+                </label>
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="block w-full border border-border bg-surface px-3 py-2 font-mono text-[12px] text-primary focus:border-gold focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {from && to && (
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-dim">
+                {from} → {to}
+              </p>
+            )}
 
             <Button
               type="button"
