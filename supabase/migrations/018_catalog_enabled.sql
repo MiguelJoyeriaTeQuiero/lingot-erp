@@ -11,3 +11,7 @@ CREATE POLICY company_settings_anon_select ON public.company_settings
 DROP POLICY IF EXISTS products_anon_select ON public.products;
 CREATE POLICY products_anon_select ON public.products
   FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS metal_prices_anon_select ON public.metal_prices;
+CREATE POLICY metal_prices_anon_select ON public.metal_prices
+  FOR SELECT USING (true);
