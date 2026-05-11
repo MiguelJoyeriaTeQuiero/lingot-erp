@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     supabase.from("clients").select("*").limit(500),
     supabase.from("products").select("*").limit(500),
     getLatestSpots(),
-    supabase.from("stock_lots").select("id, product_id, cost_per_unit"),
+    supabase.from("stock_lots").select("id, product_id, cost_per_unit, quantity_remaining"),
     supabase
       .from("document_lines")
       .select("lot_id, quantity, line_subtotal, document_id"),
@@ -89,8 +89,8 @@ export default async function DashboardPage() {
   );
   const issuedCount = documents.filter((d) => d.status !== "borrador").length;
   const activeClients = clients.filter((c) => c.active).length;
-  const stockValue = products.reduce(
-    (sum, p) => sum + Number(p.cost_price ?? 0) * Number(p.stock_current ?? 0),
+  const stockValue = allLots.reduce(
+    (sum, l) => sum + Number(l.cost_per_unit) * Number(l.quantity_remaining),
     0
   );
 
