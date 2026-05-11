@@ -5,18 +5,23 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoPage() {
   const supabase = createTypedClient();
 
-  const [companyRes, productsRes, {
-    data: { user },
-  }] = await Promise.all([
-    supabase.from("company_settings").select("trade_name, legal_name, catalog_enabled").eq("id", 1).maybeSingle(),
-    supabase.from("products").select("id, name, sku, description, metal, weight_g, purity, image_urls, active, category_id").eq("active", true).order("name"),
+  const [companyRes, productsRes, { data: { user } }] = await Promise.all([
+    supabase
+      .from("company_settings")
+      .select("trade_name, legal_name, catalog_enabled")
+      .eq("id", 1)
+      .maybeSingle(),
+    supabase
+      .from("products")
+      .select("id, name, sku, description, metal, weight_g, purity, image_urls, active")
+      .eq("active", true)
+      .order("name"),
     supabase.auth.getUser(),
   ]);
 
   const company = companyRes.data;
   const catalogEnabled = company?.catalog_enabled ?? false;
 
-  // Check if current user is admin
   let isAdmin = false;
   if (user) {
     const { data: profile } = await supabase
@@ -31,8 +36,8 @@ export default async function CatalogoPage() {
 
   if (!catalogEnabled && !isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a3746] px-6 text-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[#c8a164]">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-primary px-6 text-center">
+        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-gold">
           Próximamente
         </span>
         <h1 className="mt-4 font-display text-4xl font-medium tracking-tight text-white">
@@ -48,25 +53,26 @@ export default async function CatalogoPage() {
   const products = productsRes.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#e8edf0]">
+    <div className="min-h-screen bg-ink">
       {/* Admin preview banner */}
       {isAdmin && !catalogEnabled && (
-        <div className="bg-[#0a3746] px-6 py-3 text-center">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#c8a164]">
-            Vista previa · El catálogo no está publicado aún
+        <div className="bg-warning/10 border-b border-warning/30 px-6 py-3 text-center">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-warning">
+            Vista previa de administrador · El catálogo no está publicado
           </span>
         </div>
       )}
 
       {/* Header */}
-      <header className="border-b border-black/10 bg-[#0a3746] px-6 py-10 text-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[#c8a164]">
+      <header className="border-b border-border bg-surface-raised px-6 py-12 text-center shadow-paper">
+        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-gold-deep">
           Colección
         </span>
-        <h1 className="mt-3 font-display text-4xl font-medium tracking-tight text-white md:text-5xl">
+        <h1 className="mt-3 font-display text-4xl font-medium tracking-tight text-primary md:text-5xl">
           {shopName}
         </h1>
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.3em] text-white/40">
+        <div className="mx-auto mt-4 h-px w-16 bg-gold/60" />
+        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.3em] text-text-dim">
           {products.length} {products.length === 1 ? "referencia" : "referencias"}
         </p>
       </header>
@@ -75,7 +81,7 @@ export default async function CatalogoPage() {
       <main className="mx-auto max-w-6xl px-6 py-12">
         {products.length === 0 ? (
           <div className="py-24 text-center">
-            <p className="font-mono text-[12px] uppercase tracking-[0.3em] text-[#0a3746]/40">
+            <p className="font-mono text-[12px] uppercase tracking-[0.3em] text-text-dim">
               Sin productos disponibles
             </p>
           </div>
@@ -89,8 +95,8 @@ export default async function CatalogoPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-black/10 px-6 py-8 text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#0a3746]/40">
+      <footer className="border-t border-border px-6 py-8 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-text-dim">
           {shopName} · Joyería
         </p>
       </footer>
@@ -122,9 +128,9 @@ function ProductCard({ product: p }: { product: CatalogProduct }) {
       : `${(p.purity * 1000).toFixed(0)}‰`;
 
   return (
-    <div className="group flex flex-col border border-black/10 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="group flex flex-col border border-border bg-surface-raised shadow-paper transition-shadow hover:shadow-vault">
       {/* Image */}
-      <div className="aspect-square overflow-hidden bg-[#e8edf0]">
+      <div className="aspect-square overflow-hidden bg-surface-sunken">
         {p.image_urls?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -134,7 +140,7 @@ function ProductCard({ product: p }: { product: CatalogProduct }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#0a3746]/20">
+            <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-text-dim">
               Sin imagen
             </span>
           </div>
@@ -144,27 +150,27 @@ function ProductCard({ product: p }: { product: CatalogProduct }) {
       {/* Info */}
       <div className="flex flex-1 flex-col gap-2 p-5">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="font-display text-[15px] font-medium leading-snug tracking-tight text-[#0a3746]">
+          <h2 className="font-display text-[15px] font-medium leading-snug tracking-tight text-primary">
             {p.name}
           </h2>
-          <span className="shrink-0 border border-[#c8a164]/40 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.22em] text-[#c8a164]">
+          <span className="shrink-0 border border-gold/40 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.22em] text-gold-deep">
             {p.metal === "oro" ? "Oro" : "Plata"} {purityLabel}
           </span>
         </div>
 
         {p.sku && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#0a3746]/40">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
             {p.sku}
           </p>
         )}
 
         {p.description && (
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[#0a3746]/60">
+          <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">
             {p.description}
           </p>
         )}
 
-        <div className="mt-auto pt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#0a3746]/40">
+        <div className="mt-auto pt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-text-dim">
           {Number(p.weight_g).toFixed(2)} g · ley {Number(p.purity).toFixed(3)}
         </div>
       </div>
