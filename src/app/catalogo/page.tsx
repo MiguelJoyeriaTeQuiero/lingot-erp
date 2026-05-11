@@ -32,7 +32,7 @@ export default async function CatalogoPage() {
     isAdmin = profile?.role === "admin";
   }
 
-  const shopName = company?.trade_name ?? company?.legal_name ?? "Catálogo";
+  const shopName = "Lingot";
 
   if (!catalogEnabled && !isAdmin) {
     return (
