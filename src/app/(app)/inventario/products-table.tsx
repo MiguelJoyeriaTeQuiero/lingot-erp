@@ -164,12 +164,28 @@ export function ProductsTable({
                     className="cursor-pointer"
                   >
                     <TD>
-                      <div className="font-medium text-primary">{p.name}</div>
-                      {cat && (
-                        <div className="text-[11px] text-text-dim">
-                          {cat.name}
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden border border-border bg-surface">
+                          {p.image_urls?.[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.image_urls[0]}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-surface-raised" />
+                          )}
                         </div>
-                      )}
+                        <div>
+                          <div className="font-medium text-primary">{p.name}</div>
+                          {cat && (
+                            <div className="text-[11px] text-text-dim">
+                              {cat.name}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </TD>
                     <TD className="font-mono text-[12px] tabular text-gold-deep">
                       {p.sku ?? "—"}
