@@ -22,22 +22,21 @@ ALTER TABLE public.products
 
 -- ── 3. Storage bucket para imágenes de producto ─────────────────────
 -- Ejecutar en el SQL Editor de Supabase (requiere service_role):
--- INSERT INTO storage.buckets (id, name, public)
--- VALUES ('product-images', 'product-images', true)
--- ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "product_images_select" ON storage.objects;
+CREATE POLICY "product_images_select" ON storage.objects
+FOR SELECT USING (bucket_id = 'product-images');
+DROP POLICY IF EXISTS "product_images_insert" ON storage.objects;
+CREATE POLICY "product_images_insert" ON storage.objects
+ FOR INSERT WITH CHECK (
+     bucket_id = 'product-images' AND public.is_authenticated()
+   );
 --
--- DROP POLICY IF EXISTS "product_images_select" ON storage.objects;
--- CREATE POLICY "product_images_select" ON storage.objects
---   FOR SELECT USING (bucket_id = 'product-images');
---
--- DROP POLICY IF EXISTS "product_images_insert" ON storage.objects;
--- CREATE POLICY "product_images_insert" ON storage.objects
---   FOR INSERT WITH CHECK (
---     bucket_id = 'product-images' AND public.is_authenticated()
---   );
---
--- DROP POLICY IF EXISTS "product_images_delete" ON storage.objects;
--- CREATE POLICY "product_images_delete" ON storage.objects
---   FOR DELETE USING (
---     bucket_id = 'product-images' AND public.is_admin()
---   );
+ DROP POLICY IF EXISTS "product_images_delete" ON storage.objects;
+ CREATE POLICY "product_images_delete" ON storage.objects
+   FOR DELETE USING (
+     bucket_id = 'product-images' AND public.is_admin()
+   );
