@@ -54,6 +54,8 @@ interface SelectBuilder<T>
   extends Promise<{ data: T[] | null; error: PostgrestError | null }> {
   eq(col: string, val: unknown): SelectBuilder<T>;
   in(col: string, val: unknown[]): SelectBuilder<T>;
+  gte(col: string, val: unknown): SelectBuilder<T>;
+  lte(col: string, val: unknown): SelectBuilder<T>;
   order(col: string, opts?: { ascending?: boolean }): SelectBuilder<T>;
   limit(n: number): SelectBuilder<T>;
   single(): SingleResult<T>;
