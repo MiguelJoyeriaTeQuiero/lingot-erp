@@ -27,6 +27,7 @@ function toDbPayload(input: ProductInput) {
     stock_min: input.stock_min,
     igic_rate: input.igic_rate,
     active: input.active,
+    image_urls: input.image_urls ?? [],
   };
 }
 
@@ -201,6 +202,7 @@ export async function createPurchaseOrderAction(
       created_by: user.id,
       invoice_url: invoiceUrls?.[0] ?? null,
       invoice_urls: invoiceUrls ?? [],
+      received: false,
     })
     .select("id")
     .single();
@@ -209,36 +211,71 @@ export async function createPurchaseOrderAction(
     return { success: false, error: error?.message ?? "Error desconocido" };
   }
 
-  const reason = parsed.data.supplier_name
-    ? `Reposición — ${parsed.data.supplier_name}`
+  revalidatePath("/inventario");
+  revalidatePath(`/inventario/${productId}`);
+  return { success: true, id: data.id };
+}
+
+export async function markPurchaseOrderReceivedAction(
+  orderId: string,
+  productId: string
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "Sesión no válida" };
+
+  const { data: order } = await supabase
+    .from("purchase_orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (!order) return { success: false, error: "Pedido no encontrado" };
+  if (order.received) return { success: false, error: "Este pedido ya fue marcado como recibido" };
+
+  const { error: updErr } = await supabase
+    .from("purchase_orders")
+    .update({ received: true, received_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (updErr) return { success: false, error: updErr.message };
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("weight_g")
+    .eq("id", productId)
+    .single();
+
+  const weightG = Number((product as { weight_g?: number } | null)?.weight_g ?? 0);
+  const costPerGram = Number(order.cost_per_gram);
+  const costPerUnit = weightG > 0 ? costPerGram * weightG : costPerGram;
+
+  const reason = order.supplier_name
+    ? `Reposición — ${order.supplier_name}`
     : "Reposición de stock";
 
-  const { error: movError } = await supabase.rpc("record_stock_movement", {
+  const { error: movErr } = await supabase.rpc("record_stock_movement", {
     p_product_id: productId,
     p_movement_type: "entrada",
-    p_quantity: parsed.data.quantity,
+    p_quantity: order.quantity,
     p_reason: reason,
     p_invoice_url: null,
   });
 
-  if (movError) {
-    return { success: false, error: `Pedido guardado pero error en stock: ${movError.message}` };
-  }
+  if (movErr) return { success: false, error: `Estado actualizado pero error en stock: ${movErr.message}` };
 
-  // Crear lote con el coste por unidad exacto introducido por el usuario
   await supabase.from("stock_lots").insert({
     product_id: productId,
-    purchase_order_id: data.id,
-    quantity_total: parsed.data.quantity,
-    quantity_remaining: parsed.data.quantity,
+    purchase_order_id: orderId,
+    quantity_total: order.quantity,
+    quantity_remaining: order.quantity,
     cost_per_gram: costPerGram,
     cost_per_unit: costPerUnit,
-    order_date: parsed.data.order_date,
+    order_date: order.order_date,
   });
 
   revalidatePath("/inventario");
   revalidatePath(`/inventario/${productId}`);
-  return { success: true, id: data.id };
+  return { success: true, id: orderId };
 }
 
 export async function recordStockMovementAction(

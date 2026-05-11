@@ -14,17 +14,18 @@ export type SaleRow = {
   product_name: string;
   product_sku: string | null;
   quantity: number;
-  revenue: number;         // line_subtotal (sin IGIC)
+  revenue: number;         // line_subtotal (sin IGIC) — negativo si es rectificativa
   cost_per_unit: number;   // del lote de compra
-  total_cost: number;      // cost_per_unit × quantity
+  total_cost: number;      // cost_per_unit × quantity — negativo si es rectificativa
   profit: number;          // revenue - total_cost
+  shipping_cost: number;   // products.cost_price (costes de envío)
+  is_rectification: boolean;
 };
 
 export default async function RentabilidadPage() {
   await requireRole(["admin"]);
   const supabase = createTypedClient();
 
-  // Líneas de venta que tienen lote asignado
   const { data: rawLines } = await supabase
     .from("document_lines")
     .select("id, document_id, product_id, description, quantity, line_subtotal, lot_id");
@@ -52,7 +53,7 @@ export default async function RentabilidadPage() {
   const [docsResult, lotsResult, productsResult, clientsResult] = await Promise.all([
     supabase
       .from("documents")
-      .select("id, code, issue_date, status, client_id")
+      .select("id, code, issue_date, status, client_id, rectification_of_invoice_id")
       .in("id", docIds),
     supabase
       .from("stock_lots")
@@ -60,7 +61,7 @@ export default async function RentabilidadPage() {
       .in("id", lotIds),
     supabase
       .from("products")
-      .select("id, name, sku")
+      .select("id, name, sku, cost_price")
       .in("id", productIds),
     supabase
       .from("clients")
@@ -82,14 +83,21 @@ export default async function RentabilidadPage() {
     const lot = lotMap.get(line.lot_id as string);
     if (!lot) continue;
 
+    const isRectification = Boolean(
+      (doc as typeof doc & { rectification_of_invoice_id?: string | null })
+        .rectification_of_invoice_id
+    );
+    const sign = isRectification ? -1 : 1;
+
     const quantity = Number(line.quantity);
-    const revenue = Number(line.line_subtotal);
+    const revenue = Number(line.line_subtotal) * sign;
     const costPerUnit = Number(lot.cost_per_unit);
-    const totalCost = costPerUnit * quantity;
+    const totalCost = costPerUnit * quantity * sign;
     const profit = revenue - totalCost;
 
     const productId = line.product_id ?? lot.product_id;
     const product = productId ? productMap.get(productId) : null;
+    const shippingCost = Number((product as { cost_price?: number } | null | undefined)?.cost_price ?? 0);
 
     rows.push({
       id: line.id,
@@ -104,10 +112,11 @@ export default async function RentabilidadPage() {
       cost_per_unit: costPerUnit,
       total_cost: totalCost,
       profit,
+      shipping_cost: shippingCost,
+      is_rectification: isRectification,
     });
   }
 
-  // Ordenar por fecha descendente
   rows.sort((a, b) => b.issue_date.localeCompare(a.issue_date));
 
   return (
@@ -115,7 +124,7 @@ export default async function RentabilidadPage() {
       <PageHeader
         eyebrow="Contabilidad · 06"
         title="Rentabilidad"
-        description="Beneficio por venta — precio cobrado menos coste de compra por unidad."
+        description="Beneficio por venta — precio cobrado menos coste de compra por unidad. Las rectificativas aparecen en negativo."
       />
       <RentabilidadView rows={rows} />
     </div>

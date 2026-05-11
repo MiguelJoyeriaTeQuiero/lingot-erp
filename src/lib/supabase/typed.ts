@@ -130,6 +130,7 @@ interface PurchaseOrdersTable {
   insert(values: PurchaseOrderInsert): {
     select(cols?: string): { single: () => SingleResult<{ id: string }> };
   };
+  update(values: Partial<PurchaseOrderInsert>): MutationBuilder;
 }
 
 interface StockLotsTable {

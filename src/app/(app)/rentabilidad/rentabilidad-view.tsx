@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, RotateCcw } from "lucide-react";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { SaleRow } from "./page";
@@ -28,6 +28,7 @@ export function RentabilidadView({ rows }: Props) {
 
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0);
   const totalCost = filtered.reduce((s, r) => s + r.total_cost, 0);
+  const totalShipping = filtered.reduce((s, r) => s + r.shipping_cost, 0);
   const totalProfit = filtered.reduce((s, r) => s + r.profit, 0);
   const globalMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : null;
 
@@ -49,7 +50,7 @@ export function RentabilidadView({ rows }: Props) {
             Sin resultados.
           </div>
         ) : (
-          <Table className="min-w-[900px]">
+          <Table className="min-w-[1020px]">
             <THead>
               <TR>
                 <TH>Fecha</TH>
@@ -59,6 +60,7 @@ export function RentabilidadView({ rows }: Props) {
                 <TH className="text-right">Cant.</TH>
                 <TH className="text-right">PVP/u</TH>
                 <TH className="text-right">Coste/u</TH>
+                <TH className="text-right">Envío/u</TH>
                 <TH className="text-right">Beneficio</TH>
                 <TH className="text-right">Margen</TH>
               </TR>
@@ -69,15 +71,23 @@ export function RentabilidadView({ rows }: Props) {
                 const profitPerUnit = pvpPerUnit - row.cost_per_unit;
                 const marginPct = pvpPerUnit > 0 ? (profitPerUnit / pvpPerUnit) * 100 : null;
                 return (
-                  <TR key={row.id}>
+                  <TR
+                    key={row.id}
+                    className={row.is_rectification ? "bg-purple-50/40" : undefined}
+                  >
                     <TD className="text-text-muted">{formatDate(row.issue_date)}</TD>
                     <TD>
-                      <Link
-                        href={`/documentos/${row.doc_id}`}
-                        className="font-mono text-xs text-primary underline-offset-2 hover:underline"
-                      >
-                        {row.doc_code ?? "—"}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        {row.is_rectification && (
+                          <RotateCcw className="h-3 w-3 shrink-0 text-purple-600" strokeWidth={2} aria-label="Rectificativa" />
+                        )}
+                        <Link
+                          href={`/documentos/${row.doc_id}`}
+                          className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+                        >
+                          {row.doc_code ?? "—"}
+                        </Link>
+                      </div>
                     </TD>
                     <TD className="text-text-muted">{row.client_name ?? "—"}</TD>
                     <TD>
@@ -90,10 +100,13 @@ export function RentabilidadView({ rows }: Props) {
                     </TD>
                     <TD className="text-right tabular-nums">{row.quantity}</TD>
                     <TD className="text-right font-mono text-sm">
-                      {formatCurrency(pvpPerUnit)}
+                      {formatCurrency(Math.abs(pvpPerUnit))}
                     </TD>
                     <TD className="text-right font-mono text-sm text-text-muted">
                       {formatCurrency(row.cost_per_unit)}
+                    </TD>
+                    <TD className="text-right font-mono text-sm text-text-dim">
+                      {row.shipping_cost > 0 ? formatCurrency(row.shipping_cost) : "—"}
                     </TD>
                     <TD className="text-right font-mono text-sm">
                       <span className={row.profit >= 0 ? "text-success" : "text-danger"}>
@@ -102,7 +115,7 @@ export function RentabilidadView({ rows }: Props) {
                       </span>
                     </TD>
                     <TD className="text-right">
-                      <MarginCell marginPct={marginPct} profit={row.profit} />
+                      <MarginCell marginPct={marginPct} profit={row.profit} isRectification={row.is_rectification} />
                     </TD>
                   </TR>
                 );
@@ -122,6 +135,11 @@ export function RentabilidadView({ rows }: Props) {
             <span className="font-mono text-sm tabular-nums text-text-muted">
               Coste: {formatCurrency(totalCost)}
             </span>
+            {totalShipping > 0 && (
+              <span className="font-mono text-sm tabular-nums text-text-dim">
+                Envío: {formatCurrency(totalShipping)}
+              </span>
+            )}
             <span className={`font-mono text-sm tabular-nums font-medium ${totalProfit >= 0 ? "text-success" : "text-danger"}`}>
               {totalProfit >= 0 ? "+" : ""}{formatCurrency(totalProfit)}
             </span>
@@ -133,7 +151,23 @@ export function RentabilidadView({ rows }: Props) {
   );
 }
 
-function MarginCell({ marginPct, profit }: { marginPct: number | null; profit: number }) {
+function MarginCell({
+  marginPct,
+  profit,
+  isRectification,
+}: {
+  marginPct: number | null;
+  profit: number;
+  isRectification?: boolean;
+}) {
+  if (isRectification) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-purple-600">
+        <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
+        Rectif.
+      </span>
+    );
+  }
   if (marginPct === null) return <span className="text-xs text-text-dim">—</span>;
   if (Math.abs(profit) < 0.005) {
     return (

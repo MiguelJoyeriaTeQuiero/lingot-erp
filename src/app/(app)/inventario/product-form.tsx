@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ImagePlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   type ProductInput,
 } from "@/lib/validations/product";
 import type { ProductCategoryRow } from "@/lib/supabase/typed";
+import { createClient } from "@/lib/supabase/client";
 import {
   createProductAction,
   updateProductAction,
@@ -46,6 +48,7 @@ const emptyDefaults: ProductInput = {
   stock_min: 0,
   igic_rate: null,
   active: true,
+  image_urls: [],
 };
 
 export function ProductForm({
@@ -62,6 +65,8 @@ export function ProductForm({
   const readOnly = mode === "edit" && role !== null && role !== "admin";
 
   const [togglePending, setTogglePending] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -85,6 +90,7 @@ export function ProductForm({
   const purity = Number(watch("purity")) || 0;
   const markupPg = Number(watch("markup_per_gram")) || 0;
   const markupPp = Number(watch("markup_per_piece")) || 0;
+  const imageUrls = watch("image_urls") ?? [];
 
   const inheritedIgic =
     categoryId != null
@@ -96,7 +102,7 @@ export function ProductForm({
   const computed = useMemo(() => {
     if (!spot) return null;
     const metalValue = weight * purity * spot * (1 + globalMarkupPct / 100);
-    const hechura = weight * markupPg;
+    const hechura = metalValue * (markupPg / 100);
     const total = metalValue + hechura + markupPp;
     return {
       metalValue: Math.round(metalValue * 100) / 100,
@@ -105,6 +111,48 @@ export function ProductForm({
       total: Math.round(total * 100) / 100,
     };
   }, [weight, purity, spot, globalMarkupPct, markupPg, markupPp]);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    const remaining = 2 - imageUrls.length;
+    if (remaining <= 0) {
+      toast({ variant: "error", title: "Máximo 2 imágenes por producto" });
+      return;
+    }
+    const toUpload = files.slice(0, remaining);
+    setUploadingImages(true);
+    try {
+      const supabase = createClient();
+      const newUrls: string[] = [];
+      for (const file of toUpload) {
+        const ext = file.name.split(".").pop() ?? "jpg";
+        const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { data, error } = await supabase.storage
+          .from("product-images")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw new Error(error.message);
+        const { data: urlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(data.path);
+        newUrls.push(urlData.publicUrl);
+      }
+      setValue("image_urls", [...imageUrls, ...newUrls], { shouldDirty: true });
+    } catch (err) {
+      toast({ variant: "error", title: "Error al subir imagen", description: String(err) });
+    } finally {
+      setUploadingImages(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  }
+
+  function handleRemoveImage(idx: number) {
+    setValue(
+      "image_urls",
+      imageUrls.filter((_, i) => i !== idx),
+      { shouldDirty: true }
+    );
+  }
 
   const onSubmit = async (values: ProductInput) => {
     const result =
@@ -345,17 +393,17 @@ export function ProductForm({
       <FormSection
         eyebrow="03"
         title="Hechura y extras"
-        description={`Sobre el spot se aplica el margen global del ${globalMarkupPct}% (configurable en Configuración). Aquí defines hechura por gramo y montaje por pieza.`}
+        description={`Sobre el spot se aplica el margen global del ${globalMarkupPct}% (configurable en Configuración). Aquí defines hechura como % del valor del metal y montaje fijo por pieza.`}
       >
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
           <Input
-            label="Hechura (€/g)"
+            label="Hechura (%)"
             type="number"
             step="0.01"
             {...register("markup_per_gram")}
             error={errors.markup_per_gram?.message}
             disabled={readOnly}
-            help="Mano de obra y diseño por gramo"
+            help="Porcentaje sobre el valor del metal (mano de obra)"
           />
           <Input
             label="Extra por pieza (€)"
@@ -372,18 +420,18 @@ export function ProductForm({
       {/* Inventario y costo */}
       <FormSection
         eyebrow="04"
-        title="Inventario y coste"
-        description="Coste de adquisición histórico (informativo) y stock mínimo de aviso."
+        title="Inventario y costes de envío"
+        description="Costes de envío asociados al producto (se muestran separados en rentabilidad) y stock mínimo de aviso."
       >
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
           <Input
-            label="Coste unitario (€)"
+            label="Costes de envío (€)"
             type="number"
             step="0.01"
             {...register("cost_price")}
             error={errors.cost_price?.message}
             disabled={readOnly}
-            help="Precio de compra/coste contable"
+            help="Gastos de envío o logística por unidad"
           />
           <Input
             label="Stock mínimo"
@@ -417,7 +465,7 @@ export function ProductForm({
                   value={formatCurrency(computed?.metalValue ?? 0)}
                 />
                 <Row
-                  label={`Hechura · ${weight.toFixed(3)} g × ${markupPg.toFixed(2)} €/g`}
+                  label={`Hechura · ${markupPg.toFixed(2)}% del valor del metal`}
                   value={formatCurrency(computed?.hechura ?? 0)}
                 />
                 <Row
@@ -434,6 +482,56 @@ export function ProductForm({
                 </span>
               </div>
             </div>
+          )}
+        </div>
+      </FormSection>
+
+      {/* Imágenes del producto */}
+      <FormSection
+        eyebrow="06"
+        title="Imágenes"
+        description="Hasta 2 fotos del producto. Solo uso interno, no aparecen en facturas PDF."
+      >
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-4">
+            {imageUrls.map((url, i) => (
+              <div key={i} className="group relative h-28 w-28 overflow-hidden border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`Imagen ${i + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(i)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" strokeWidth={2} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {imageUrls.length < 2 && !readOnly && (
+              <label className="flex h-28 w-28 cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-border text-text-dim transition-colors hover:border-gold/50 hover:text-text-muted">
+                <ImagePlus className="h-5 w-5" strokeWidth={1.5} />
+                <span className="font-mono text-[9px] uppercase tracking-[0.2em]">
+                  {uploadingImages ? "Subiendo…" : "Añadir foto"}
+                </span>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImages}
+                />
+              </label>
+            )}
+          </div>
+          {imageUrls.length === 0 && (
+            <p className="text-[12px] text-text-dim">Sin imágenes todavía.</p>
           )}
         </div>
       </FormSection>

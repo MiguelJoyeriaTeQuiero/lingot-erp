@@ -46,6 +46,12 @@ export default async function ProductoDetailPage({
 
   if (error || !product) notFound();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("id, email, full_name, role").eq("id", user.id).single()
+    : { data: null };
+  const isAdmin = (profile as { role?: string } | null)?.role === "admin";
+
   const globalMarkupPct = Number(
     (company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4
   );
@@ -62,7 +68,7 @@ export default async function ProductoDetailPage({
     supabase
       .from("purchase_orders")
       .select(
-        "id, order_date, supplier_name, quantity, cost_per_gram, spot_price_per_g, total_cost, notes, created_at, invoice_url, invoice_urls"
+        "id, order_date, supplier_name, quantity, cost_per_gram, spot_price_per_g, total_cost, notes, created_at, invoice_url, invoice_urls, received, received_at"
       )
       .eq("product_id", params.id)
       .order("order_date", { ascending: true }),
@@ -175,6 +181,7 @@ export default async function ProductoDetailPage({
     stock_min: product.stock_min,
     igic_rate: product.igic_rate,
     active: product.active,
+    image_urls: (product as typeof product & { image_urls?: string[] }).image_urls ?? [],
   };
 
   const isPhysical = product.type === "producto";
@@ -254,6 +261,7 @@ export default async function ProductoDetailPage({
           metal={product.metal as "oro" | "plata"}
           currentSpotPerG={spots[product.metal as "oro" | "plata"]?.price_eur_per_g ?? null}
           orders={ordersWithDelta}
+          isAdmin={isAdmin}
         />
       )}
 

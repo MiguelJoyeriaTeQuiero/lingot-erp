@@ -11,6 +11,7 @@ import { DocumentEditor } from "../document-editor";
 import { DownloadPdfButton } from "./download-pdf-button";
 import { ConvertButton } from "./convert-button";
 import { RectifyButton } from "./rectify-button";
+import { MarkPaidButton } from "./mark-paid-button";
 import { DeleteDocumentButton } from "./delete-button";
 
 export const dynamic = "force-dynamic";
@@ -115,6 +116,9 @@ export default async function DocumentoDetailPage({
   const canRectify =
     doc.doc_type === "factura" &&
     (doc.status === "emitido" || doc.status === "pagado");
+  const canMarkPaid =
+    doc.doc_type === "factura" &&
+    (doc.status === "emitido" || doc.status === "pagado");
 
   const originalDoc = originalResult.data as typeof doc | null;
   const rectificationDoc = rectificationResult.data as typeof doc | null;
@@ -167,6 +171,9 @@ export default async function DocumentoDetailPage({
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Badge variant={statusToBadge[doc.status] ?? "neutral"} />
             {canConvert && <ConvertButton documentId={doc.id} />}
+            {canMarkPaid && (
+              <MarkPaidButton documentId={doc.id} currentStatus={doc.status} />
+            )}
             {canRectify && <RectifyButton documentId={doc.id} />}
             {canDownload && docClient && (
               <DownloadPdfButton

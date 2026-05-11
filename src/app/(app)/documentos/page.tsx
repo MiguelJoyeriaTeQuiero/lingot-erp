@@ -16,7 +16,7 @@ export default async function DocumentosPage() {
       .select(
         "id, doc_type, status, code, number, client_id, issue_date, due_date, total, notes, created_at, updated_at, subtotal, igic_total, series_id, converted_to_invoice_id, source_albaran_id, created_by"
       )
-      .order("issue_date", { ascending: false })
+      .order("number", { ascending: false })
       .limit(500),
     supabase
       .from("clients")

@@ -5,7 +5,9 @@
       "Bash(npm run *)",
       "Bash(npm install *)",
       "Read(//c/Users/itjoy/.claude/skills/**)",
-      "Read(//c/Users/itjoy/.claude/plugins/**)"
+      "Read(//c/Users/itjoy/.claude/plugins/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

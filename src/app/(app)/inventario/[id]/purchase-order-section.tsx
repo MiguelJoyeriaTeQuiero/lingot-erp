@@ -13,6 +13,8 @@ import {
   ShoppingCart,
   Paperclip,
   Receipt,
+  PackageCheck,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,7 +25,7 @@ import {
   purchaseOrderSchema,
   type PurchaseOrderInput,
 } from "@/lib/validations/product";
-import { createPurchaseOrderAction } from "../actions";
+import { createPurchaseOrderAction, markPurchaseOrderReceivedAction } from "../actions";
 import { createClient } from "@/lib/supabase/client";
 
 export interface PurchaseOrderEntry {
@@ -40,6 +42,8 @@ export interface PurchaseOrderEntry {
   deltaPct: number | null;
   invoice_url?: string | null;
   invoice_urls?: string[] | null;
+  received: boolean;
+  received_at?: string | null;
 }
 
 interface Props {
@@ -48,6 +52,7 @@ interface Props {
   metal: "oro" | "plata";
   currentSpotPerG: number | null;
   orders: PurchaseOrderEntry[];
+  isAdmin?: boolean;
 }
 
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
@@ -62,11 +67,13 @@ export function PurchaseOrderSection({
   weightG,
   currentSpotPerG,
   orders,
+  isAdmin = true,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [receivingId, setReceivingId] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -164,6 +171,20 @@ export function PurchaseOrderSection({
     setFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsOpen(false);
+    router.refresh();
+  }
+
+  async function handleReceived(orderId: string) {
+    if (!window.confirm("¿Marcar este pedido como recibido? Se añadirá el stock automáticamente."))
+      return;
+    setReceivingId(orderId);
+    const result = await markPurchaseOrderReceivedAction(orderId, productId);
+    setReceivingId(null);
+    if (!result.success) {
+      toast({ variant: "error", title: "No se pudo registrar", description: result.error });
+      return;
+    }
+    toast({ variant: "success", title: "Pedido recibido y stock actualizado" });
     router.refresh();
   }
 
@@ -315,7 +336,7 @@ export function PurchaseOrderSection({
             Aún no hay pedidos de reposición registrados.
           </div>
         ) : (
-          <Table className="min-w-[700px]">
+          <Table className="min-w-[780px]">
             <THead>
               <TR>
                 <TH>Fecha</TH>
@@ -325,6 +346,7 @@ export function PurchaseOrderSection({
                 <TH className="text-right">Total pedido</TH>
                 <TH className="text-right">Fluctuación</TH>
                 <TH>Factura</TH>
+                <TH>Recibido</TH>
               </TR>
             </THead>
             <TBody>
@@ -352,6 +374,29 @@ export function PurchaseOrderSection({
                   </TD>
                   <TD>
                     <OrderDocuments order={order} />
+                  </TD>
+                  <TD>
+                    {order.received ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-success">
+                        <PackageCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        Recibido
+                      </span>
+                    ) : isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => handleReceived(order.id)}
+                        disabled={receivingId === order.id}
+                        className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-primary disabled:opacity-50"
+                      >
+                        <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        {receivingId === order.id ? "…" : "Pendiente"}
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs text-text-dim">
+                        <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        Pendiente
+                      </span>
+                    )}
                   </TD>
                 </TR>
               ))}

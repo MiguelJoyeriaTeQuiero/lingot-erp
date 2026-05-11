@@ -97,6 +97,7 @@ export interface Database {
           stock_min: number;
           igic_rate: number | null;
           active: boolean;
+          image_urls: string[];
           created_at: string;
           updated_at: string;
         };
@@ -117,6 +118,7 @@ export interface Database {
           stock_min?: number;
           igic_rate?: number | null;
           active?: boolean;
+          image_urls?: string[];
         };
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
         Relationships: Relationship[];
@@ -308,6 +310,8 @@ export interface Database {
           created_at: string;
           invoice_url: string | null;
           invoice_urls: string[];
+          received: boolean;
+          received_at: string | null;
         };
         Insert: {
           id?: string;
@@ -322,6 +326,8 @@ export interface Database {
           created_by?: string | null;
           invoice_url?: string | null;
           invoice_urls?: string[];
+          received?: boolean;
+          received_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["purchase_orders"]["Insert"]>;
         Relationships: Relationship[];

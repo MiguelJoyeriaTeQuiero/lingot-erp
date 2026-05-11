@@ -90,6 +90,7 @@ export const productSchema = z.object({
   stock_min: stockNonNegative,
   igic_rate: optionalIgicRate,
   active: z.boolean().default(true),
+  image_urls: z.array(z.string().url()).max(2, "Máximo 2 imágenes").default([]),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
