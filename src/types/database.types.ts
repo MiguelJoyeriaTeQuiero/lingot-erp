@@ -179,6 +179,7 @@ export interface Database {
           default_payment_days: number;
           invoice_footer: string | null;
           metal_markup_pct: number;
+          catalog_enabled: boolean;
           created_at: string;
           updated_at: string;
         };

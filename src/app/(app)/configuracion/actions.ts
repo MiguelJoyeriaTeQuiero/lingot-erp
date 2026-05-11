@@ -40,3 +40,21 @@ export async function updateCompanySettingsAction(
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function toggleCatalogAction(
+  enabled: boolean
+): Promise<ActionResult> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "Sesión no válida" };
+
+  const { error } = await supabase
+    .from("company_settings")
+    .update({ catalog_enabled: enabled })
+    .eq("id", 1);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/configuracion");
+  revalidatePath("/catalogo");
+  return { success: true };
+}
