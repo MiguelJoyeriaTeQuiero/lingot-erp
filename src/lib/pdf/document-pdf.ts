@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import QRCode from "qrcode";
 import type {
   ClientRow,
   CompanySettingsRow,
@@ -42,10 +43,11 @@ export interface DocumentPdfPayload {
   lines: DocumentLineRow[];
   client: ClientRow;
   company: CompanySettingsRow | null;
+  verifactuHash?: string | null;
 }
 
-export function generateDocumentPdf(payload: DocumentPdfPayload): jsPDF {
-  const { document: doc, lines, client, company } = payload;
+export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<jsPDF> {
+  const { document: doc, lines, client, company, verifactuHash } = payload;
   const isFactura = doc.doc_type === "factura";
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -344,7 +346,45 @@ export function generateDocumentPdf(payload: DocumentPdfPayload): jsPDF {
     ty += 8;
   }
 
-  // ── FOOTER PRIVACIDAD ─────────────────────────────────────────────────────
+  // ── FOOTER ───────────────────────────────────────────────────────────────
+  const footerY = H - 22;
+  pdf.setDrawColor(...C_LINE);
+  pdf.setLineWidth(0.2);
+  pdf.line(ml, footerY - 3, W - mr, footerY - 3);
+
+  // QR VERI*FACTU (solo facturas con hash calculado)
+  const qrSize = 20;
+  const qrX = W - mr - qrSize;
+  const qrY = footerY - 1;
+  const privMaxWidth = cw - qrSize - 4;
+
+  if (doc.doc_type === "factura" && verifactuHash && company?.tax_id && doc.code) {
+    const qrData =
+      `https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR` +
+      `?nif=${encodeURIComponent(company.tax_id)}` +
+      `&numserie=${encodeURIComponent(doc.code)}` +
+      `&fecha=${encodeURIComponent(doc.issue_date ?? "")}` +
+      `&importe=${encodeURIComponent(Number(doc.total).toFixed(2))}`;
+
+    try {
+      const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 160 });
+      pdf.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(5.5);
+      pdf.setTextColor(...C_PRIMARY);
+      pdf.text("VERI*FACTU", qrX + qrSize / 2, qrY + qrSize + 3, { align: "center" });
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(5);
+      pdf.setTextColor(...C_MUTED);
+      const shortHash = verifactuHash.slice(0, 16) + "…";
+      pdf.text(shortHash, qrX + qrSize / 2, qrY + qrSize + 6.5, { align: "center" });
+    } catch {
+      // QR generation failed silently
+    }
+  }
+
   const privLines = [
     "Información básica. Protección de datos.",
     `Responsable: ${company?.legal_name ?? company?.trade_name ?? ""}`,
@@ -353,20 +393,16 @@ export function generateDocumentPdf(payload: DocumentPdfPayload): jsPDF {
       (company?.website ? `que puede encontrar en nuestra política de privacidad en ${company.website}.` : "de nuestra política de privacidad."),
   ];
 
-  const footerY = H - 22;
-  pdf.setDrawColor(...C_LINE);
-  pdf.setLineWidth(0.2);
-  pdf.line(ml, footerY - 3, W - mr, footerY - 3);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(6.5);
   pdf.setTextColor(...C_MUTED);
-  pdf.text(privLines, ml, footerY, { maxWidth: cw });
+  pdf.text(privLines, ml, footerY, { maxWidth: privMaxWidth });
 
   return pdf;
 }
 
-export function downloadDocumentPdf(payload: DocumentPdfPayload) {
-  const pdf = generateDocumentPdf(payload);
+export async function downloadDocumentPdf(payload: DocumentPdfPayload) {
+  const pdf = await generateDocumentPdf(payload);
   const filename = `${payload.document.code ?? "documento"}.pdf`.replace(
     /[^\w\-./]/g,
     "_"

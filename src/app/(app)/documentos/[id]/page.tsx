@@ -182,6 +182,7 @@ export default async function DocumentoDetailPage({
                   lines,
                   client: docClient,
                   company,
+                  verifactuHash: (doc as typeof doc & { verifactu_hash?: string | null }).verifactu_hash,
                 }}
               />
             )}

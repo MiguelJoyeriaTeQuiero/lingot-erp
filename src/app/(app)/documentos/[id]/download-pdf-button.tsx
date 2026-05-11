@@ -1,19 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadDocumentPdf, type DocumentPdfPayload } from "@/lib/pdf/document-pdf";
 
 export function DownloadPdfButton({ payload }: { payload: DocumentPdfPayload }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      await downloadDocumentPdf(payload);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <Button
       type="button"
       variant="secondary"
       size="sm"
-      onClick={() => downloadDocumentPdf(payload)}
+      disabled={loading}
+      onClick={handleClick}
     >
       <Download className="h-4 w-4" />
-      Descargar PDF
+      {loading ? "Generando…" : "Descargar PDF"}
     </Button>
   );
 }

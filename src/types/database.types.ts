@@ -246,6 +246,7 @@ export interface Database {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          verifactu_hash: string | null;
         };
         Insert: {
           id?: string;
