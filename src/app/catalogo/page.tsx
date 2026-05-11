@@ -165,7 +165,7 @@ function ProductCard({ product: p }: { product: CatalogProduct }) {
         )}
         {!p.inStock && (
           <div className="absolute inset-0 flex items-end p-3">
-            <span className="border border-border bg-surface-raised/90 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.24em] text-text-muted backdrop-blur-sm">
+            <span className="border border-danger/40 bg-danger/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.24em] text-danger backdrop-blur-sm">
               Sin stock
             </span>
           </div>
