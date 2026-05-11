@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 import type {
   ClientRow,
   CompanySettingsRow,
@@ -367,7 +367,9 @@ export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<
       `&importe=${encodeURIComponent(Number(doc.total).toFixed(2))}`;
 
     try {
-      const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 160 });
+      const canvas = document.createElement("canvas");
+      await QRCode.toCanvas(canvas, qrData, { margin: 1, width: 160 });
+      const qrDataUrl = canvas.toDataURL("image/png");
       pdf.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
 
       pdf.setFont("helvetica", "bold");
@@ -380,8 +382,8 @@ export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<
       pdf.setTextColor(...C_MUTED);
       const shortHash = verifactuHash.slice(0, 16) + "…";
       pdf.text(shortHash, qrX + qrSize / 2, qrY + qrSize + 6.5, { align: "center" });
-    } catch {
-      // QR generation failed silently
+    } catch (err) {
+      console.error("[VERI*FACTU] QR generation failed:", err);
     }
   }
 
