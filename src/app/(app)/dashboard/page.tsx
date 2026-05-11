@@ -97,35 +97,6 @@ export default async function DashboardPage() {
 
   const recent = documents.slice(0, 6);
 
-  const kpiData = {
-    monthRevenue,
-    monthName: now.toLocaleDateString("es-ES", { month: "long" }).toUpperCase(),
-    monthOpCount: monthInvoices.length,
-    issuedCount,
-    activeClients,
-    totalClients: clients.length,
-    stockValue,
-    productCount: products.length,
-    spotOro: spots.oro?.price_eur_per_g ?? null,
-    spotOroAt: spots.oro?.fetched_at ?? null,
-    spotPlata: spots.plata?.price_eur_per_g ?? null,
-    spotPlataAt: spots.plata?.fetched_at ?? null,
-    profitRows,
-    totalRevenue: totalProfitRevenue,
-    totalCost: totalProfitCost,
-    totalProfit,
-    marginPct: overallMarginPct,
-    recent: recent.map((doc) => ({
-      code: doc.code ?? null,
-      doc_type: doc.doc_type,
-      clientName: clients.find((c) => c.id === doc.client_id)?.name ?? "—",
-      status: doc.status,
-      total: Number(doc.total ?? 0),
-      issue_date: doc.issue_date,
-    })),
-    generatedAt: now.toISOString(),
-  };
-
   const statusToBadge: Record<string, BadgeVariant> = {
     borrador: "borrador",
     emitido: "emitido",
@@ -180,7 +151,7 @@ export default async function DashboardPage() {
         eyebrow="Visión · 01"
         title="Dashboard"
         description="Resumen ejecutivo de la actividad comercial. Datos al instante."
-        action={<KpiPdfButton data={kpiData} />}
+        action={<KpiPdfButton />}
       />
 
       {/* Hero stat — editorial split on paper */}
