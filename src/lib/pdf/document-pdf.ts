@@ -359,11 +359,12 @@ export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<
   const privMaxWidth = cw - qrSize - 4;
 
   if (doc.doc_type === "factura" && verifactuHash && company?.tax_id && doc.code) {
+    const fechaDDMMYYYY = (doc.issue_date ?? "").split("-").reverse().join("-");
     const qrData =
       `https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR` +
       `?nif=${encodeURIComponent(company.tax_id)}` +
       `&numserie=${encodeURIComponent(doc.code)}` +
-      `&fecha=${encodeURIComponent(doc.issue_date ?? "")}` +
+      `&fecha=${encodeURIComponent(fechaDDMMYYYY)}` +
       `&importe=${encodeURIComponent(Number(doc.total).toFixed(2))}`;
 
     try {
