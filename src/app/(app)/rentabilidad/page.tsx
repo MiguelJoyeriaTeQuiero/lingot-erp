@@ -87,12 +87,12 @@ export default async function RentabilidadPage() {
       (doc as typeof doc & { rectification_of_invoice_id?: string | null })
         .rectification_of_invoice_id
     );
-    const sign = isRectification ? -1 : 1;
+    if (isRectification) continue;
 
     const quantity = Number(line.quantity);
-    const revenue = Number(line.line_subtotal) * sign;
+    const revenue = Number(line.line_subtotal);
     const costPerUnit = Number(lot.cost_per_unit);
-    const totalCost = costPerUnit * quantity * sign;
+    const totalCost = costPerUnit * quantity;
     const profit = revenue - totalCost;
 
     const productId = line.product_id ?? lot.product_id;
@@ -113,7 +113,7 @@ export default async function RentabilidadPage() {
       total_cost: totalCost,
       profit,
       shipping_cost: shippingCost,
-      is_rectification: isRectification,
+      is_rectification: false,
     });
   }
 
@@ -124,7 +124,7 @@ export default async function RentabilidadPage() {
       <PageHeader
         eyebrow="Contabilidad · 06"
         title="Rentabilidad"
-        description="Beneficio por venta — precio cobrado menos coste de compra por unidad. Las rectificativas aparecen en negativo."
+        description="Beneficio por venta — precio cobrado menos coste de compra por unidad. Las rectificativas no se contabilizan."
       />
       <RentabilidadView rows={rows} />
     </div>
