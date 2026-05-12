@@ -254,25 +254,25 @@ export default async function CatalogoPage() {
           TICKER STRIP
       ══════════════════════════════════════════════════════════════════ */}
       {(goldSpot != null || silverSpot != null) && (
-        <div className="overflow-hidden border-y border-border/30 bg-surface-sunken py-3">
+        <div className="overflow-hidden border-y border-white/8 bg-primary-deep py-3">
           <div className="ticker-track inline-flex gap-0 whitespace-nowrap">
             {Array.from({ length: 14 }, (_, i) => (
               <span
                 key={i}
-                className="inline-flex shrink-0 items-center gap-5 px-6 font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim"
+                className="inline-flex shrink-0 items-center gap-5 px-6 font-mono text-[10px] uppercase tracking-[0.28em] text-white/25"
               >
                 {goldSpot != null && (
                   <>
-                    <span className="text-gold-deep">Oro</span>
-                    <span className="text-text-muted">{formatCurrency(goldSpot)} /g</span>
-                    <span className="text-border-strong">·</span>
+                    <span className="text-gold">Oro</span>
+                    <span className="text-white/40">{formatCurrency(goldSpot)} /g</span>
+                    <span className="text-white/15">·</span>
                   </>
                 )}
                 {silverSpot != null && (
                   <>
-                    <span>Plata</span>
-                    <span className="text-text-muted">{formatCurrency(silverSpot)} /g</span>
-                    <span className="text-border-strong">·</span>
+                    <span className="text-white/40">Plata</span>
+                    <span className="text-white/40">{formatCurrency(silverSpot)} /g</span>
+                    <span className="text-white/15">·</span>
                   </>
                 )}
               </span>
@@ -284,7 +284,7 @@ export default async function CatalogoPage() {
       {/* ══════════════════════════════════════════════════════════════════
           CATALOG GRID
       ══════════════════════════════════════════════════════════════════ */}
-      <main className="relative bg-ink">
+      <main className="relative">
         {products.length === 0 ? (
           <div className="py-28 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-text-dim">
