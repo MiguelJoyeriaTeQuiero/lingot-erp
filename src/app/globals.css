@@ -210,6 +210,49 @@ input:-webkit-autofill:focus {
 .delay-6 { animation-delay: 360ms; }
 .delay-7 { animation-delay: 420ms; }
 
+/* ---------- Catalog animations ---------- */
+
+/* Ambient orb drift */
+@keyframes drift {
+  0%,  100% { transform: translate(0, 0)     scale(1);    }
+  33%        { transform: translate(20px, -15px) scale(1.04); }
+  66%        { transform: translate(-12px, 10px) scale(0.97); }
+}
+.catalog-orb {
+  animation: drift 14s ease-in-out infinite;
+}
+
+/* Live price indicator dot */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+.live-dot {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+/* Infinite horizontal ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker 36s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Scroll-triggered card reveal (toggled by IntersectionObserver) */
+[data-observe] {
+  opacity: 0;
+  transition: opacity 0.75s var(--ease-out-expo);
+}
+[data-observe].is-visible {
+  opacity: 1;
+}
+
 /* ---------- Editorial helpers ---------- */
 .eyebrow {
   font-size: 10px;

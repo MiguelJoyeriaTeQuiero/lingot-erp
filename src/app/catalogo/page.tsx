@@ -2,6 +2,7 @@ import { getLatestSpots } from "@/lib/metal-prices";
 import { computeUnitPrice } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 import { createTypedClient } from "@/lib/supabase/typed";
+import { CatalogGrid } from "./catalog-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,9 @@ export default async function CatalogoPage() {
       .maybeSingle(),
     supabase
       .from("products")
-      .select("id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, image_urls, active, stock_current")
+      .select(
+        "id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, cost_price, image_urls, active, stock_current"
+      )
       .eq("active", true)
       .order("name"),
     getLatestSpots(),
@@ -25,7 +28,9 @@ export default async function CatalogoPage() {
 
   const company = companyRes.data;
   const catalogEnabled = company?.catalog_enabled ?? false;
-  const globalMarkupPct = Number((company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4);
+  const globalMarkupPct = Number(
+    (company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4
+  );
 
   let isAdmin = false;
   if (user) {
@@ -37,22 +42,40 @@ export default async function CatalogoPage() {
     isAdmin = profile?.role === "admin";
   }
 
+  // ── Coming soon ──────────────────────────────────────────────────────────
   if (!catalogEnabled && !isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-primary px-6 text-center">
-        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-gold">
-          Próximamente
-        </span>
-        <h1 className="mt-4 font-display text-4xl font-medium tracking-tight text-white">
-          Lingot
-        </h1>
-        <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-white/50">
-          Nuestro catálogo estará disponible muy pronto.
-        </p>
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-primary px-6 text-center">
+        <div className="grain-overlay" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-40 -top-40 h-[700px] w-[700px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(184,138,61,0.15), transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
+        <div className="relative z-10 flex flex-col items-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.5em] text-gold">
+            Próximamente
+          </span>
+          <h1
+            className="mt-8 select-none font-display font-light leading-none tracking-[-0.04em] text-surface-raised"
+            style={{ fontSize: "clamp(64px, 13vw, 160px)" }}
+          >
+            LINGOT
+          </h1>
+          <div className="mx-auto mt-8 h-px w-24 bg-gradient-to-r from-transparent via-gold to-transparent" />
+          <p className="mt-8 max-w-xs font-mono text-[12px] uppercase tracking-[0.2em] text-surface-raised/30">
+            Nuestro catálogo estará disponible muy pronto
+          </p>
+        </div>
       </div>
     );
   }
 
+  // ── Compute prices ───────────────────────────────────────────────────────
   const products = (productsRes.data ?? []).map((p) => {
     const spot = spots[p.metal as "oro" | "plata"]?.price_eur_per_g ?? null;
     const price =
@@ -63,153 +86,244 @@ export default async function CatalogoPage() {
             metal: p.metal as "oro" | "plata",
             markup_per_gram: Number(p.markup_per_gram),
             markup_per_piece: Number(p.markup_per_piece),
+            cost_price: Number(
+              (p as typeof p & { cost_price?: number }).cost_price ?? 0
+            ),
             spot_eur_per_g: spot,
             global_markup_pct: globalMarkupPct,
           })
         : null;
-    return { ...p, price, inStock: Number(p.stock_current) > 0 };
+    return {
+      ...p,
+      price,
+      inStock: Number(p.stock_current) > 0,
+      image_urls:
+        (p as typeof p & { image_urls?: string[] }).image_urls ?? [],
+    };
   });
 
+  const goldSpot = spots.oro?.price_eur_per_g ?? null;
+  const silverSpot = spots.plata?.price_eur_per_g ?? null;
+  const brandName =
+    (company as { trade_name?: string; legal_name?: string } | null)
+      ?.trade_name ??
+    (company as { trade_name?: string; legal_name?: string } | null)
+      ?.legal_name ??
+    "Lingot";
+
+  const year = new Date().getFullYear();
+
   return (
-    <div className="min-h-screen bg-ink">
+    <div className="min-h-screen bg-primary">
+      <div className="grain-overlay" />
+
+      {/* Admin preview banner */}
       {isAdmin && !catalogEnabled && (
-        <div className="border-b border-warning/30 bg-warning/10 px-6 py-3 text-center">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-warning">
+        <div className="relative z-50 border-b border-warning/30 bg-warning/10 px-6 py-2.5 text-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-warning">
             Vista previa de administrador · El catálogo no está publicado
           </span>
         </div>
       )}
 
-      {/* Header */}
-      <header className="border-b border-border bg-surface-raised px-6 py-12 text-center shadow-paper">
-        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-gold-deep">
-          Colección
-        </span>
-        <h1 className="mt-3 font-display text-4xl font-medium tracking-tight text-primary md:text-5xl">
-          Lingot
-        </h1>
-        <div className="mx-auto mt-4 h-px w-16 bg-gold/60" />
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.3em] text-text-dim">
-          {products.length} {products.length === 1 ? "referencia" : "referencias"}
-        </p>
+      {/* ══════════════════════════════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════════════════════════════ */}
+      <header className="relative flex min-h-[92vh] flex-col items-center justify-center overflow-hidden px-6 pb-20">
+        {/* Ambient orbs */}
+        <div
+          aria-hidden
+          className="catalog-orb pointer-events-none absolute -right-40 -top-40 h-[660px] w-[660px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(184,138,61,0.16), transparent 70%)",
+            filter: "blur(90px)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="catalog-orb pointer-events-none absolute -bottom-52 -left-52 h-[800px] w-[800px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(10,84,106,0.2), transparent 70%)",
+            filter: "blur(110px)",
+            animationDelay: "5s",
+          }}
+        />
+
+        {/* Editorial column rules */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-[7vw] w-px hidden lg:block"
+          style={{ background: "rgba(255,255,255,0.04)" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-[7vw] w-px hidden lg:block"
+          style={{ background: "rgba(255,255,255,0.04)" }}
+        />
+
+        {/* Hero content */}
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="reveal delay-0">
+            <span className="font-mono text-[10px] uppercase tracking-[0.5em] text-gold">
+              Colección · {year}
+            </span>
+          </div>
+
+          {/* Wordmark */}
+          <h1
+            className="reveal delay-1 mt-8 select-none font-display font-light leading-none tracking-[-0.04em] text-surface-raised"
+            style={{ fontSize: "clamp(68px, 13vw, 168px)" }}
+          >
+            {brandName.toUpperCase()}
+          </h1>
+
+          {/* Gold divider */}
+          <div className="reveal delay-2 mt-8 flex items-center gap-5">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold/50" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-surface-raised/35">
+              Metales Preciosos
+            </span>
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold/50" />
+          </div>
+
+          {/* Live spot prices */}
+          {(goldSpot != null || silverSpot != null) && (
+            <div className="reveal delay-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+              {goldSpot != null && (
+                <div className="flex items-center gap-3 border border-gold/20 bg-gold/5 px-5 py-3 backdrop-blur-sm">
+                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-gold" />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold">
+                    Oro
+                  </span>
+                  <div className="h-3.5 w-px bg-surface-raised/15" />
+                  <span className="font-editorial text-xl text-surface-raised">
+                    {formatCurrency(goldSpot)}
+                    <span className="ml-1 font-mono text-[10px] text-surface-raised/35">
+                      /g
+                    </span>
+                  </span>
+                </div>
+              )}
+              {silverSpot != null && (
+                <div className="flex items-center gap-3 border border-surface-raised/10 bg-surface-raised/5 px-5 py-3 backdrop-blur-sm">
+                  <span
+                    className="live-dot h-1.5 w-1.5 rounded-full bg-surface-raised/50"
+                    style={{ animationDelay: "0.6s" }}
+                  />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-surface-raised/45">
+                    Plata
+                  </span>
+                  <div className="h-3.5 w-px bg-surface-raised/15" />
+                  <span className="font-editorial text-xl text-surface-raised/65">
+                    {formatCurrency(silverSpot)}
+                    <span className="ml-1 font-mono text-[10px] text-surface-raised/25">
+                      /g
+                    </span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Product count */}
+          <div className="reveal delay-4 mt-8">
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-surface-raised/25">
+              {products.length}{" "}
+              {products.length === 1 ? "referencia disponible" : "referencias disponibles"}
+            </span>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div className="reveal delay-5 absolute bottom-10 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5">
+          <span className="font-mono text-[9px] uppercase tracking-[0.4em] text-surface-raised/20">
+            Explorar
+          </span>
+          <div className="flex h-8 w-5 items-start justify-center rounded-full border border-surface-raised/12 pt-1.5">
+            <div
+              className="h-1.5 w-0.5 rounded-full bg-surface-raised/25"
+              style={{ animation: "bounce 1.8s ease-in-out infinite" }}
+            />
+          </div>
+        </div>
       </header>
 
-      {/* Products grid */}
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      {/* ══════════════════════════════════════════════════════════════════
+          TICKER STRIP
+      ══════════════════════════════════════════════════════════════════ */}
+      {(goldSpot != null || silverSpot != null) && (
+        <div className="overflow-hidden border-y border-border/30 bg-surface-sunken py-3">
+          <div className="ticker-track inline-flex gap-0 whitespace-nowrap">
+            {Array.from({ length: 14 }, (_, i) => (
+              <span
+                key={i}
+                className="inline-flex shrink-0 items-center gap-5 px-6 font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim"
+              >
+                {goldSpot != null && (
+                  <>
+                    <span className="text-gold-deep">Oro</span>
+                    <span className="text-text-muted">{formatCurrency(goldSpot)} /g</span>
+                    <span className="text-border-strong">·</span>
+                  </>
+                )}
+                {silverSpot != null && (
+                  <>
+                    <span>Plata</span>
+                    <span className="text-text-muted">{formatCurrency(silverSpot)} /g</span>
+                    <span className="text-border-strong">·</span>
+                  </>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          CATALOG GRID
+      ══════════════════════════════════════════════════════════════════ */}
+      <main className="relative bg-ink">
         {products.length === 0 ? (
-          <div className="py-24 text-center">
-            <p className="font-mono text-[12px] uppercase tracking-[0.3em] text-text-dim">
+          <div className="py-28 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-text-dim">
               Sin productos disponibles
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          <CatalogGrid products={products} />
         )}
       </main>
 
-      <footer className="border-t border-border px-6 py-8 text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-text-dim">
-          Lingot · Joyería
-        </p>
+      {/* ══════════════════════════════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════════════════════════════ */}
+      <footer className="relative overflow-hidden bg-primary px-6 py-24 text-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 50% at 50% 100%, rgba(184,138,61,0.08), transparent)",
+          }}
+        />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="h-px w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+          <p
+            className="mt-10 select-none font-display font-light leading-none tracking-[-0.04em]"
+            style={{
+              fontSize: "clamp(36px, 7vw, 88px)",
+              color: "rgba(251,248,241,0.12)",
+            }}
+          >
+            {brandName.toUpperCase()}
+          </p>
+          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.4em] text-surface-raised/15">
+            Joyería · Metales Preciosos · {year}
+          </p>
+        </div>
       </footer>
-    </div>
-  );
-}
-
-type CatalogProduct = {
-  id: string;
-  name: string;
-  sku: string | null;
-  description: string | null;
-  metal: string;
-  weight_g: number;
-  purity: number;
-  image_urls: string[];
-  price: number | null;
-  inStock: boolean;
-};
-
-function ProductCard({ product: p }: { product: CatalogProduct }) {
-  const purityLabel =
-    p.metal === "oro"
-      ? p.purity >= 0.999
-        ? "24k"
-        : p.purity >= 0.75
-        ? "18k"
-        : p.purity >= 0.585
-        ? "14k"
-        : `${(p.purity * 1000).toFixed(0)}‰`
-      : `${(p.purity * 1000).toFixed(0)}‰`;
-
-  return (
-    <div className="group flex flex-col border border-border bg-surface-raised shadow-paper transition-shadow hover:shadow-vault">
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-surface-sunken">
-        {p.image_urls?.[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={p.image_urls[0]}
-            alt={p.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-text-dim">
-              Sin imagen
-            </span>
-          </div>
-        )}
-        {!p.inStock && (
-          <div className="absolute inset-0 flex items-end p-3">
-            <span className="border border-danger/40 bg-danger/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.24em] text-danger backdrop-blur-sm">
-              Sin stock
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <h2 className="font-display text-[15px] font-medium leading-snug tracking-tight text-primary">
-            {p.name}
-          </h2>
-          <span className="shrink-0 border border-gold/40 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.22em] text-gold-deep">
-            {p.metal === "oro" ? "Oro" : "Plata"} {purityLabel}
-          </span>
-        </div>
-
-        {p.sku && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
-            {p.sku}
-          </p>
-        )}
-
-        {p.description && (
-          <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">
-            {p.description}
-          </p>
-        )}
-
-        <div className="mt-auto flex items-end justify-between gap-2 border-t border-hairline pt-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-text-dim">
-            {Number(p.weight_g).toFixed(2)} g · {Number(p.purity).toFixed(3)}
-          </span>
-          {p.price != null ? (
-            <span className="font-display text-[18px] font-medium tabular text-primary">
-              {formatCurrency(p.price)}
-            </span>
-          ) : (
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-text-dim">
-              Consultar
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
