@@ -193,7 +193,7 @@ function ProductCard({ product: p, index }: { product: CatalogProduct; index: nu
             <img
               src={p.image_urls[0]}
               alt={p.name}
-              className="h-full w-full object-cover transition-transform duration-700 ease-out-expo group-hover:scale-[1.05]"
+              className="h-full w-full object-contain p-6 transition-transform duration-700 ease-out-expo group-hover:scale-[1.04]"
             />
           ) : (
             // Elegant no-image placeholder
