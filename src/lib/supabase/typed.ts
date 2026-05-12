@@ -138,6 +138,7 @@ interface PurchaseOrdersTable {
 interface StockLotsTable {
   select(cols?: string): SelectBuilder<StockLotRow>;
   insert(values: StockLotInsert): Promise<{ error: PostgrestError | null }>;
+  update(values: Partial<StockLotInsert>): MutationBuilder;
 }
 
 type RecordStockMovementArgs = Functions["record_stock_movement"]["Args"];

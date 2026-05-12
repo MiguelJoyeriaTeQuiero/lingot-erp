@@ -218,7 +218,8 @@ export async function createPurchaseOrderAction(
 
 export async function markPurchaseOrderReceivedAction(
   orderId: string,
-  productId: string
+  productId: string,
+  targetLotId?: string | null   // null/undefined = nuevo lote; string = añadir a lote existente
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
@@ -263,15 +264,32 @@ export async function markPurchaseOrderReceivedAction(
 
   if (movErr) return { success: false, error: `Estado actualizado pero error en stock: ${movErr.message}` };
 
-  await supabase.from("stock_lots").insert({
-    product_id: productId,
-    purchase_order_id: orderId,
-    quantity_total: order.quantity,
-    quantity_remaining: order.quantity,
-    cost_per_gram: costPerGram,
-    cost_per_unit: costPerUnit,
-    order_date: order.order_date,
-  });
+  if (targetLotId) {
+    // Añadir al lote existente
+    const { data: lot } = await supabase
+      .from("stock_lots")
+      .select("quantity_total, quantity_remaining")
+      .eq("id", targetLotId)
+      .single();
+
+    if (lot) {
+      await supabase.from("stock_lots").update({
+        quantity_total: Number(lot.quantity_total) + Number(order.quantity),
+        quantity_remaining: Number(lot.quantity_remaining) + Number(order.quantity),
+      }).eq("id", targetLotId);
+    }
+  } else {
+    // Crear nuevo lote
+    await supabase.from("stock_lots").insert({
+      product_id: productId,
+      purchase_order_id: orderId,
+      quantity_total: order.quantity,
+      quantity_remaining: order.quantity,
+      cost_per_gram: costPerGram,
+      cost_per_unit: costPerUnit,
+      order_date: order.order_date,
+    });
+  }
 
   revalidatePath("/inventario");
   revalidatePath(`/inventario/${productId}`);

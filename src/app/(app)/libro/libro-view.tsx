@@ -97,9 +97,11 @@ export function LibroView({
       }
       const g = map.get(key)!;
       g.docs.push(doc);
-      g.total    += Number(doc.total ?? 0);
-      g.igic     += Number(doc.igic_total ?? 0);
-      g.subtotal += Number(doc.subtotal ?? 0);
+      // Las rectificativas son abonos — restan del período
+      const sign = doc.rectification_of_invoice_id ? -1 : 1;
+      g.total    += Number(doc.total ?? 0) * sign;
+      g.igic     += Number(doc.igic_total ?? 0) * sign;
+      g.subtotal += Number(doc.subtotal ?? 0) * sign;
     }
 
     const groups = [...map.values()];
@@ -218,7 +220,9 @@ export function LibroView({
                         {doc.code ?? <span className="italic text-text-dim">borrador</span>}
                       </span>
                       <span className="font-mono text-[10px] tabular text-text-dim sm:hidden">
-                        {format(new Date(doc.issue_date), "dd/MM")}
+                        {doc.rectification_of_invoice_id
+                          ? <span className="text-danger">−{formatCurrency(Number(doc.total ?? 0))}</span>
+                          : format(new Date(doc.issue_date), "dd/MM")}
                       </span>
                     </div>
                     <div className="sm:col-span-4 truncate text-sm text-text">
@@ -231,14 +235,23 @@ export function LibroView({
                       </span>
                     </div>
                     <div className="hidden sm:block sm:col-span-2 text-right">
-                      <span className="font-mono text-[13px] tabular text-primary">
-                        {formatCurrency(Number(doc.total ?? 0))}
-                      </span>
-                      {Number(doc.igic_total) > 0 && (
-                        <div className="font-mono text-[10px] text-text-dim">
-                          +{formatCurrency(Number(doc.igic_total))} IGIC
-                        </div>
-                      )}
+                      {(() => {
+                        const sign = doc.rectification_of_invoice_id ? -1 : 1;
+                        const total = Number(doc.total ?? 0) * sign;
+                        const igic = Number(doc.igic_total) * sign;
+                        return (
+                          <>
+                            <span className={`font-mono text-[13px] tabular ${sign < 0 ? "text-danger" : "text-primary"}`}>
+                              {sign < 0 ? "−" : ""}{formatCurrency(Math.abs(total))}
+                            </span>
+                            {Math.abs(igic) > 0 && (
+                              <div className="font-mono text-[10px] text-text-dim">
+                                {sign < 0 ? "−" : "+"}{formatCurrency(Math.abs(igic))} IGIC
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}
