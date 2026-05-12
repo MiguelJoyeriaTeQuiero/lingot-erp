@@ -90,6 +90,7 @@ export function ProductForm({
   const purity = Number(watch("purity")) || 0;
   const markupPg = Number(watch("markup_per_gram")) || 0;
   const markupPp = Number(watch("markup_per_piece")) || 0;
+  const costPrice = Number(watch("cost_price")) || 0;
   const imageUrls = watch("image_urls") ?? [];
 
   const inheritedIgic =
@@ -103,14 +104,15 @@ export function ProductForm({
     if (!spot) return null;
     const metalValue = weight * purity * spot * (1 + globalMarkupPct / 100);
     const hechura = metalValue * (markupPg / 100);
-    const total = metalValue + hechura + markupPp;
+    const total = metalValue + hechura + markupPp + costPrice;
     return {
       metalValue: Math.round(metalValue * 100) / 100,
       hechura: Math.round(hechura * 100) / 100,
       extra: markupPp,
+      shipping: costPrice,
       total: Math.round(total * 100) / 100,
     };
-  }, [weight, purity, spot, globalMarkupPct, markupPg, markupPp]);
+  }, [weight, purity, spot, globalMarkupPct, markupPg, markupPp, costPrice]);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -472,6 +474,12 @@ export function ProductForm({
                   label="Extra por pieza"
                   value={formatCurrency(computed?.extra ?? 0)}
                 />
+                {(computed?.shipping ?? 0) > 0 && (
+                  <Row
+                    label="Costes de envío"
+                    value={formatCurrency(computed?.shipping ?? 0)}
+                  />
+                )}
               </div>
               <div className="flex flex-col items-end justify-center border-l border-border pl-6">
                 <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-gold-deep">
