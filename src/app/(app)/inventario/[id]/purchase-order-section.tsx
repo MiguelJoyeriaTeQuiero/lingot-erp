@@ -53,6 +53,7 @@ interface Props {
   currentSpotPerG: number | null;
   orders: PurchaseOrderEntry[];
   isAdmin?: boolean;
+  canReceive?: boolean;
 }
 
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
@@ -68,6 +69,7 @@ export function PurchaseOrderSection({
   currentSpotPerG,
   orders,
   isAdmin = true,
+  canReceive = true,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -158,7 +160,7 @@ export function PurchaseOrderSection({
       return;
     }
 
-    toast({ variant: "success", title: "Pedido registrado y stock actualizado" });
+    toast({ variant: "success", title: "Pedido registrado — se añadirá al stock al recibirlo" });
     reset({
       order_date: today(),
       supplier_name: null,
@@ -381,20 +383,20 @@ export function PurchaseOrderSection({
                         <PackageCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
                         Recibido
                       </span>
-                    ) : isAdmin ? (
+                    ) : canReceive ? (
                       <button
                         type="button"
                         onClick={() => handleReceived(order.id)}
                         disabled={receivingId === order.id}
-                        className="inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-primary disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/5 px-2 py-0.5 text-xs text-gold-deep transition-colors hover:bg-gold/10 disabled:opacity-50"
                       >
                         <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        {receivingId === order.id ? "…" : "Pendiente"}
+                        {receivingId === order.id ? "…" : "Marcar recibido"}
                       </button>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-text-dim">
                         <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        Pendiente
+                        En tránsito
                       </span>
                     )}
                   </TD>

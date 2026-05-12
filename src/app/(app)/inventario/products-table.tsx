@@ -20,6 +20,7 @@ interface ProductsTableProps {
   categories: ProductCategoryRow[];
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
+  pendingByProductId?: Record<string, number>;
 }
 
 export function ProductsTable({
@@ -27,6 +28,7 @@ export function ProductsTable({
   categories,
   spotByMetal,
   globalMarkupPct,
+  pendingByProductId = {},
 }: ProductsTableProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -223,6 +225,11 @@ export function ProductsTable({
                         )}
                         {p.stock_current}
                       </span>
+                      {(pendingByProductId[p.id] ?? 0) > 0 && (
+                        <div className="text-[11px] text-gold-deep">
+                          +{pendingByProductId[p.id]} en tránsito
+                        </div>
+                      )}
                     </TD>
                     <TD>
                       {p.active ? (

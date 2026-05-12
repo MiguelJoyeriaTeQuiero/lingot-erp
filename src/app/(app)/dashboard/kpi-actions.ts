@@ -139,7 +139,7 @@ export async function fetchKpiReport(
     const docMap = new Map(docs.map((d) => [d.id, d]));
 
     const ventas = lines
-      .filter((ln) => ln.lot_id && emittedIds.has(ln.document_id))
+      .filter((ln) => ln.lot_id && emittedIds.has(ln.document_id) && !rectIds.has(ln.document_id))
       .map((ln) => {
         const lot = lotMap.get(ln.lot_id!);
         const product = productMap.get(ln.product_id ?? "");

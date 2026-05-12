@@ -50,7 +50,9 @@ export default async function ProductoDetailPage({
   const { data: profile } = user
     ? await supabase.from("profiles").select("id, email, full_name, role").eq("id", user.id).single()
     : { data: null };
-  const isAdmin = (profile as { role?: string } | null)?.role === "admin";
+  const userRole = (profile as { role?: string } | null)?.role;
+  const isAdmin = userRole === "admin";
+  const canReceive = userRole === "admin" || userRole === "contabilidad";
 
   const globalMarkupPct = Number(
     (company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4
@@ -73,6 +75,11 @@ export default async function ProductoDetailPage({
       .eq("product_id", params.id)
       .order("order_date", { ascending: true }),
   ]);
+
+  // Stock pendiente (pedidos no recibidos aún)
+  const stockPending = (rawOrders ?? [])
+    .filter((o) => !(o as typeof o & { received?: boolean }).received)
+    .reduce((s, o) => s + Number(o.quantity), 0);
 
   // Calcular fluctuación entre pedidos consecutivos
   const sortedOrders = (rawOrders ?? []).slice().sort((a, b) => {
@@ -201,18 +208,30 @@ export default async function ProductoDetailPage({
         action={
           <div className="flex items-center gap-3">
             {isPhysical && (
-              <div className="text-right">
-                <div className="text-xs uppercase tracking-widest text-text-muted">
-                  Stock actual
+              <div className="flex items-start gap-5">
+                <div className="text-right">
+                  <div className="text-xs uppercase tracking-widest text-text-muted">
+                    Stock real
+                  </div>
+                  <div
+                    className={
+                      "font-display text-2xl " +
+                      (lowStock ? "text-danger" : "text-text")
+                    }
+                  >
+                    {product.stock_current}
+                  </div>
                 </div>
-                <div
-                  className={
-                    "font-display text-2xl " +
-                    (lowStock ? "text-danger" : "text-text")
-                  }
-                >
-                  {product.stock_current}
-                </div>
+                {stockPending > 0 && (
+                  <div className="text-right">
+                    <div className="text-xs uppercase tracking-widest text-text-muted">
+                      En tránsito
+                    </div>
+                    <div className="font-display text-2xl text-gold">
+                      +{stockPending}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {product.active ? (
@@ -262,6 +281,7 @@ export default async function ProductoDetailPage({
           currentSpotPerG={spots[product.metal as "oro" | "plata"]?.price_eur_per_g ?? null}
           orders={ordersWithDelta}
           isAdmin={isAdmin}
+          canReceive={canReceive}
         />
       )}
 

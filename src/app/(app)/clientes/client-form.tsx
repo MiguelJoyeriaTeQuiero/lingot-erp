@@ -41,7 +41,7 @@ export function ClientForm({ mode, defaultValues, clientId }: ClientFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { role } = useRole();
-  const readOnly = mode === "edit" && role !== null && role !== "admin";
+  const readOnly = mode === "edit" && role !== null && role !== "admin" && role !== "contabilidad";
 
   const [togglePending, setTogglePending] = useState(false);
 

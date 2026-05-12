@@ -7,7 +7,11 @@
       "Read(//c/Users/itjoy/.claude/skills/**)",
       "Read(//c/Users/itjoy/.claude/plugins/**)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\itjoy\\\\Desarrollo\\\\lingot-erp\\\\.claude\\\\worktrees\\\\sharp-torvalds-e3b82f\" -Directory -Force)",
+      "Bash(Select-Object -First 20)",
+      "Bash(git commit -m 'fix: qrcode import y canvas DOM para QR VERI*FACTU *)",
+      "Bash(git commit -m 'fix: fecha QR VERI*FACTU en formato DD-MM-AAAA *)"
     ]
   }
 }

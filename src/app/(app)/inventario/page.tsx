@@ -14,7 +14,7 @@ export default async function InventarioPage() {
   const isAdmin = role === "admin";
   const supabase = createTypedClient();
 
-  const [productsResult, categoriesResult, companyResult, spots] =
+  const [productsResult, categoriesResult, companyResult, spots, pendingOrdersResult] =
     await Promise.all([
       supabase
         .from("products")
@@ -26,7 +26,16 @@ export default async function InventarioPage() {
         .order("name", { ascending: true }),
       supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),
       getLatestSpots(),
+      supabase
+        .from("purchase_orders")
+        .select("product_id, quantity")
+        .eq("received", false),
     ]);
+
+  const pendingByProductId: Record<string, number> = {};
+  for (const o of (pendingOrdersResult.data ?? []) as Array<{ product_id: string; quantity: number }>) {
+    pendingByProductId[o.product_id] = (pendingByProductId[o.product_id] ?? 0) + Number(o.quantity);
+  }
 
   const globalMarkupPct = Number(
     (companyResult.data as { metal_markup_pct?: number } | null)
@@ -72,6 +81,7 @@ export default async function InventarioPage() {
             plata: spots.plata?.price_eur_per_g ?? null,
           }}
           globalMarkupPct={globalMarkupPct}
+          pendingByProductId={pendingByProductId}
         />
       )}
     </div>
