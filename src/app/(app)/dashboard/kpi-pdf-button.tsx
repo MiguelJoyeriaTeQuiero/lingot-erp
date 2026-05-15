@@ -297,7 +297,7 @@ async function generatePdf(data: KpiReportData) {
     doc.setFont("helvetica", "normal");
     doc.setTextColor(C.muted);
     doc.text(
-      `Ingresos: ${eur(data.totalRevenue)}   ·   Costes: ${eur(data.totalCost)}   ·   Envío: ${eur(data.totalEnvio)}   ·   Beneficio: ${eur(data.totalProfit)}   ·   Margen global: ${data.margenGlobal.toFixed(1)}%`,
+      `Ingresos: ${eur(data.totalRevenue)}   ·   Costes: ${eur(data.totalCost)}   ·   Beneficio: ${eur(data.totalProfit)}   ·   Margen global: ${data.margenGlobal.toFixed(1)}%`,
       ML,
       y
     );
@@ -305,7 +305,7 @@ async function generatePdf(data: KpiReportData) {
 
     autoTable(doc, {
       startY: y,
-      head: [["Fecha", "Factura", "Cliente", "Producto", "Cant.", "PVP/u", "Coste/u", "Envío/u", "Beneficio", "Margen"]],
+      head: [["Fecha", "Factura", "Cliente", "Producto", "Cant.", "PVP/u", "Coste/u", "Beneficio", "Margen"]],
       body: data.ventas.map((v) => [
         fmtDate(v.fecha),
         v.esRectificacion ? `${v.factura} ®` : v.factura,
@@ -314,7 +314,6 @@ async function generatePdf(data: KpiReportData) {
         String(v.cantidad),
         eur(v.pvpUnit),
         eur(v.costeUnit),
-        eur(v.envioUnit),
         (v.beneficioUnit >= 0 ? "+" : "") + eur(v.beneficioUnit),
         pct(v.margenPct),
       ]),
@@ -323,7 +322,6 @@ async function generatePdf(data: KpiReportData) {
         "",
         eur(data.totalRevenue),
         eur(data.totalCost),
-        eur(data.totalEnvio),
         (data.totalProfit >= 0 ? "+" : "") + eur(data.totalProfit),
         `${data.margenGlobal.toFixed(1)}%`,
       ]],

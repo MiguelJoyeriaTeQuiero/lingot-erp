@@ -18,7 +18,6 @@ export type SaleRow = {
   cost_per_unit: number;   // del lote de compra
   total_cost: number;      // cost_per_unit × quantity — negativo si es rectificativa
   profit: number;          // revenue - total_cost
-  shipping_cost: number;   // products.cost_price (costes de envío)
   is_rectification: boolean;
 };
 
@@ -61,7 +60,7 @@ export default async function RentabilidadPage() {
       .in("id", lotIds),
     supabase
       .from("products")
-      .select("id, name, sku, cost_price")
+      .select("id, name, sku")
       .in("id", productIds),
     supabase
       .from("clients")
@@ -97,7 +96,6 @@ export default async function RentabilidadPage() {
 
     const productId = line.product_id ?? lot.product_id;
     const product = productId ? productMap.get(productId) : null;
-    const shippingCost = Number((product as { cost_price?: number } | null | undefined)?.cost_price ?? 0);
 
     rows.push({
       id: line.id,
@@ -112,7 +110,6 @@ export default async function RentabilidadPage() {
       cost_per_unit: costPerUnit,
       total_cost: totalCost,
       profit,
-      shipping_cost: shippingCost,
       is_rectification: false,
     });
   }

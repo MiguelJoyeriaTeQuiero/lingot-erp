@@ -28,7 +28,6 @@ export interface KpiReportData {
     cantidad: number;
     pvpUnit: number;
     costeUnit: number;
-    envioUnit: number;
     beneficioUnit: number;
     margenPct: number;
     totalLinea: number;
@@ -38,7 +37,6 @@ export interface KpiReportData {
   // Totales rentabilidad
   totalRevenue: number;
   totalCost: number;
-  totalEnvio: number;
   totalProfit: number;
   margenGlobal: number;
 
@@ -148,10 +146,7 @@ export async function fetchKpiReport(
         const totalLinea = Number(ln.line_subtotal);
         const pvpUnit = qty > 0 ? totalLinea / qty : 0;
         const costeUnit = Number(lot?.cost_per_unit ?? 0);
-        const envioUnit = Number(
-          (product as { cost_price?: number } | undefined)?.cost_price ?? 0
-        );
-        const beneficioUnit = pvpUnit - costeUnit - envioUnit;
+        const beneficioUnit = pvpUnit - costeUnit;
         const margenPct = pvpUnit > 0 ? (beneficioUnit / pvpUnit) * 100 : 0;
 
         return {
@@ -163,7 +158,6 @@ export async function fetchKpiReport(
           cantidad: qty,
           pvpUnit,
           costeUnit,
-          envioUnit,
           beneficioUnit,
           margenPct,
           totalLinea,
@@ -174,7 +168,6 @@ export async function fetchKpiReport(
 
     const totalRevenue = ventas.reduce((s, v) => s + v.totalLinea, 0);
     const totalCost = ventas.reduce((s, v) => s + v.costeUnit * v.cantidad, 0);
-    const totalEnvio = ventas.reduce((s, v) => s + v.envioUnit * v.cantidad, 0);
     const totalProfit = ventas.reduce(
       (s, v) => s + v.beneficioUnit * v.cantidad,
       0
@@ -259,7 +252,6 @@ export async function fetchKpiReport(
         ventas,
         totalRevenue,
         totalCost,
-        totalEnvio,
         totalProfit,
         margenGlobal,
         stockRows,

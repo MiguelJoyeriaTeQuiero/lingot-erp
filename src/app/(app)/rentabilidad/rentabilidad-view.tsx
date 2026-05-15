@@ -28,7 +28,6 @@ export function RentabilidadView({ rows }: Props) {
 
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0);
   const totalCost = filtered.reduce((s, r) => s + r.total_cost, 0);
-  const totalShipping = filtered.reduce((s, r) => s + r.shipping_cost, 0);
   const totalProfit = filtered.reduce((s, r) => s + r.profit, 0);
   const globalMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : null;
 
@@ -60,7 +59,6 @@ export function RentabilidadView({ rows }: Props) {
                 <TH className="text-right">Cant.</TH>
                 <TH className="text-right">PVP/u</TH>
                 <TH className="text-right">Coste/u</TH>
-                <TH className="text-right">Envío/u</TH>
                 <TH className="text-right">Beneficio</TH>
                 <TH className="text-right">Margen</TH>
               </TR>
@@ -105,9 +103,6 @@ export function RentabilidadView({ rows }: Props) {
                     <TD className="text-right font-mono text-sm text-text-muted">
                       {formatCurrency(row.cost_per_unit)}
                     </TD>
-                    <TD className="text-right font-mono text-sm text-text-dim">
-                      {row.shipping_cost > 0 ? formatCurrency(row.shipping_cost) : "—"}
-                    </TD>
                     <TD className="text-right font-mono text-sm">
                       <span className={row.profit >= 0 ? "text-success" : "text-danger"}>
                         {row.profit >= 0 ? "+" : ""}
@@ -135,11 +130,6 @@ export function RentabilidadView({ rows }: Props) {
             <span className="font-mono text-sm tabular-nums text-text-muted">
               Coste: {formatCurrency(totalCost)}
             </span>
-            {totalShipping > 0 && (
-              <span className="font-mono text-sm tabular-nums text-text-dim">
-                Envío: {formatCurrency(totalShipping)}
-              </span>
-            )}
             <span className={`font-mono text-sm tabular-nums font-medium ${totalProfit >= 0 ? "text-success" : "text-danger"}`}>
               {totalProfit >= 0 ? "+" : ""}{formatCurrency(totalProfit)}
             </span>

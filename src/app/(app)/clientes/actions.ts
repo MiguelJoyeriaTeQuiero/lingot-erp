@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createTypedClient } from "@/lib/supabase/typed";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { clientSchema, type ClientInput } from "@/lib/validations/client";
 
 type ActionResult = { success: boolean; error?: string; id?: string };
@@ -62,7 +63,7 @@ export async function updateClientAction(
   id: string,
   raw: unknown
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireUser();
+  const { user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
 
   const parsed = clientSchema.safeParse(raw);
@@ -71,7 +72,8 @@ export async function updateClientAction(
     return { success: false, error: first?.message ?? "Datos no válidos" };
   }
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("clients")
     .update(toDbPayload(parsed.data))
     .eq("id", id);
@@ -87,10 +89,11 @@ export async function toggleClientActive(
   id: string,
   active: boolean
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireUser();
+  const { user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("clients")
     .update({ active })
     .eq("id", id);
