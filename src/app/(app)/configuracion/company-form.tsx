@@ -294,7 +294,7 @@ export function CompanyForm({
               />
             </div>
             <div className="mt-4 font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
-              Cron: 07:00 · 08:00 · 14:00 · 15:00 UTC
+              Actualización automática cada hora
             </div>
           </div>
         </div>
