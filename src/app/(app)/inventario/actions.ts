@@ -324,3 +324,29 @@ export async function recordStockMovementAction(
   revalidatePath(`/inventario/${productId}`);
   return { success: true, id: productId };
 }
+
+export async function adjustLotQuantityAction(
+  lotId: string,
+  newQuantity: number,
+  productId: string
+): Promise<ActionResult> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { success: false, error: guard.error };
+
+  if (newQuantity < 0 || !Number.isInteger(newQuantity)) {
+    return { success: false, error: "La cantidad debe ser un entero ≥ 0" };
+  }
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("stock_lots")
+    .update({ quantity_remaining: newQuantity })
+    .eq("id", lotId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/inventario");
+  revalidatePath(`/inventario/${productId}`);
+  return { success: true };
+}

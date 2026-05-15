@@ -1,6 +1,11 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { TrendingUp, TrendingDown, Minus, Pencil, Check, X } from "lucide-react";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useRole } from "@/lib/hooks/useRole";
+import { adjustLotQuantityAction } from "../actions";
 
 export interface LotProfitRow {
   id: string;
@@ -17,9 +22,13 @@ export interface LotProfitRow {
 
 interface Props {
   rows: LotProfitRow[];
+  productId: string;
 }
 
-export function ProfitabilitySection({ rows }: Props) {
+export function ProfitabilitySection({ rows, productId }: Props) {
+  const { role } = useRole();
+  const isAdmin = role === "admin";
+
   if (rows.length === 0) {
     return (
       <section className="space-y-4">
@@ -77,9 +86,12 @@ export function ProfitabilitySection({ rows }: Props) {
                     {row.qtySold > 0 ? row.qtySold : <span className="text-text-dim">0</span>}
                   </TD>
                   <TD className="text-right tabular-nums">
-                    <span className={Number(row.quantity_remaining) === 0 ? "text-text-dim" : ""}>
-                      {row.quantity_remaining}
-                    </span>
+                    <DisponibleCell
+                      lotId={row.id}
+                      productId={productId}
+                      quantity={row.quantity_remaining}
+                      isAdmin={isAdmin}
+                    />
                   </TD>
                   <TD className="text-right font-mono text-sm">
                     {row.revenue > 0 ? formatCurrency(row.revenue) : <span className="text-text-dim">—</span>}
@@ -96,7 +108,6 @@ export function ProfitabilitySection({ rows }: Props) {
           </TBody>
         </Table>
 
-        {/* Totales */}
         {totalQtySold > 0 && (
           <div className="flex items-center justify-end gap-6 border-t border-border px-4 py-3">
             <span className="text-xs uppercase tracking-widest text-text-muted">
@@ -116,6 +127,89 @@ export function ProfitabilitySection({ rows }: Props) {
         )}
       </div>
     </section>
+  );
+}
+
+function DisponibleCell({
+  lotId,
+  productId,
+  quantity,
+  isAdmin,
+}: {
+  lotId: string;
+  productId: string;
+  quantity: number;
+  isAdmin: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(quantity));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!editing) {
+    return (
+      <span className="inline-flex items-center justify-end gap-1.5">
+        <span className={quantity === 0 ? "text-text-dim" : ""}>{quantity}</span>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => { setValue(String(quantity)); setEditing(true); setError(null); }}
+            className="opacity-0 group-hover/row:opacity-100 text-text-dim hover:text-gold transition-opacity focus:opacity-100"
+            title="Ajustar disponible"
+          >
+            <Pencil className="h-3 w-3" strokeWidth={2} />
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  const handleSave = async () => {
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed) || parsed < 0) {
+      setError("Entero ≥ 0");
+      return;
+    }
+    setSaving(true);
+    const result = await adjustLotQuantityAction(lotId, parsed, productId);
+    setSaving(false);
+    if (!result.success) {
+      setError(result.error ?? "Error");
+    } else {
+      setEditing(false);
+    }
+  };
+
+  return (
+    <span className="inline-flex items-center justify-end gap-1">
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => { setValue(e.target.value); setError(null); }}
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
+        className="w-16 rounded border border-gold bg-surface px-1.5 py-0.5 text-right font-mono text-sm focus:outline-none focus:ring-1 focus:ring-gold/60"
+        autoFocus
+      />
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="text-success hover:text-success/80 disabled:opacity-50"
+        title="Guardar"
+      >
+        <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="text-text-dim hover:text-text"
+        title="Cancelar"
+      >
+        <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </button>
+      {error && <span className="text-xs text-danger">{error}</span>}
+    </span>
   );
 }
 

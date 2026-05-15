@@ -295,7 +295,7 @@ export default async function ProductoDetailPage({
       )}
 
       {isPhysical && (
-        <ProfitabilitySection rows={lotProfitRows} />
+        <ProfitabilitySection rows={lotProfitRows} productId={params.id} />
       )}
 
       {isPhysical && (
