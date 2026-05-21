@@ -45,7 +45,8 @@ export default async function InventarioPage() {
   const lotsByProductId: Record<string, LotSummary[]> = {};
   for (const l of (lotsResult.data ?? []).filter((l) => Number(l.quantity_remaining) > 0) as Array<LotSummary & { product_id: string }>) {
     if (!lotsByProductId[l.product_id]) lotsByProductId[l.product_id] = [];
-    lotsByProductId[l.product_id].push({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    lotsByProductId[l.product_id]!.push({
       cost_per_unit: Number(l.cost_per_unit),
       cost_per_gram: Number(l.cost_per_gram),
       quantity_remaining: Number(l.quantity_remaining),
