@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   X,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -50,13 +51,14 @@ const sections: NavSection[] = [
       { href: "/documentos", label: "Documentos", icon: FileText,       hint: "04" },
       { href: "/libro",         label: "Libro",         icon: BookOpen,   hint: "05", roles: ["admin"] },
       { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp, hint: "06", roles: ["admin"] },
+      { href: "/accesos",       label: "Acceso catálogo", icon: KeyRound, hint: "07", roles: ["admin"] },
     ],
   },
   {
     label: "Sistema",
     roles: ["admin"],
     items: [
-      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "07" },
+      { href: "/configuracion", label: "Configuración", icon: Settings, hint: "08" },
     ],
   },
 ];

@@ -196,7 +196,10 @@ export default async function ProductoDetailPage({
     stock_min: product.stock_min,
     igic_rate: product.igic_rate,
     active: product.active,
+    catalog_out_of_stock:
+      (product as typeof product & { catalog_out_of_stock?: boolean }).catalog_out_of_stock ?? false,
     image_urls: (product as typeof product & { image_urls?: string[] }).image_urls ?? [],
+    retail_markup_pct: Number((product as typeof product & { retail_markup_pct?: number }).retail_markup_pct ?? 0),
   };
 
   const isPhysical = product.type === "producto";

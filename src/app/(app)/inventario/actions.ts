@@ -27,7 +27,9 @@ function toDbPayload(input: ProductInput) {
     stock_min: input.stock_min,
     igic_rate: input.igic_rate,
     active: input.active,
+    catalog_out_of_stock: input.catalog_out_of_stock ?? false,
     image_urls: input.image_urls ?? [],
+    retail_markup_pct: input.retail_markup_pct ?? 0,
   };
 }
 

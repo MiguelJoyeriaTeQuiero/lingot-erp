@@ -48,7 +48,9 @@ const emptyDefaults: ProductInput = {
   stock_min: 0,
   igic_rate: null,
   active: true,
+  catalog_out_of_stock: false,
   image_urls: [],
+  retail_markup_pct: 0,
 };
 
 export function ProductForm({
@@ -92,6 +94,7 @@ export function ProductForm({
   const markupPp = Number(watch("markup_per_piece")) || 0;
   const costPrice = Number(watch("cost_price")) || 0;
   const imageUrls = watch("image_urls") ?? [];
+  const retailMarkupPct = Number(watch("retail_markup_pct")) || 0;
 
   const inheritedIgic =
     categoryId != null
@@ -494,9 +497,52 @@ export function ProductForm({
         </div>
       </FormSection>
 
-      {/* Imágenes del producto */}
+      {/* Precio minorista */}
       <FormSection
         eyebrow="06"
+        title="Precio público (catálogo)"
+        description="El catálogo muestra este precio a clientes sin acceso mayorista. Si el margen es 0 se mostrará 'Consultar'."
+      >
+        <div className="space-y-6">
+          <Input
+            label="Margen minorista (%)"
+            type="number"
+            step="0.01"
+            min="0"
+            {...register("retail_markup_pct")}
+            error={errors.retail_markup_pct?.message}
+            disabled={readOnly}
+            help="El precio público = precio mayorista × (1 + margen%). Pon 0 para mostrar 'Consultar'."
+          />
+          {computed && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border border-border bg-surface-raised p-4">
+                <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-text-dim">
+                  Precio mayorista
+                </div>
+                <div className="mt-1.5 font-editorial text-[22px] leading-none tracking-tight text-primary tabular">
+                  {formatCurrency(computed.total)}
+                </div>
+              </div>
+              <div className="border border-gold/30 bg-gold/5 p-4">
+                <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-gold-deep">
+                  Precio público
+                </div>
+                <div className="mt-1.5 font-editorial text-[22px] leading-none tracking-tight text-primary tabular">
+                  {retailMarkupPct > 0
+                    ? formatCurrency(computed.total * (1 + retailMarkupPct / 100))
+                    : <span className="text-[14px] text-text-dim">Consultar</span>
+                  }
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </FormSection>
+
+      {/* Imágenes del producto */}
+      <FormSection
+        eyebrow="07"
         title="Imágenes"
         description="Hasta 2 fotos del producto. Solo uso interno, no aparecen en facturas PDF."
       >
@@ -545,15 +591,36 @@ export function ProductForm({
       </FormSection>
 
       {mode === "edit" && (
-        <label className="flex items-center gap-2 text-sm text-text-muted">
-          <input
-            type="checkbox"
-            {...register("active")}
-            disabled={readOnly}
-            className="h-4 w-4 border-border bg-surface-raised accent-primary"
-          />
-          Producto activo
-        </label>
+        <div className="flex flex-col gap-3 border border-border bg-surface-raised p-4 shadow-paper">
+          <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
+            Visibilidad en catálogo
+          </span>
+          <label className="flex items-center gap-2 text-sm text-text-muted">
+            <input
+              type="checkbox"
+              {...register("active")}
+              disabled={readOnly}
+              className="h-4 w-4 border-border bg-surface-raised accent-primary"
+            />
+            Producto activo
+          </label>
+          <label className="flex items-center gap-2 text-sm text-text-muted">
+            <input
+              type="checkbox"
+              {...register("catalog_out_of_stock")}
+              disabled={readOnly}
+              className="h-4 w-4 border-border bg-surface-raised accent-danger"
+            />
+            <span>
+              Mostrar como{" "}
+              <span className="font-medium text-danger">Sin stock</span> en el
+              catálogo
+              <span className="ml-1 text-[11px] text-text-dim">
+                (aunque haya stock real)
+              </span>
+            </span>
+          </label>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-3 border-t border-border pt-6">

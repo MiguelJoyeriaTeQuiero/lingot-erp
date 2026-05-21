@@ -14,7 +14,7 @@ export default async function InventarioPage() {
   const isAdmin = role === "admin";
   const supabase = createTypedClient();
 
-  const [productsResult, categoriesResult, companyResult, spots, pendingOrdersResult] =
+  const [productsResult, categoriesResult, companyResult, spots, pendingOrdersResult, lotsResult] =
     await Promise.all([
       supabase
         .from("products")
@@ -30,11 +30,28 @@ export default async function InventarioPage() {
         .from("purchase_orders")
         .select("product_id, quantity")
         .eq("received", false),
+      supabase
+        .from("stock_lots")
+        .select("product_id, cost_per_unit, cost_per_gram, quantity_remaining, order_date")
+        .gt("quantity_remaining", 0)
+        .order("order_date", { ascending: true }),
     ]);
 
   const pendingByProductId: Record<string, number> = {};
   for (const o of (pendingOrdersResult.data ?? []) as Array<{ product_id: string; quantity: number }>) {
     pendingByProductId[o.product_id] = (pendingByProductId[o.product_id] ?? 0) + Number(o.quantity);
+  }
+
+  type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string };
+  const lotsByProductId: Record<string, LotSummary[]> = {};
+  for (const l of (lotsResult.data ?? []) as Array<LotSummary & { product_id: string }>) {
+    if (!lotsByProductId[l.product_id]) lotsByProductId[l.product_id] = [];
+    lotsByProductId[l.product_id].push({
+      cost_per_unit: Number(l.cost_per_unit),
+      cost_per_gram: Number(l.cost_per_gram),
+      quantity_remaining: Number(l.quantity_remaining),
+      order_date: l.order_date,
+    });
   }
 
   const globalMarkupPct = Number(
@@ -82,6 +99,7 @@ export default async function InventarioPage() {
           }}
           globalMarkupPct={globalMarkupPct}
           pendingByProductId={pendingByProductId}
+          lotsByProductId={lotsByProductId}
         />
       )}
     </div>

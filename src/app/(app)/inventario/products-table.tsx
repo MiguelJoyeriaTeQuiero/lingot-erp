@@ -15,12 +15,15 @@ import type {
   MetalType,
 } from "@/lib/supabase/typed";
 
+type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string };
+
 interface ProductsTableProps {
   products: ProductRow[];
   categories: ProductCategoryRow[];
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
   pendingByProductId?: Record<string, number>;
+  lotsByProductId?: Record<string, LotSummary[]>;
 }
 
 export function ProductsTable({
@@ -29,6 +32,7 @@ export function ProductsTable({
   spotByMetal,
   globalMarkupPct,
   pendingByProductId = {},
+  lotsByProductId = {},
 }: ProductsTableProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -71,6 +75,7 @@ export function ProductsTable({
       metal: p.metal,
       markup_per_gram: Number(p.markup_per_gram),
       markup_per_piece: Number(p.markup_per_piece),
+      cost_price: Number(p.cost_price ?? 0),
       spot_eur_per_g: spot,
       global_markup_pct: globalMarkupPct,
     });
@@ -159,6 +164,7 @@ export function ProductsTable({
                 const cat = p.category_id
                   ? categoryById.get(p.category_id)
                   : null;
+                const lots = lotsByProductId[p.id] ?? [];
                 return (
                   <TR
                     key={p.id}
@@ -204,9 +210,31 @@ export function ProductsTable({
                       {price == null ? (
                         <span className="text-text-dim">sin spot</span>
                       ) : (
-                        <span className="font-mono tabular text-primary">
-                          {formatCurrency(price)}
-                        </span>
+                        <div>
+                          <span className="font-mono tabular text-primary">
+                            {formatCurrency(price)}
+                          </span>
+                          {lots.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {lots.map((lot, i) => {
+                                const margin = price > 0
+                                  ? Math.round((price - lot.cost_per_unit) / lot.cost_per_unit * 100)
+                                  : null;
+                                return (
+                                  <div key={i} className="flex items-center justify-end gap-1.5 text-[10px] font-mono tabular text-text-muted">
+                                    <span>{formatCurrency(lot.cost_per_unit)}</span>
+                                    <span className="text-text-dim">×{lot.quantity_remaining}</span>
+                                    {margin != null && (
+                                      <span className={margin >= 3 ? "text-success" : margin >= 0 ? "text-gold-deep" : "text-danger"}>
+                                        {margin > 0 ? "+" : ""}{margin}%
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </TD>
                     <TD className="text-right">

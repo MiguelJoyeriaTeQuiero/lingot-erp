@@ -18,8 +18,7 @@ export default async function DashboardPage() {
     supabase
       .from("documents")
       .select("*")
-      .order("created_at", { ascending: false })
-      .limit(60),
+      .order("created_at", { ascending: false }),
     supabase.from("clients").select("*").limit(500),
     supabase.from("products").select("*").limit(500),
     getLatestSpots(),
@@ -38,7 +37,13 @@ export default async function DashboardPage() {
   // ── Rentabilidad ─────────────────────────────────────────────────────────
   const emittedDocIds = new Set(
     documents
-      .filter((d) => d.status !== "borrador" && d.status !== "cancelado")
+      .filter(
+        (d) =>
+          d.status !== "borrador" &&
+          d.status !== "cancelado" &&
+          !(d as typeof d & { rectification_of_invoice_id?: string | null })
+            .rectification_of_invoice_id
+      )
       .map((d) => d.id)
   );
   const lotMap = new Map(allLots.map((l) => [l.id, l]));
@@ -63,16 +68,17 @@ export default async function DashboardPage() {
     profitByProduct.set(lot.product_id, prev);
   }
 
-  const profitRows = [...profitByProduct.values()]
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 6);
+  const allProfitRows = [...profitByProduct.values()].sort(
+    (a, b) => b.revenue - a.revenue
+  );
+  const profitRows = allProfitRows.slice(0, 6); // solo top 6 para las barras
 
-  const totalProfitRevenue = profitRows.reduce((s, r) => s + r.revenue, 0);
-  const totalProfitCost = profitRows.reduce((s, r) => s + r.cost, 0);
+  const totalProfitRevenue = allProfitRows.reduce((s, r) => s + r.revenue, 0);
+  const totalProfitCost = allProfitRows.reduce((s, r) => s + r.cost, 0);
   const totalProfit = totalProfitRevenue - totalProfitCost;
   const overallMarginPct =
     totalProfitRevenue > 0 ? (totalProfit / totalProfitRevenue) * 100 : 0;
-  const hasProfitData = profitRows.length > 0;
+  const hasProfitData = allProfitRows.length > 0;
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

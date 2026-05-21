@@ -23,6 +23,11 @@ export default async function AppLayout({
     .eq("id", user.id)
     .single();
 
+  const erpRoles = ["admin", "contabilidad"];
+  if (!erpRoles.includes((profile as { role?: string } | null)?.role ?? "")) {
+    redirect("/catalogo");
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-ink">
       {/* Ambient gradient orbs */}
