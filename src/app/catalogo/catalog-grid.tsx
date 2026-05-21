@@ -67,7 +67,7 @@ export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className="relative shrink-0 px-5 py-4 font-mono text-[10px] uppercase tracking-[0.28em] transition-colors duration-300"
+                className="relative shrink-0 px-5 py-4 font-mono text-[12px] uppercase tracking-[0.22em] transition-colors duration-300 sm:text-[10px] sm:tracking-[0.28em]"
                 style={{ color: active ? "#0a2530" : "rgba(10,37,48,0.35)" }}
               >
                 {labels[f]}
@@ -192,7 +192,7 @@ function ProductCard({ product: p, index }: { product: CatalogProduct; index: nu
           {/* Badge metal/pureza */}
           <div className="absolute left-3 top-3 z-20">
             <span
-              className="inline-block px-2 py-0.5 font-mono text-[7px] uppercase tracking-[0.22em] backdrop-blur-sm"
+              className="inline-block px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] backdrop-blur-sm sm:text-[7px] sm:tracking-[0.22em]"
               style={{
                 background: isGold ? "rgba(184,138,61,0.10)" : "rgba(10,55,70,0.06)",
                 border: isGold
@@ -271,28 +271,28 @@ function ProductCard({ product: p, index }: { product: CatalogProduct; index: nu
         {/* ── Info panel ── */}
         <div className="flex flex-1 flex-col px-4 py-3.5">
           <h2
-            className="line-clamp-2 font-display text-[13px] font-medium leading-snug tracking-tight"
+            className="line-clamp-2 font-display text-[15px] font-medium leading-snug tracking-tight sm:text-[13px]"
             style={{ color: "#0a2530" }}
           >
             {p.name}
           </h2>
           <div className="mt-auto flex items-baseline justify-between gap-2 pt-2">
             <span
-              className="font-mono text-[8.5px] uppercase tracking-[0.2em]"
+              className="font-mono text-[11px] uppercase tracking-[0.15em] sm:text-[8.5px] sm:tracking-[0.2em]"
               style={{ color: "rgba(10,37,48,0.35)" }}
             >
               {Number(p.weight_g).toFixed(2)} g
             </span>
             {p.price != null ? (
               <span
-                className="font-editorial text-[20px] tabular leading-none"
+                className="font-editorial text-[22px] tabular leading-none sm:text-[20px]"
                 style={{ color: isGold ? "#9a7230" : "#1e5468" }}
               >
                 {formatCurrency(p.price)}
               </span>
             ) : (
               <span
-                className="font-mono text-[8px] uppercase tracking-[0.25em]"
+                className="font-mono text-[10px] uppercase tracking-[0.2em] sm:text-[8px] sm:tracking-[0.25em]"
                 style={{ color: "rgba(10,37,48,0.25)" }}
               >
                 Consultar
