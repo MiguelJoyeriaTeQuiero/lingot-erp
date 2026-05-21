@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/lib/utils";
+import { ReserveModal } from "./reserve-modal";
 
 export type CatalogProduct = {
   id: string;
@@ -19,8 +20,15 @@ export type CatalogProduct = {
 type Filter = "all" | "oro" | "plata";
 
 // ─── Barra de filtros ──────────────────────────────────────────────────────
-export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
+export function CatalogGrid({
+  products,
+  isLoggedIn,
+}: {
+  products: CatalogProduct[];
+  isLoggedIn: boolean;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [reservingProduct, setReservingProduct] = useState<CatalogProduct | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const filtered =
@@ -104,17 +112,41 @@ export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                index={i}
+                isLoggedIn={isLoggedIn}
+                onReserve={setReservingProduct}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* ── Reserve modal ── */}
+      {reservingProduct !== null && (
+        <ReserveModal
+          product={reservingProduct}
+          onClose={() => setReservingProduct(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Tarjeta de producto ───────────────────────────────────────────────────
-function ProductCard({ product: p, index }: { product: CatalogProduct; index: number }) {
+function ProductCard({
+  product: p,
+  index,
+  isLoggedIn,
+  onReserve,
+}: {
+  product: CatalogProduct;
+  index: number;
+  isLoggedIn: boolean;
+  onReserve: (product: CatalogProduct) => void;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const shineRef = useRef<HTMLDivElement>(null);
 
@@ -299,6 +331,28 @@ function ProductCard({ product: p, index }: { product: CatalogProduct; index: nu
               </span>
             )}
           </div>
+
+          {/* Reservar button — only for logged-in users with in-stock products */}
+          {isLoggedIn && p.inStock && (
+            <button
+              onClick={() => onReserve(p)}
+              className="mt-3 w-full border py-2 font-mono text-[10px] uppercase tracking-[0.3em] transition-all duration-300"
+              style={{
+                borderColor: "rgba(184,138,61,0.40)",
+                color: "#9a7230",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(184,138,61,0.08)";
+                e.currentTarget.style.borderColor = "rgba(184,138,61,0.70)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "";
+                e.currentTarget.style.borderColor = "rgba(184,138,61,0.40)";
+              }}
+            >
+              Reservar
+            </button>
+          )}
         </div>
       </div>
     </div>

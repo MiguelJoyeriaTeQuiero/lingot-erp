@@ -5,6 +5,7 @@ import { createTypedClient } from "@/lib/supabase/typed";
 import { CatalogGrid } from "./catalog-grid";
 import { CatalogLoginButton } from "./catalog-login";
 import { CatalogScrollTransition } from "./catalog-scroll-transition";
+import { MisReservas } from "./mis-reservas";
 
 export const dynamic = "force-dynamic";
 
@@ -317,9 +318,20 @@ export default async function CatalogoPage() {
             </p>
           </div>
         ) : (
-          <CatalogGrid products={products} />
+          <CatalogGrid products={products} isLoggedIn={!!user} />
         )}
       </main>
+
+      {/* ══════════════════════════════════════════════════════════════
+          MIS RESERVAS
+      ══════════════════════════════════════════════════════════════ */}
+      {user && !isAdmin && (
+        <section style={{ background: "#f5f1ea" }} className="px-4 py-16 sm:px-8">
+          <div className="mx-auto max-w-7xl">
+            <MisReservas userId={user.id} />
+          </div>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           FOOTER
