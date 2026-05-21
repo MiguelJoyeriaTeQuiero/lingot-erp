@@ -36,15 +36,18 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
 
   if (isLoggedIn) {
     return (
-      <div className="flex items-center gap-3">
+      <div
+        className="flex items-center gap-3 rounded-none px-3 py-2 backdrop-blur-md"
+        style={{ background: "rgba(4,18,26,0.55)" }}
+      >
         {isWholesale && (
-          <span className="hidden border border-gold/30 bg-gold/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.22em] text-gold sm:inline-block">
+          <span className="hidden border border-gold/50 bg-gold/15 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.22em] text-gold sm:inline-block">
             Precios mayorista
           </span>
         )}
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-surface-raised/40 transition-colors hover:text-surface-raised/70"
+          className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-white/70 transition-colors hover:text-white"
         >
           <LogOut className="h-3 w-3" strokeWidth={1.5} />
           Salir
@@ -57,7 +60,8 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-surface-raised/35 transition-colors hover:text-surface-raised/60"
+        className="flex items-center gap-1.5 rounded-none px-3 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/70 backdrop-blur-md transition-colors hover:text-white"
+        style={{ background: "rgba(4,18,26,0.55)" }}
       >
         <LogIn className="h-3 w-3" strokeWidth={1.5} />
         Acceso profesional
