@@ -325,7 +325,7 @@ export default async function CatalogoPage() {
       {/* ══════════════════════════════════════════════════════════════
           MIS RESERVAS
       ══════════════════════════════════════════════════════════════ */}
-      {user && !isAdmin && (
+      {user && (
         <section style={{ background: "#f5f1ea" }} className="px-4 py-16 sm:px-8">
           <div className="mx-auto max-w-7xl">
             <MisReservas userId={user.id} />
