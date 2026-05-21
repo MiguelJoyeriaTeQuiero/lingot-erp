@@ -33,7 +33,6 @@ export default async function InventarioPage() {
       supabase
         .from("stock_lots")
         .select("product_id, cost_per_unit, cost_per_gram, quantity_remaining, order_date")
-        .gt("quantity_remaining", 0)
         .order("order_date", { ascending: true }),
     ]);
 
@@ -44,7 +43,7 @@ export default async function InventarioPage() {
 
   type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string };
   const lotsByProductId: Record<string, LotSummary[]> = {};
-  for (const l of (lotsResult.data ?? []) as Array<LotSummary & { product_id: string }>) {
+  for (const l of (lotsResult.data ?? []).filter((l) => Number(l.quantity_remaining) > 0) as Array<LotSummary & { product_id: string }>) {
     if (!lotsByProductId[l.product_id]) lotsByProductId[l.product_id] = [];
     lotsByProductId[l.product_id].push({
       cost_per_unit: Number(l.cost_per_unit),
