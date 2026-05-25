@@ -46,7 +46,7 @@ export default async function CatalogoPage() {
     isWholesale = (profile as { is_wholesale?: boolean } | null)?.is_wholesale ?? false;
     if (profile?.role === "admin" || profile?.role === "contabilidad") isWholesale = true;
     userName = (profile as { full_name?: string } | null)?.full_name
-      ?? user.user_metadata?.full_name as string | undefined
+      ?? (user as unknown as { user_metadata?: { full_name?: string } }).user_metadata?.full_name
       ?? user.email?.split("@")[0]
       ?? "";
   }
