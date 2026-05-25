@@ -6,12 +6,22 @@ import Link from "next/link";
 import { LogIn, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: boolean; isWholesale: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
+const SPRING = "cubic-bezier(0.32, 0.72, 0, 1)";
+
+export function CatalogLoginButton({
+  isLoggedIn,
+  isWholesale,
+  userName = "",
+}: {
+  isLoggedIn:  boolean;
+  isWholesale: boolean;
+  userName?:   string;
+}) {
+  const [open,     setOpen]     = useState(false);
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
   const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
@@ -21,10 +31,7 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (authError) {
-      setError("Email o contraseña incorrectos");
-      return;
-    }
+    if (authError) { setError("Email o contraseña incorrectos"); return; }
     setOpen(false);
     router.refresh();
   }
@@ -35,13 +42,123 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
     router.refresh();
   }
 
+  const pillBase: React.CSSProperties = {
+    background:          "rgba(249,244,236,0.88)",
+    border:              "1px solid rgba(10,31,43,0.12)",
+    backdropFilter:      "blur(16px)",
+    WebkitBackdropFilter:"blur(16px)",
+    boxShadow:           "0 2px 12px -2px rgba(10,31,43,0.08)",
+    borderRadius:        "99px",
+    padding:             "6px 14px",
+    transition:          `all 0.40s ${SPRING}`,
+  };
+
   if (isLoggedIn) {
+    // Derive a clean display name: first word of full name, or raw value
+    const firstName = userName.trim().split(/\s+/)[0] ?? "";
+    const initial   = firstName.charAt(0).toUpperCase() || "U";
+
     return (
-      <div className="flex items-center gap-2 rounded-none px-3 py-2 backdrop-blur-md" style={{ background: "rgba(4,18,26,0.55)" }}>
-        {isWholesale && <span className="hidden border border-gold/50 bg-gold/15 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.22em] text-gold sm:inline-block">Mayorista</span>}
-        <Link href="/catalogo/mi-cuenta" className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/80 hover:text-white transition-colors">Mi cuenta</Link>
-        <span className="text-white/20">·</span>
-        <button onClick={handleLogout} className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/50 hover:text-white/80 transition-colors">Salir</button>
+      <div
+        className="flex items-center gap-0"
+        style={{
+          ...pillBase,
+          padding: "4px 4px 4px 4px",
+          gap: 0,
+        }}
+      >
+        {/* Avatar circle — gold tint for wholesale, ink for regular */}
+        <Link
+          href="/catalogo/mi-cuenta"
+          aria-label="Mi cuenta"
+          style={{
+            display:         "flex",
+            alignItems:      "center",
+            justifyContent:  "center",
+            width:           "28px",
+            height:          "28px",
+            borderRadius:    "50%",
+            background:      isWholesale
+              ? "linear-gradient(135deg, rgba(154,114,48,0.18) 0%, rgba(200,161,100,0.28) 100%)"
+              : "rgba(10,31,43,0.07)",
+            border:          isWholesale
+              ? "1px solid rgba(154,114,48,0.34)"
+              : "1px solid rgba(10,31,43,0.12)",
+            fontFamily:      "monospace",
+            fontSize:        "10px",
+            fontWeight:      600,
+            letterSpacing:   "0.04em",
+            color:           isWholesale ? "#9a7230" : "rgba(10,31,43,0.65)",
+            textDecoration:  "none",
+            flexShrink:      0,
+            transition:      `all 0.30s ${SPRING}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = isWholesale
+              ? "linear-gradient(135deg, rgba(154,114,48,0.28) 0%, rgba(200,161,100,0.42) 100%)"
+              : "rgba(10,31,43,0.12)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = isWholesale
+              ? "linear-gradient(135deg, rgba(154,114,48,0.18) 0%, rgba(200,161,100,0.28) 100%)"
+              : "rgba(10,31,43,0.07)";
+          }}
+        >
+          {initial}
+        </Link>
+
+        {/* First name — hidden on very narrow screens */}
+        {firstName && (
+          <Link
+            href="/catalogo/mi-cuenta"
+            className="hidden sm:block"
+            style={{
+              fontFamily:    "monospace",
+              fontSize:      "10px",
+              letterSpacing: "0.10em",
+              color:         "rgba(10,31,43,0.70)",
+              textDecoration:"none",
+              paddingLeft:   "9px",
+              paddingRight:  "4px",
+              whiteSpace:    "nowrap",
+              transition:    `color 0.22s ease`,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#0a1f2b"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(10,31,43,0.70)"; }}
+          >
+            {firstName}
+          </Link>
+        )}
+
+        {/* Divider */}
+        <span
+          className="hidden sm:block"
+          style={{
+            width:      "1px",
+            height:     "14px",
+            background: "rgba(10,31,43,0.10)",
+            margin:     "0 8px",
+            flexShrink: 0,
+          }}
+        />
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="font-mono text-[9px] uppercase tracking-[0.20em]"
+          style={{
+            background:  "none",
+            border:      "none",
+            cursor:      "pointer",
+            color:       "rgba(10,31,43,0.32)",
+            padding:     "0 8px 0 0",
+            transition:  `color 0.22s ease`,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(10,31,43,0.65)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(10,31,43,0.32)"; }}
+        >
+          Salir
+        </button>
       </div>
     );
   }
@@ -50,8 +167,19 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-none px-3 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/70 backdrop-blur-md transition-colors hover:text-white"
-        style={{ background: "rgba(4,18,26,0.55)" }}
+        className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em]"
+        style={{
+          ...pillBase,
+          color: "rgba(10,31,43,0.55)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color    = "#0a1f2b";
+          e.currentTarget.style.boxShadow = "0 4px 20px -4px rgba(10,31,43,0.14)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color    = "rgba(10,31,43,0.55)";
+          e.currentTarget.style.boxShadow = "0 2px 12px -2px rgba(10,31,43,0.08)";
+        }}
       >
         <LogIn className="h-3 w-3" strokeWidth={1.5} />
         Acceso profesional
@@ -59,67 +187,128 @@ export function CatalogLoginButton({ isLoggedIn, isWholesale }: { isLoggedIn: bo
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Backdrop — warm frosted */}
           <div
-            className="absolute inset-0 bg-primary-deep/80 backdrop-blur-sm"
+            className="absolute inset-0"
+            style={{
+              background:          "rgba(240,233,218,0.75)",
+              backdropFilter:      "blur(20px)",
+              WebkitBackdropFilter:"blur(20px)",
+            }}
             onClick={() => setOpen(false)}
           />
-          <div className="relative w-full max-w-sm border border-white/10 bg-primary p-8 shadow-2xl">
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute right-4 top-4 text-surface-raised/30 transition-colors hover:text-surface-raised/60"
+
+          {/* Modal — paper white Double-Bezel */}
+          <div
+            className="relative w-full max-w-sm"
+            style={{
+              padding:      "3px",
+              borderRadius: "28px",
+              background:   "rgba(154,114,48,0.06)",
+              border:       "1px solid rgba(154,114,48,0.16)",
+              boxShadow:    "0 24px 64px -24px rgba(10,31,43,0.18), 0 8px 24px -8px rgba(10,31,43,0.10)",
+            }}
+          >
+            <div
+              className="relative p-8"
+              style={{
+                borderRadius: "25px",
+                background:   "#FFFFFF",
+                boxShadow:    "inset 0 1px 0 rgba(255,255,255,0.90)",
+              }}
             >
-              <X className="h-4 w-4" strokeWidth={1.5} />
-            </button>
-
-            <div className="mb-6">
-              <div className="font-mono text-[9px] uppercase tracking-[0.4em] text-gold">
-                Acceso profesional
-              </div>
-              <div className="mt-2 text-[13px] text-surface-raised/50">
-                Introduce tus credenciales para ver los precios de tu tarifa.
-              </div>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block font-mono text-[10px] uppercase tracking-[0.22em] text-surface-raised/40">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1.5 block w-full border-b border-white/15 bg-transparent py-2 text-[14px] text-surface-raised placeholder:text-surface-raised/25 focus:border-gold/60 focus:outline-none"
-                  placeholder="tu@email.com"
-                />
-              </div>
-              <div>
-                <label className="block font-mono text-[10px] uppercase tracking-[0.22em] text-surface-raised/40">
-                  Contraseña
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1.5 block w-full border-b border-white/15 bg-transparent py-2 text-[14px] text-surface-raised placeholder:text-surface-raised/25 focus:border-gold/60 focus:outline-none"
-                  placeholder="••••••"
-                />
-              </div>
-
-              {error && (
-                <p className="text-[12px] text-danger">{error}</p>
-              )}
-
               <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 w-full bg-gold py-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary-deep transition-opacity disabled:opacity-50 hover:opacity-90"
+                onClick={() => setOpen(false)}
+                className="absolute right-4 top-4 transition-colors"
+                style={{ color: "rgba(10,31,43,0.25)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(10,31,43,0.55)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(10,31,43,0.25)"; }}
               >
-                {loading ? "Accediendo…" : "Entrar"}
+                <X className="h-4 w-4" strokeWidth={1.5} />
               </button>
-            </form>
+
+              <div className="mb-8">
+                {/* Eyebrow pill */}
+                <div
+                  className="mb-4 inline-flex items-center rounded-full px-3 py-1"
+                  style={{
+                    background: "rgba(154,114,48,0.07)",
+                    border:     "1px solid rgba(154,114,48,0.18)",
+                  }}
+                >
+                  <span className="font-mono text-[8px] uppercase tracking-[0.42em]"
+                    style={{ color: "rgba(154,114,48,0.75)" }}>
+                    Acceso profesional
+                  </span>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed"
+                  style={{ color: "rgba(10,31,43,0.42)" }}>
+                  Introduce tus credenciales para ver los precios de tu tarifa.
+                </p>
+                <div className="mt-5 h-px"
+                  style={{ background: "linear-gradient(to right, rgba(154,114,48,0.18), transparent)" }} />
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                  <label className="block font-mono text-[9px] uppercase tracking-[0.28em]"
+                    style={{ color: "rgba(10,31,43,0.35)" }}>Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-2 block w-full border-b bg-transparent py-2 text-[14px] focus:outline-none"
+                    style={{ borderColor: "rgba(10,31,43,0.14)", color: "#0a1f2b" }}
+                    onFocus={(e) => { e.target.style.borderColor = "rgba(154,114,48,0.50)"; }}
+                    onBlur={(e)  => { e.target.style.borderColor = "rgba(10,31,43,0.14)"; }}
+                    placeholder="tu@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono text-[9px] uppercase tracking-[0.28em]"
+                    style={{ color: "rgba(10,31,43,0.35)" }}>Contraseña</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-2 block w-full border-b bg-transparent py-2 text-[14px] focus:outline-none"
+                    style={{ borderColor: "rgba(10,31,43,0.14)", color: "#0a1f2b" }}
+                    onFocus={(e) => { e.target.style.borderColor = "rgba(154,114,48,0.50)"; }}
+                    onBlur={(e)  => { e.target.style.borderColor = "rgba(10,31,43,0.14)"; }}
+                    placeholder="••••••"
+                  />
+                </div>
+
+                {error && (
+                  <p className="text-[12px]" style={{ color: "#b14338" }}>{error}</p>
+                )}
+
+                {/* CTA — dark ink button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-4 flex w-full items-center justify-between rounded-full px-6 py-3 font-mono text-[10px] uppercase tracking-[0.32em] transition-opacity disabled:opacity-40"
+                  style={{
+                    background: "#0a1f2b",
+                    color:      "rgba(249,244,236,0.88)",
+                    boxShadow:  "0 2px 10px -2px rgba(10,31,43,0.22)",
+                    transition: `all 0.45s ${SPRING}`,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#162e40"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#0a1f2b"; }}
+                >
+                  <span>{loading ? "Accediendo…" : "Entrar"}</span>
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-[11px]"
+                    style={{ background: "rgba(249,244,236,0.12)" }}
+                  >
+                    ↗
+                  </span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}

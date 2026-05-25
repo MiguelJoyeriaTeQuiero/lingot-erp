@@ -365,3 +365,254 @@ input:-webkit-autofill:focus {
 .nav-underline:hover::after {
   transform: scaleX(1);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   CATALOG DARK — Premium redesign styles
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Glassmorphism card ────────────────────────────────────── */
+.catalog-dark-card {
+  background:    rgba(255,255,255,0.028);
+  border:        1px solid rgba(200,161,100,0.10);
+  backdrop-filter: blur(12px);
+  transition:
+    box-shadow   0.45s ease,
+    border-color 0.40s ease,
+    transform    0.55s cubic-bezier(0.16,1,0.3,1);
+}
+.catalog-dark-card:hover {
+  border-color: rgba(200,161,100,0.32);
+  box-shadow:
+    0 0 0 1px rgba(200,161,100,0.14),
+    0 16px 48px -16px rgba(0,0,0,0.60),
+    0  0   36px -10px rgba(200,161,100,0.10);
+}
+
+/* ── Horizontal scan line across hero ─────────────────────── */
+@keyframes scan {
+  0%   { top: -2px;   opacity: 0; }
+  8%   { opacity: 1;  }
+  92%  { opacity: 0.6; }
+  100% { top: 100%;   opacity: 0; }
+}
+.catalog-scan-line {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(200,161,100,0.00) 20%,
+    rgba(200,161,100,0.30) 50%,
+    rgba(200,161,100,0.00) 80%,
+    transparent 100%
+  );
+  animation: scan 8s ease-in-out infinite;
+  animation-delay: 2.5s;
+}
+
+/* ── Price pill hover glow ─────────────────────────────────── */
+.catalog-price-pill {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.catalog-price-pill:hover {
+  box-shadow: 0 0 20px -6px rgba(200,161,100,0.18);
+}
+
+/* ── Scroll cue breathing ──────────────────────────────────── */
+@keyframes scroll-cue-breathe {
+  0%, 100% { opacity: 0.5; transform: scaleY(1);    }
+  50%      { opacity: 1.0; transform: scaleY(1.15); }
+}
+.catalog-scroll-cue {
+  transform-origin: top;
+  animation: scroll-cue-breathe 2.2s ease-in-out infinite;
+}
+
+/* ── Reserve button ────────────────────────────────────────── */
+.catalog-reserve-btn {
+  letter-spacing: 0.28em;
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    color            0.25s ease,
+    transform        0.2s ease;
+}
+.catalog-reserve-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Dark catalog filter bar active indicator ─────────────── */
+@keyframes filter-appear {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ── Soft scroll behavior for catalog page ────────────────── */
+html:has(.catalog-dark-card) {
+  scroll-behavior: smooth;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CATALOG LIGHT — Editorial Luxury (parchment + espresso ink)
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Fixed film-grain overlay — paper feel ────────────────── */
+.catalog-grain-overlay {
+  position:        fixed;
+  inset:           0;
+  z-index:         99;
+  pointer-events:  none;
+  opacity:         0.028;
+  mix-blend-mode:  multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.12 0 0 0 0 0.16 0 0 0 0.85 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+
+/* ── Gold shimmer (light version — warmer, darker) ────────── */
+@keyframes shimmer-gold-light {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.gold-shimmer-light {
+  background: linear-gradient(
+    90deg,
+    rgba(154,114,48,0.08) 0%,
+    rgba(154,114,48,0.40) 40%,
+    rgba(184,144,58,0.65) 50%,
+    rgba(154,114,48,0.40) 60%,
+    rgba(154,114,48,0.08) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer-gold-light 3.8s linear infinite;
+}
+
+/* ── Light price pill hover glow ──────────────────────────── */
+.catalog-price-pill {
+  transition: box-shadow 0.35s ease;
+}
+.catalog-price-pill:hover {
+  box-shadow: 0 4px 20px -6px rgba(154,114,48,0.16);
+}
+
+/* ── Live dot (light mode) ────────────────────────────────── */
+@keyframes pulse-live-light {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+.live-dot-light {
+  animation: pulse-live-light 2.2s ease-in-out infinite;
+}
+
+/* ── Hero scan line (light — gold, subtle) ────────────────── */
+@keyframes scan-light {
+  0%   { top: -2px;  opacity: 0; }
+  8%   { opacity: 0.6; }
+  92%  { opacity: 0.3; }
+  100% { top: 100%;  opacity: 0; }
+}
+.catalog-scan-line-light {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(154,114,48,0.00) 20%,
+    rgba(154,114,48,0.22) 50%,
+    rgba(154,114,48,0.00) 80%,
+    transparent 100%
+  );
+  animation: scan-light 9s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+/* ── Logo breathe — light version ────────────────────────── */
+@keyframes logo-breathe-light {
+  0%, 100% { filter: brightness(0.08) sepia(0.4); }
+  50%       { filter: brightness(0.12) sepia(0.5) drop-shadow(0 0 18px rgba(154,114,48,0.14)); }
+}
+.logo-breathe-light {
+  animation: logo-breathe-light 7s ease-in-out infinite;
+}
+
+/* ── Awwwards-tier scroll reveal: blur + translate + fade ─── */
+[data-reveal] {
+  opacity:    0;
+  transform:  translateY(28px);
+  filter:     blur(5px);
+  transition:
+    opacity   0.88s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.88s cubic-bezier(0.32, 0.72, 0, 1),
+    filter    0.70s cubic-bezier(0.32, 0.72, 0, 1);
+}
+[data-reveal].revealed {
+  opacity:    1;
+  transform:  translateY(0);
+  filter:     blur(0);
+}
+
+/* Staggered children inside [data-reveal-stagger] */
+[data-reveal-stagger] > *:nth-child(1) { transition-delay:   0ms; }
+[data-reveal-stagger] > *:nth-child(2) { transition-delay:  60ms; }
+[data-reveal-stagger] > *:nth-child(3) { transition-delay: 120ms; }
+[data-reveal-stagger] > *:nth-child(4) { transition-delay: 180ms; }
+
+/* ── Serif font utility (used in catalog) ─────────────────── */
+.font-serif-catalog {
+  font-family: var(--font-catalog-serif, Georgia, serif);
+}
+
+/* ── Catalog filter island transition ─────────────────────── */
+.catalog-filter-active {
+  background: rgba(200,161,100,0.14) !important;
+  color:      #e8edf0 !important;
+}
+
+/* ── Blog / landing card hover (CSS-only, no JS handlers) ──── */
+.blog-card-bezel {
+  border:     1px solid rgba(154,114,48,0.12);
+  transition: border-color 0.30s ease, box-shadow 0.30s ease;
+}
+.blog-card-bezel:hover {
+  border-color: rgba(154,114,48,0.28);
+  box-shadow:   0 8px 32px -8px rgba(10,31,43,0.10);
+}
+
+.post-nav-card {
+  border:     1px solid rgba(154,114,48,0.10);
+  transition: border-color 0.25s ease;
+}
+.post-nav-card:hover {
+  border-color: rgba(154,114,48,0.24);
+}
+
+/* Dark ink CTA button hover (server-component safe) */
+.cta-btn-dark {
+  background: #0a1f2b;
+  transition: background 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.cta-btn-dark:hover { background: #162e40; }
+
+/* Contact cards hover */
+.contact-card-bezel:hover {
+  border-color: rgba(154, 114, 48, 0.30) !important;
+  box-shadow: 0 8px 28px -8px rgba(10, 31, 43, 0.10);
+}
+
+/* Hero price panel float animation */
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-12px); }
+}
+
+/* Hero text line slide-up reveal (CSS-only, no React state dependency) */
+@keyframes hero-line-in {
+  from { transform: translateY(112%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes hero-fade-down {
+  from { transform: translateY(-18px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes hero-fade-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes hero-card-in {
+  from { transform: translateY(36px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
