@@ -146,7 +146,7 @@ export function CatalogNav() {
 
           {/* Hamburger button — mobile only */}
           <button
-            className="sm:hidden"
+            className="flex sm:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={open}
@@ -155,7 +155,6 @@ export function CatalogNav() {
               border:        "none",
               cursor:        "pointer",
               padding:       "8px",
-              display:       "flex",
               flexDirection: "column",
               justifyContent:"center",
               alignItems:    "center",
