@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPaginatedPosts, BLOG_POSTS } from "./data";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Blog · Lingot — Metales Preciosos",
   description:
