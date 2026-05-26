@@ -213,6 +213,18 @@ export async function createPurchaseOrderAction(
     return { success: false, error: error?.message ?? "Error desconocido" };
   }
 
+  // Crear el lote en el momento del pedido para permitir asignarlo a ventas
+  // antes de que llegue la mercancía (stock en tránsito)
+  await supabase.from("stock_lots").insert({
+    product_id: productId,
+    purchase_order_id: data.id,
+    quantity_total: parsed.data.quantity,
+    quantity_remaining: parsed.data.quantity,
+    cost_per_gram: costPerGram,
+    cost_per_unit: costPerUnit,
+    order_date: parsed.data.order_date,
+  });
+
   revalidatePath("/inventario");
   revalidatePath(`/inventario/${productId}`);
   return { success: true, id: data.id };
@@ -221,7 +233,6 @@ export async function createPurchaseOrderAction(
 export async function markPurchaseOrderReceivedAction(
   orderId: string,
   productId: string,
-  targetLotId?: string | null   // null/undefined = nuevo lote; string = añadir a lote existente
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
@@ -266,22 +277,15 @@ export async function markPurchaseOrderReceivedAction(
 
   if (movErr) return { success: false, error: `Estado actualizado pero error en stock: ${movErr.message}` };
 
-  if (targetLotId) {
-    // Añadir al lote existente
-    const { data: lot } = await supabase
-      .from("stock_lots")
-      .select("quantity_total, quantity_remaining")
-      .eq("id", targetLotId)
-      .single();
+  // El lote se crea al registrar el pedido. Solo crearlo aquí si no existe
+  // (backward compat con pedidos anteriores a esta migración)
+  const { data: existingLot } = await supabase
+    .from("stock_lots")
+    .select("id")
+    .eq("purchase_order_id", orderId)
+    .maybeSingle();
 
-    if (lot) {
-      await supabase.from("stock_lots").update({
-        quantity_total: Number(lot.quantity_total) + Number(order.quantity),
-        quantity_remaining: Number(lot.quantity_remaining) + Number(order.quantity),
-      }).eq("id", targetLotId);
-    }
-  } else {
-    // Crear nuevo lote
+  if (!existingLot) {
     await supabase.from("stock_lots").insert({
       product_id: productId,
       purchase_order_id: orderId,

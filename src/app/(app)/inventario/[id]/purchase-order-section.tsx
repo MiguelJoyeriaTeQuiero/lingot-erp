@@ -15,7 +15,6 @@ import {
   Receipt,
   PackageCheck,
   Clock,
-  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,13 +46,6 @@ export interface PurchaseOrderEntry {
   received_at?: string | null;
 }
 
-export interface ExistingLot {
-  id: string;
-  order_date: string | null;
-  cost_per_unit: number;
-  quantity_remaining: number;
-}
-
 interface Props {
   productId: string;
   weightG: number;
@@ -62,7 +54,6 @@ interface Props {
   orders: PurchaseOrderEntry[];
   isAdmin?: boolean;
   canReceive?: boolean;
-  existingLots?: ExistingLot[];
 }
 
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
@@ -79,16 +70,12 @@ export function PurchaseOrderSection({
   orders,
   isAdmin = true,
   canReceive = true,
-  existingLots = [],
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [receivingId, setReceivingId] = useState<string | null>(null);
-  const [lotPanelOrderId, setLotPanelOrderId] = useState<string | null>(null);
-  const [lotMode, setLotMode] = useState<"new" | "existing">("new");
-  const [selectedLotId, setSelectedLotId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,7 +160,7 @@ export function PurchaseOrderSection({
       return;
     }
 
-    toast({ variant: "success", title: "Pedido registrado — se añadirá al stock al recibirlo" });
+    toast({ variant: "success", title: "Pedido registrado — lote creado y disponible para asignar a ventas" });
     reset({
       order_date: today(),
       supplier_name: null,
@@ -189,24 +176,9 @@ export function PurchaseOrderSection({
     router.refresh();
   }
 
-  function openLotPanel(orderId: string) {
-    setLotPanelOrderId(orderId);
-    setLotMode("new");
-    setSelectedLotId("");
-  }
-
-  function closeLotPanel() {
-    setLotPanelOrderId(null);
-    setLotMode("new");
-    setSelectedLotId("");
-  }
-
-  async function confirmReceived() {
-    if (!lotPanelOrderId) return;
-    const targetLotId = lotMode === "existing" && selectedLotId ? selectedLotId : undefined;
-    setReceivingId(lotPanelOrderId);
-    closeLotPanel();
-    const result = await markPurchaseOrderReceivedAction(lotPanelOrderId, productId, targetLotId);
+  async function markReceived(orderId: string) {
+    setReceivingId(orderId);
+    const result = await markPurchaseOrderReceivedAction(orderId, productId);
     setReceivingId(null);
     if (!result.success) {
       toast({ variant: "error", title: "No se pudo registrar", description: result.error });
@@ -358,83 +330,6 @@ export function PurchaseOrderSection({
         </div>
       )}
 
-      {/* Inline lot selection panel */}
-      {lotPanelOrderId && (
-        <div className="rounded-md border border-gold/30 bg-gold/5 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-sm uppercase tracking-widest text-text-muted">
-              Seleccionar lote de destino
-            </h3>
-            <button type="button" onClick={closeLotPanel} className="text-text-muted hover:text-primary">
-              <X className="h-4 w-4" strokeWidth={1.5} />
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="lot-mode"
-                value="new"
-                checked={lotMode === "new"}
-                onChange={() => setLotMode("new")}
-                className="accent-[var(--color-gold)]"
-              />
-              <span className="text-sm text-text">Crear nuevo lote</span>
-            </label>
-            {existingLots.length > 0 && (
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="lot-mode"
-                  value="existing"
-                  checked={lotMode === "existing"}
-                  onChange={() => setLotMode("existing")}
-                  className="accent-[var(--color-gold)]"
-                />
-                <span className="text-sm text-text">Añadir a lote existente</span>
-              </label>
-            )}
-          </div>
-
-          {lotMode === "existing" && existingLots.length > 0 && (
-            <div className="space-y-1">
-              <div className="text-[13px] font-medium text-primary mb-1.5">Lote</div>
-              <select
-                value={selectedLotId}
-                onChange={(e) => setSelectedLotId(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30"
-              >
-                <option value="">— Seleccionar lote —</option>
-                {existingLots.map((lot) => (
-                  <option key={lot.id} value={lot.id}>
-                    {lot.order_date ? formatDate(lot.order_date) : "Sin fecha"} · {formatCurrency(lot.cost_per_unit)}/u · {lot.quantity_remaining} restantes
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={closeLotPanel}
-              className="px-3 py-1.5 text-sm text-text-muted hover:text-primary"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={confirmReceived}
-              disabled={lotMode === "existing" && !selectedLotId}
-              className="inline-flex items-center gap-1.5 rounded-md bg-gold px-4 py-1.5 text-sm font-medium text-surface transition-colors hover:bg-gold-deep disabled:opacity-40"
-            >
-              <Check className="h-3.5 w-3.5" strokeWidth={2} />
-              Confirmar recepción
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="rounded-md border border-border bg-surface">
         {orders.length === 0 ? (
@@ -493,7 +388,7 @@ export function PurchaseOrderSection({
                       ) : (
                         <button
                           type="button"
-                          onClick={() => openLotPanel(order.id)}
+                          onClick={() => markReceived(order.id)}
                           className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/5 px-2 py-0.5 text-xs text-gold-deep transition-colors hover:bg-gold/10"
                         >
                           <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />

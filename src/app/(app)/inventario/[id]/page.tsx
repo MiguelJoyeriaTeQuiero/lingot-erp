@@ -12,7 +12,6 @@ import { StockAdjustForm } from "./stock-adjust-form";
 import {
   PurchaseOrderSection,
   type PurchaseOrderEntry,
-  type ExistingLot,
 } from "./purchase-order-section";
 import {
   ProfitabilitySection,
@@ -103,13 +102,6 @@ export default async function ProductoDetailPage({
     .select("*")
     .eq("product_id", params.id)
     .order("order_date", { ascending: false });
-
-  const existingLots: ExistingLot[] = (rawLots ?? []).map((l) => ({
-    id: l.id,
-    order_date: l.order_date,
-    cost_per_unit: Number(l.cost_per_unit),
-    quantity_remaining: Number(l.quantity_remaining),
-  }));
 
   let lotProfitRows: LotProfitRow[] = (rawLots ?? []).map((l) => ({
     id: l.id,
@@ -293,7 +285,6 @@ export default async function ProductoDetailPage({
           orders={ordersWithDelta}
           isAdmin={isAdmin}
           canReceive={canReceive}
-          existingLots={existingLots}
         />
       )}
 
