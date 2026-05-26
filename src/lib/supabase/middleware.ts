@@ -36,6 +36,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/public");
+  const isCatalogRoute = pathname.startsWith("/catalogo");
 
   if (isPublicAsset) return supabaseResponse;
 
@@ -47,7 +48,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Sin sesión y ruta protegida → /login
-  if (!user && !isAuthRoute) {
+  // El catálogo público (/catalogo) es accesible sin autenticación
+  if (!user && !isAuthRoute && !isCatalogRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
