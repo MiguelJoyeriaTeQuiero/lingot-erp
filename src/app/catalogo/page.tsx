@@ -19,7 +19,7 @@ export default async function CatalogoPage() {
     supabase
       .from("products")
       .select(
-        "id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, cost_price, image_urls, active, stock_current, catalog_out_of_stock"
+        "id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, cost_price, retail_markup_pct, image_urls, active, stock_current, catalog_out_of_stock"
       )
       .eq("active", true)
       .order("name"),

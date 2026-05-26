@@ -53,6 +53,12 @@ const config: Config = {
           "Arial",
           "sans-serif",
         ],
+        serif: [
+          "var(--font-catalog-serif)",
+          "Georgia",
+          "Times New Roman",
+          "serif",
+        ],
       },
       borderColor: {
         DEFAULT: "var(--color-border)",
@@ -73,8 +79,10 @@ const config: Config = {
         ultra: "0.28em",
       },
       transitionTimingFunction: {
-        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "out-quart": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "out-expo":   "cubic-bezier(0.16, 1, 0.3, 1)",
+        "out-quart":  "cubic-bezier(0.25, 1, 0.5, 1)",
+        "spring":     "cubic-bezier(0.32, 0.72, 0, 1)",
+        "overshoot":  "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
     },
   },
