@@ -19,7 +19,7 @@ export default async function CatalogoPage() {
     supabase
       .from("products")
       .select(
-        "id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, cost_price, retail_markup_pct, image_urls, active, stock_current, catalog_out_of_stock"
+        "id, name, sku, description, metal, weight_g, purity, markup_per_gram, markup_per_piece, cost_price, retail_markup_pct, igic_rate, image_urls, active, stock_current, catalog_out_of_stock"
       )
       .eq("active", true)
       .order("name"),
@@ -101,9 +101,18 @@ export default async function CatalogoPage() {
     const retailMarkupPct = Number(
       (p as typeof p & { retail_markup_pct?: number }).retail_markup_pct ?? 0
     );
+    const igicRate = Number(
+      (p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0
+    );
+    const applyIgic = (price: number) =>
+      igicRate > 0
+        ? Math.round(price * (1 + igicRate / 100) * 100) / 100
+        : price;
+
+    const wholesaleFinal = wholesalePrice != null ? applyIgic(wholesalePrice) : null;
     const retailPrice =
       wholesalePrice != null && retailMarkupPct > 0
-        ? Math.round(wholesalePrice * (1 + retailMarkupPct / 100) * 100) / 100
+        ? applyIgic(Math.round(wholesalePrice * (1 + retailMarkupPct / 100) * 100) / 100)
         : null;
 
     return {
@@ -115,7 +124,7 @@ export default async function CatalogoPage() {
       weight_g:    Number(p.weight_g),
       purity:      Number(p.purity),
       image_urls:  (p as typeof p & { image_urls?: string[] }).image_urls ?? [],
-      price:       isWholesale ? wholesalePrice : retailPrice,
+      price:       isWholesale ? wholesaleFinal : retailPrice,
       inStock:
         Number(p.stock_current) > 0 &&
         !(p as typeof p & { catalog_out_of_stock?: boolean }).catalog_out_of_stock,
