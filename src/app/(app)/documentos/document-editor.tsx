@@ -39,6 +39,7 @@ interface DocumentEditorProps {
   products: ProductRow[];
   categories: ProductCategoryRow[];
   lots: StockLotRow[];
+  pendingByProduct?: Record<string, number>;
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
 }
@@ -77,6 +78,7 @@ export function DocumentEditor({
   products,
   categories,
   lots,
+  pendingByProduct = {},
   spotByMetal,
   globalMarkupPct,
 }: DocumentEditorProps) {
@@ -461,6 +463,9 @@ export function DocumentEditor({
                   )
                 : [];
               const hasLots = isPhysical && productLots.length > 0;
+              const transitQty = currentProductId ? (pendingByProduct[currentProductId] ?? 0) : 0;
+              const stockCurrent = currentProduct ? Number((currentProduct as typeof currentProduct & { stock_current?: number }).stock_current ?? 0) : 0;
+              const showTransitBadge = isPhysical && transitQty > 0 && stockCurrent <= 0;
 
               return (
                 <div
@@ -483,6 +488,13 @@ export function DocumentEditor({
                       />
                     )}
                   />
+                  {showTransitBadge && (
+                    <div className="flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium uppercase tracking-widest"
+                      style={{ background: "rgba(184,138,61,0.08)", color: "#8b6628", border: "1px solid rgba(184,138,61,0.22)" }}>
+                      <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#b88a3d" }} />
+                      {transitQty} u en tránsito
+                    </div>
+                  )}
                   {hasLots && (
                     <Controller
                       control={control}

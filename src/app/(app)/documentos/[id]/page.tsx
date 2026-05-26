@@ -59,6 +59,7 @@ export default async function DocumentoDetailPage({
     lotsResult,
     originalResult,
     rectificationResult,
+    pendingOrdersResult,
   ] = await Promise.all([
     supabase
       .from("document_lines")
@@ -96,6 +97,7 @@ export default async function DocumentoDetailPage({
           .eq("rectification_of_invoice_id", doc.id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    supabase.from("purchase_orders").select("product_id, quantity, received").eq("received", false),
   ]);
 
   const globalMarkupPct = Number(
@@ -108,6 +110,13 @@ export default async function DocumentoDetailPage({
   const docClient = allClients.find((c) => c.id === doc.client_id) ?? null;
   const company = companyResult.data ?? null;
   const allLots = lotsResult.data ?? [];
+
+  const pendingByProduct: Record<string, number> = {};
+  for (const o of pendingOrdersResult.data ?? []) {
+    if (o.product_id) {
+      pendingByProduct[o.product_id] = (pendingByProduct[o.product_id] ?? 0) + Number(o.quantity);
+    }
+  }
   const canDownload = doc.status !== "borrador" && docClient !== null;
   const canConvert =
     doc.doc_type === "albaran" &&
@@ -235,6 +244,7 @@ export default async function DocumentoDetailPage({
           products={productsResult.data ?? []}
           categories={categoriesResult.data ?? []}
           lots={allLots}
+          pendingByProduct={pendingByProduct}
           spotByMetal={{
             oro: spots.oro?.price_eur_per_g ?? null,
             plata: spots.plata?.price_eur_per_g ?? null,

@@ -53,7 +53,7 @@ const sections: NavSection[] = [
       { href: "/libro",         label: "Libro",         icon: BookOpen,   hint: "05", roles: ["admin"] },
       { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp, hint: "06", roles: ["admin"] },
       { href: "/accesos",       label: "Acceso catálogo", icon: KeyRound,    hint: "07", roles: ["admin"] },
-      { href: "/reservas",      label: "Reservas",        icon: BookMarked,  hint: "08", roles: ["admin"] },
+      { href: "/reservas",      label: "Reservas",        icon: BookMarked,  hint: "08", roles: ["admin", "contabilidad"] },
     ],
   },
   {

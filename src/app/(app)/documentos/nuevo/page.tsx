@@ -15,7 +15,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
   const supabase = createTypedClient();
 
-  const [clientsResult, productsResult, categoriesResult, companyResult, spots, lotsResult] =
+  const [clientsResult, productsResult, categoriesResult, companyResult, spots, lotsResult, pendingOrdersResult] =
     await Promise.all([
       supabase
         .from("clients")
@@ -33,6 +33,7 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
       supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),
       getLatestSpots(),
       supabase.from("stock_lots").select("*").order("order_date", { ascending: false }),
+      supabase.from("purchase_orders").select("product_id, quantity, received").eq("received", false),
     ]);
 
   const preselectedType =
@@ -42,6 +43,13 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
     (companyResult.data as { metal_markup_pct?: number } | null)
       ?.metal_markup_pct ?? 4
   );
+
+  const pendingByProduct: Record<string, number> = {};
+  for (const o of pendingOrdersResult.data ?? []) {
+    if (o.product_id) {
+      pendingByProduct[o.product_id] = (pendingByProduct[o.product_id] ?? 0) + Number(o.quantity);
+    }
+  }
 
   const initial: DocumentInput = {
     doc_type: preselectedType,
@@ -77,6 +85,7 @@ export default async function NuevoDocumentoPage({ searchParams }: PageProps) {
         products={productsResult.data ?? []}
         categories={categoriesResult.data ?? []}
         lots={lotsResult.data ?? []}
+        pendingByProduct={pendingByProduct}
         spotByMetal={{
           oro: spots.oro?.price_eur_per_g ?? null,
           plata: spots.plata?.price_eur_per_g ?? null,

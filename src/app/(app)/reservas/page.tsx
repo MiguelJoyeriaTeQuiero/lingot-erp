@@ -22,7 +22,7 @@ export type ReservationRow = {
 };
 
 export default async function ReservasPage() {
-  await requireRole(["admin"]);
+  await requireRole(["admin", "contabilidad"]);
 
   const admin = createRawAdminClient();
 
