@@ -13,8 +13,6 @@ import type { BlogPost } from "./blog/data";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  goldSpot:       number | null;
-  silverSpot:     number | null;
   products:       CatalogProduct[];
   brandName:      string;
   year:           number;
@@ -135,7 +133,7 @@ function HeroLine({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function CatalogLanding({
-  goldSpot, silverSpot, products, brandName, year,
+  products, brandName, year,
   latestPosts,
   isLoggedIn, isWholesale, isAdmin, catalogEnabled, userName,
 }: Props) {
@@ -177,207 +175,94 @@ export function CatalogLanding({
         <CatalogScrollTransition />
         <div aria-hidden className="catalog-scan-line-light pointer-events-none absolute inset-x-0" style={{ height: "1px", zIndex: 3 }} />
 
-        {/* Top bar — padding-top clears the 58px fixed nav */}
+        {/* Top bar — year only, no brand name */}
         <div
           className="relative flex items-center justify-between px-8 sm:px-14"
           style={{
-            paddingTop: "clamp(74px, 9vh, 90px)",
+            paddingTop: "clamp(32px, 5vh, 48px)",
             zIndex:     5,
             animation:  "hero-fade-down 0.70s cubic-bezier(0.16,1,0.3,1) 60ms both",
           }}
         >
           <span className="font-mono text-[9px] uppercase tracking-[0.40em]"
-            style={{ color: "rgba(10,31,43,0.25)" }}>
-            {brandName}
+            style={{ color: "rgba(10,31,43,0.18)" }}>
+            {year}
           </span>
           <span className="hidden font-mono text-[9px] uppercase tracking-[0.40em] sm:block"
             style={{ color: "rgba(10,31,43,0.18)" }}>
-            Oro · Plata · {year}
+            Oro · Plata
           </span>
         </div>
 
-        {/* ── Main hero body: flex split ─────────────────────────────── */}
+        {/* ── Main hero body: centered branding ────────────────────── */}
         <div
           id="hero-content"
-          className="relative flex flex-1 items-center px-8 pb-24 pt-6 sm:px-14"
-          style={{ zIndex: 5, gap: "clamp(32px, 5vw, 80px)" }}
+          className="relative flex flex-1 flex-col items-center justify-center px-8 pb-16 pt-4 sm:px-14"
+          style={{ zIndex: 5, textAlign: "center" }}
         >
-          {/* LEFT — typography */}
-          <div style={{ flex: "1 1 0", minWidth: 0 }}>
-            <div style={{ marginBottom: "clamp(20px, 3vw, 40px)" }}>
-              <HeroLine delay={180}>
-                <span
-                  className="font-serif font-light italic select-none"
-                  style={{
-                    fontSize:      "clamp(60px, 8.5vw, 130px)",
-                    color:         "#0a1f2b",
-                    letterSpacing: "-0.03em",
-                    display:       "block",
-                    whiteSpace:    "nowrap",
-                  }}
-                >
-                  El metal
-                </span>
-              </HeroLine>
-              <HeroLine delay={340} indent>
-                <span
-                  className="font-serif font-light italic select-none"
-                  style={{
-                    fontSize:      "clamp(60px, 8.5vw, 130px)",
-                    color:         "#0a1f2b",
-                    letterSpacing: "-0.03em",
-                    display:       "block",
-                    whiteSpace:    "nowrap",
-                  }}
-                >
-                  sin ruido.
-                </span>
-              </HeroLine>
-            </div>
+          {/* Eyebrow */}
+          <div style={{ marginBottom: "clamp(16px, 2.5vw, 28px)", animation: "hero-fade-down 0.70s cubic-bezier(0.16,1,0.3,1) 100ms both" }}>
+            <span className="font-mono text-[9px] uppercase tracking-[0.50em]"
+              style={{ color: "rgba(154,114,48,0.55)" }}>
+              Metales preciosos · Alta pureza
+            </span>
+          </div>
 
-            <div style={{ animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 600ms both" }}>
-              <div className="mb-4 flex items-center gap-4" style={{ maxWidth: "min(300px, 70vw)" }}>
-                <div className="gold-shimmer-light h-px flex-1" />
-                <span className="font-mono text-[8px]" style={{ color: "rgba(154,114,48,0.35)" }}>✦</span>
-                <div className="gold-shimmer-light h-px flex-1" style={{ animationDirection: "reverse" }} />
-              </div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.40em]"
-                style={{ color: "rgba(10,31,43,0.38)" }}>
-                {products.length} {products.length === 1 ? "referencia" : "referencias"} · Oro · Plata
-              </p>
+          {/* Brand name — main hero element */}
+          <HeroLine delay={180}>
+            <span
+              className="font-serif font-light italic select-none"
+              style={{
+                fontSize:      "clamp(88px, 16vw, 220px)",
+                color:         "#0a1f2b",
+                letterSpacing: "-0.04em",
+                lineHeight:    0.88,
+                display:       "block",
+              }}
+            >
+              {brandName}
+            </span>
+          </HeroLine>
+
+          {/* Gold separator */}
+          <div style={{ margin: "clamp(22px, 3.5vw, 44px) 0", width: "clamp(200px, 30vw, 360px)", animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 380ms both" }}>
+            <div className="flex items-center gap-5">
+              <div className="gold-shimmer-light h-px flex-1" />
+              <span className="font-mono text-[8px]" style={{ color: "rgba(154,114,48,0.40)" }}>✦</span>
+              <div className="gold-shimmer-light h-px flex-1" style={{ animationDirection: "reverse" }} />
             </div>
           </div>
 
-          {/* RIGHT — live price card */}
-          <div
-            className="hidden lg:flex"
-            style={{
-              flex:           "0 0 auto",
-              width:          "clamp(240px, 22vw, 320px)",
-              justifyContent: "center",
-              position:       "relative",
-              animation:      "hero-card-in 1.0s cubic-bezier(0.16,1,0.3,1) 650ms both",
-            }}
-          >
-            {/* Au watermark behind card */}
-            <div
-              aria-hidden
+          {/* Tagline */}
+          <HeroLine delay={340}>
+            <span
+              className="font-serif font-light italic select-none"
               style={{
-                position:       "absolute",
-                inset:          "-40px",
-                display:        "flex",
-                alignItems:     "center",
-                justifyContent: "center",
-                fontFamily:     "var(--font-catalog-serif, Georgia, serif)",
-                fontWeight:     300,
-                fontStyle:      "italic",
-                fontSize:       "clamp(160px, 20vw, 260px)",
-                color:          "rgba(154,114,48,0.055)",
-                userSelect:     "none",
-                letterSpacing:  "-0.05em",
-                lineHeight:     1,
-                pointerEvents:  "none",
+                fontSize:      "clamp(24px, 3.8vw, 52px)",
+                color:         "rgba(10,31,43,0.48)",
+                letterSpacing: "-0.02em",
+                lineHeight:    1.1,
+                display:       "block",
               }}
             >
-              Au
-            </div>
+              El metal sin ruido.
+            </span>
+          </HeroLine>
 
-            {/* Double-Bezel price card */}
-            <div
-              style={{
-                position:            "relative",
-                zIndex:              2,
-                padding:             "4px",
-                borderRadius:        "28px",
-                background:          "rgba(249,244,236,0.75)",
-                border:              "1px solid rgba(154,114,48,0.18)",
-                backdropFilter:      "blur(24px)",
-                WebkitBackdropFilter:"blur(24px)",
-                boxShadow:           "0 24px 64px -16px rgba(10,31,43,0.12), 0 4px 16px -4px rgba(154,114,48,0.10)",
-                animation:           "heroFloat 6s ease-in-out infinite",
-                width:               "100%",
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: "24px",
-                  background:   "rgba(255,255,255,0.85)",
-                  boxShadow:    "inset 0 1px 0 rgba(255,255,255,0.95)",
-                  padding:      "28px 24px",
-                }}
-              >
-                {/* Header */}
-                <div style={{ marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid rgba(10,31,43,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontFamily: "monospace", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.38em", color: "rgba(10,31,43,0.30)", marginBottom: "3px" }}>
-                      Precio spot
-                    </div>
-                    <div style={{ fontFamily: "monospace", fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.28em", color: "rgba(10,31,43,0.18)" }}>
-                      En tiempo real
-                    </div>
-                  </div>
-                  <span className="live-dot-light h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#9a7230" }} />
-                </div>
-
-                {/* Gold row */}
-                {goldSpot != null && (
-                  <div style={{ marginBottom: "18px" }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: "5px" }}>
-                        <span style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontWeight: 300, fontStyle: "italic", fontSize: "clamp(26px, 2.6vw, 34px)", color: "rgba(154,114,48,0.82)", letterSpacing: "-0.03em", lineHeight: 1 }}>Au</span>
-                        <span style={{ fontFamily: "monospace", fontSize: "9px", color: "rgba(154,114,48,0.42)", letterSpacing: "0.12em" }}>79</span>
-                      </div>
-                      <span style={{ fontFamily: "monospace", fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(10,31,43,0.25)" }}>Oro</span>
-                    </div>
-                    <div style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontWeight: 300, fontSize: "clamp(20px, 2.2vw, 30px)", color: "#0a1f2b", letterSpacing: "-0.03em", lineHeight: 1 }}>
-                      {formatCurrency(goldSpot)}
-                      <span style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(10,31,43,0.28)", marginLeft: "3px" }}>/g</span>
-                    </div>
-                  </div>
-                )}
-
-                {goldSpot != null && silverSpot != null && (
-                  <div style={{ height: "1px", background: "linear-gradient(to right, rgba(154,114,48,0.14), transparent)", marginBottom: "18px" }} />
-                )}
-
-                {/* Silver row */}
-                {silverSpot != null && (
-                  <div style={{ marginBottom: "8px" }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: "5px" }}>
-                        <span style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontWeight: 300, fontStyle: "italic", fontSize: "clamp(26px, 2.6vw, 34px)", color: "rgba(42,96,112,0.65)", letterSpacing: "-0.03em", lineHeight: 1 }}>Ag</span>
-                        <span style={{ fontFamily: "monospace", fontSize: "9px", color: "rgba(42,96,112,0.36)", letterSpacing: "0.12em" }}>47</span>
-                      </div>
-                      <span style={{ fontFamily: "monospace", fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(10,31,43,0.25)" }}>Plata</span>
-                    </div>
-                    <div style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontWeight: 300, fontSize: "clamp(20px, 2.2vw, 30px)", color: "#0a1f2b", letterSpacing: "-0.03em", lineHeight: 1 }}>
-                      {formatCurrency(silverSpot)}
-                      <span style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(10,31,43,0.28)", marginLeft: "3px" }}>/g</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div style={{ marginTop: "20px", paddingTop: "14px", borderTop: "1px solid rgba(10,31,43,0.05)", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div className="live-dot-light h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#9a7230" }} />
-                  <span style={{ fontFamily: "monospace", fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.28em", color: "rgba(10,31,43,0.22)" }}>
-                    Mercado LBMA
-                  </span>
-                </div>
-              </div>
-            </div>
+          {/* Reference count */}
+          <div style={{ marginTop: "clamp(20px, 3vw, 36px)", animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 600ms both" }}>
+            <p className="font-mono text-[9px] uppercase tracking-[0.40em]"
+              style={{ color: "rgba(10,31,43,0.28)" }}>
+              {products.length} {products.length === 1 ? "referencia" : "referencias"} · Oro · Plata
+            </p>
           </div>
         </div>
 
-        {/* Bottom bar: prices + scroll */}
+        {/* Scroll cue */}
         <div
-          className="relative flex items-end justify-between gap-4 flex-wrap px-8 pb-10 sm:px-14"
-          style={{
-            zIndex:    5,
-            animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 850ms both",
-          }}
+          className="relative flex justify-center pb-10"
+          style={{ zIndex: 5, animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 850ms both" }}
         >
-          {/* Scroll cue */}
           <div className="flex flex-col items-center gap-2.5">
             <div className="catalog-scroll-cue"
               style={{ width: "1px", height: "42px", background: "linear-gradient(to bottom, transparent, rgba(154,114,48,0.45))" }} />

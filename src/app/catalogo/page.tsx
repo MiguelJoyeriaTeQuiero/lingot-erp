@@ -131,16 +131,12 @@ export default async function CatalogoPage() {
     };
   });
 
-  const goldSpot    = spots.oro?.price_eur_per_g   ?? null;
-  const silverSpot  = spots.plata?.price_eur_per_g ?? null;
   const brandName   = (company as { trade_name?: string } | null)?.trade_name ?? "Lingot";
   const year        = new Date().getFullYear();
   const latestPosts = BLOG_POSTS.slice(0, 3);
 
   return (
     <CatalogLanding
-      goldSpot={goldSpot}
-      silverSpot={silverSpot}
       products={products}
       brandName={brandName}
       year={year}
