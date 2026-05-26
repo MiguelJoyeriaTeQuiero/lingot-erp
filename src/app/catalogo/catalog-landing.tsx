@@ -7,6 +7,7 @@ import { CatalogHeroWebGL } from "./catalog-hero-webgl";
 import { CatalogGrid, type CatalogProduct } from "./catalog-grid";
 import { CatalogLoginButton } from "./catalog-login";
 import { CatalogScrollTransition } from "./catalog-scroll-transition";
+import { TradingViewChart } from "./trading-view-chart";
 import type { BlogPost } from "./blog/data";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -376,38 +377,6 @@ export function CatalogLanding({
             animation: "hero-fade-up 0.80s cubic-bezier(0.16,1,0.3,1) 850ms both",
           }}
         >
-          {/* Price pills */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {goldSpot != null && (
-              <div style={{ padding: "3px", borderRadius: "99px", background: "rgba(154,114,48,0.06)", border: "1px solid rgba(154,114,48,0.20)" }}>
-                <div className="flex items-center gap-3 px-5 py-2.5"
-                  style={{ borderRadius: "99px", background: "rgba(255,255,255,0.60)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.80)" }}>
-                  <span className="live-dot-light h-1.5 w-1.5 rounded-full" style={{ background: "#9a7230" }} />
-                  <span className="font-mono text-[8px] uppercase tracking-[0.38em]" style={{ color: "rgba(154,114,48,0.80)" }}>Oro</span>
-                  <div className="h-3 w-px" style={{ background: "rgba(10,31,43,0.10)" }} />
-                  <span style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontSize: "19px", lineHeight: 1, letterSpacing: "-0.03em", color: "#0a1f2b" }}>
-                    {formatCurrency(goldSpot)}
-                    <span className="font-mono" style={{ fontSize: "8px", color: "rgba(10,31,43,0.30)", marginLeft: "3px" }}>/g</span>
-                  </span>
-                </div>
-              </div>
-            )}
-            {silverSpot != null && (
-              <div style={{ padding: "3px", borderRadius: "99px", background: "rgba(42,96,112,0.05)", border: "1px solid rgba(42,96,112,0.16)" }}>
-                <div className="flex items-center gap-3 px-5 py-2.5"
-                  style={{ borderRadius: "99px", background: "rgba(255,255,255,0.60)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.80)" }}>
-                  <span className="live-dot-light h-1.5 w-1.5 rounded-full" style={{ background: "#2a6070", animationDelay: "0.8s" }} />
-                  <span className="font-mono text-[8px] uppercase tracking-[0.38em]" style={{ color: "rgba(42,96,112,0.70)" }}>Plata</span>
-                  <div className="h-3 w-px" style={{ background: "rgba(10,31,43,0.10)" }} />
-                  <span style={{ fontFamily: "var(--font-catalog-serif, Georgia, serif)", fontSize: "19px", lineHeight: 1, letterSpacing: "-0.03em", color: "#0a1f2b" }}>
-                    {formatCurrency(silverSpot)}
-                    <span className="font-mono" style={{ fontSize: "8px", color: "rgba(10,31,43,0.30)", marginLeft: "3px" }}>/g</span>
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Scroll cue */}
           <div className="flex flex-col items-center gap-2.5">
             <div className="catalog-scroll-cue"
@@ -418,22 +387,6 @@ export function CatalogLanding({
         </div>
       </header>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          TICKER
-      ══════════════════════════════════════════════════════════════════ */}
-      {(goldSpot != null || silverSpot != null) && (
-        <div className="overflow-hidden"
-          style={{ background: "#0a1f2b", borderTop: "1px solid rgba(10,31,43,0.12)", borderBottom: "1px solid rgba(10,31,43,0.12)", padding: "9px 0" }}>
-          <div className="ticker-track inline-flex whitespace-nowrap">
-            {Array.from({ length: 18 }, (_, i) => (
-              <span key={i} className="inline-flex shrink-0 items-center gap-6 px-8 font-mono text-[8px] uppercase tracking-[0.32em]">
-                {goldSpot   != null && <><span style={{ color: "rgba(184,144,58,0.80)" }}>Oro</span><span style={{ color: "rgba(255,255,255,0.35)" }}>{formatCurrency(goldSpot)} /g</span><span style={{ color: "rgba(184,144,58,0.22)" }}>✦</span></>}
-                {silverSpot != null && <><span style={{ color: "rgba(140,195,210,0.65)" }}>Plata</span><span style={{ color: "rgba(255,255,255,0.35)" }}>{formatCurrency(silverSpot)} /g</span><span style={{ color: "rgba(184,144,58,0.22)" }}>✦</span></>}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════════════════════════════════
           STATEMENT — dark, cinematic
@@ -483,6 +436,22 @@ export function CatalogLanding({
       </section>
 
 
+
+      {/* ══════════════════════════════════════════════════════════════════
+          GOLD CHART
+      ══════════════════════════════════════════════════════════════════ */}
+      <section data-reveal className="px-6 sm:px-14"
+        style={{ paddingTop: "clamp(64px, 10vw, 100px)", paddingBottom: "clamp(64px, 10vw, 100px)", background: "#F4EDE0" }}>
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 flex items-center gap-4">
+            <div className="h-px w-10" style={{ background: "linear-gradient(to right, rgba(154,114,48,0.45), transparent)" }} />
+            <span className="font-mono text-[9px] uppercase tracking-[0.42em]" style={{ color: "rgba(154,114,48,0.60)" }}>Oro · XAU/EUR · Onza troy</span>
+          </div>
+          <div style={{ height: "460px", borderRadius: "16px", overflow: "hidden", border: "1px solid rgba(154,114,48,0.14)", background: "#F9F4EC" }}>
+            <TradingViewChart />
+          </div>
+        </div>
+      </section>
 
       {/* ══════════════════════════════════════════════════════════════════
           PRODUCT GRID
