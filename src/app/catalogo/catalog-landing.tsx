@@ -482,48 +482,6 @@ export function CatalogLanding({
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          FULL-BLEED IMAGE
-      ══════════════════════════════════════════════════════════════════ */}
-      <section data-reveal
-        style={{ position: "relative", overflow: "hidden", height: "clamp(260px, 46vw, 560px)" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=1600&q=80"
-          alt="Lingotes de oro de alta pureza certificados"
-          style={{
-            width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block",
-            filter: "sepia(0.38) saturate(0.78) brightness(0.84) contrast(1.04)",
-          }}
-        />
-        {/* Parchment tint — mix-blend-mode multiply warm-coats the photo */}
-        <div aria-hidden style={{
-          position:  "absolute", inset: 0,
-          background: "rgba(232, 218, 190, 0.42)",
-          mixBlendMode: "multiply",
-        }} />
-        {/* Top fade: melts into the section above */}
-        <div aria-hidden style={{
-          position:   "absolute", inset: 0,
-          background: "linear-gradient(to bottom, #F4EDE0 0%, transparent 22%, transparent 78%, #F4EDE0 100%)",
-        }} />
-        {/* Side vignette for depth */}
-        <div aria-hidden style={{
-          position:   "absolute", inset: 0,
-          background: "linear-gradient(to right, rgba(10,31,43,0.18) 0%, transparent 30%, transparent 70%, rgba(10,31,43,0.14) 100%)",
-          mixBlendMode: "multiply",
-        }} />
-        {/* Caption pill */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, padding: "clamp(18px, 3vw, 36px)", zIndex: 2 }}>
-          <div style={{ padding: "3px", borderRadius: "99px", background: "rgba(249,244,236,0.90)", border: "1px solid rgba(255,255,255,0.70)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "inline-flex" }}>
-            <div style={{ borderRadius: "99px", background: "rgba(255,255,255,0.60)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.90)", padding: "10px 20px", display: "flex", alignItems: "center", gap: "12px" }}>
-              <span className="font-mono text-[9px] uppercase tracking-[0.38em]" style={{ color: "rgba(154,114,48,0.75)" }}>Nuestros metales</span>
-              <span style={{ width: "1px", height: "14px", background: "rgba(10,31,43,0.12)", display: "inline-block" }} />
-              <span className="font-serif italic text-[14px]" style={{ color: "rgba(10,31,43,0.58)" }}>Oro · Plata · Alta pureza</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
 
       {/* ══════════════════════════════════════════════════════════════════
