@@ -124,7 +124,7 @@ export default async function CatalogoPage() {
       weight_g:    Number(p.weight_g),
       purity:      Number(p.purity),
       image_urls:  (p as typeof p & { image_urls?: string[] }).image_urls ?? [],
-      price:       isWholesale ? wholesaleFinal : retailPrice,
+      price:       isWholesale ? wholesaleFinal : (p.metal === "plata" ? retailPrice : null),
       inStock:
         Number(p.stock_current) > 0 &&
         !(p as typeof p & { catalog_out_of_stock?: boolean }).catalog_out_of_stock,
@@ -135,8 +135,6 @@ export default async function CatalogoPage() {
   const silverSpot  = spots.plata?.price_eur_per_g ?? null;
   const brandName   = (company as { trade_name?: string } | null)?.trade_name ?? "Lingot";
   const year        = new Date().getFullYear();
-  const goldCount   = products.filter((p) => p.metal === "oro").length;
-  const silverCount = products.filter((p) => p.metal === "plata").length;
   const latestPosts = BLOG_POSTS.slice(0, 3);
 
   return (
@@ -146,8 +144,6 @@ export default async function CatalogoPage() {
       products={products}
       brandName={brandName}
       year={year}
-      goldCount={goldCount}
-      silverCount={silverCount}
       latestPosts={latestPosts}
       isLoggedIn={!!user}
       isWholesale={isWholesale}

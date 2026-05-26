@@ -17,8 +17,6 @@ interface Props {
   products:       CatalogProduct[];
   brandName:      string;
   year:           number;
-  goldCount:      number;
-  silverCount:    number;
   latestPosts:    BlogPost[];
   isLoggedIn:     boolean;
   isWholesale:    boolean;
@@ -137,7 +135,7 @@ function HeroLine({
 
 export function CatalogLanding({
   goldSpot, silverSpot, products, brandName, year,
-  goldCount, silverCount, latestPosts,
+  latestPosts,
   isLoggedIn, isWholesale, isAdmin, catalogEnabled, userName,
 }: Props) {
 
@@ -478,35 +476,9 @@ export function CatalogLanding({
             maxWidth:      "24ch",
             marginBottom:  "clamp(40px, 6vw, 72px)",
           }}>
-            "El valor del oro no está en su brillo. Está en su resistencia a todo lo que intenta erosionarlo."
+            "El oro es dinero. El resto es crédito (John P. Morgan (1912))"
           </p>
 
-          {/* Stats strip */}
-          <div className="flex flex-wrap gap-x-12 gap-y-8 lg:gap-x-20">
-            {[
-              { label: "Pureza máxima",    value: "999.9‰"           },
-              { label: "Norma ref.",        value: "LBMA"             },
-              { label: "Referencias",      value: `${products.length}`},
-              ...(goldCount   > 0 ? [{ label: "Piezas oro",   value: `${goldCount}`   }] : []),
-              ...(silverCount > 0 ? [{ label: "Piezas plata", value: `${silverCount}` }] : []),
-            ].map((s) => (
-              <div key={s.label}>
-                <div style={{ fontFamily: "monospace", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.32em", color: "rgba(184,144,58,0.50)", marginBottom: "6px" }}>
-                  {s.label}
-                </div>
-                <div style={{
-                  fontFamily:    "var(--font-catalog-serif, Georgia, serif)",
-                  fontWeight:    300,
-                  fontSize:      "clamp(26px, 3.2vw, 42px)",
-                  color:         "rgba(249,244,236,0.82)",
-                  letterSpacing: "-0.02em",
-                  lineHeight:    1,
-                }}>
-                  {s.value}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -553,54 +525,6 @@ export function CatalogLanding({
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          NOSOTROS TEASER
-      ══════════════════════════════════════════════════════════════════ */}
-      <section data-reveal className="px-6 sm:px-14"
-        style={{ paddingTop: "clamp(80px, 12vw, 120px)", paddingBottom: "clamp(80px, 12vw, 120px)", background: "#F4EDE0", borderTop: "1px solid rgba(10,31,43,0.06)", borderBottom: "1px solid rgba(10,31,43,0.06)" }}>
-        <div className="mx-auto max-w-7xl">
-          <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-24">
-            <div>
-              <div className="mb-6 flex items-center gap-4">
-                <div className="h-px w-10" style={{ background: "linear-gradient(to right, rgba(154,114,48,0.45), transparent)" }} />
-                <span className="font-mono text-[9px] uppercase tracking-[0.42em]" style={{ color: "rgba(154,114,48,0.60)" }}>Quiénes somos</span>
-              </div>
-              <h2 className="font-serif font-light italic"
-                style={{ fontSize: "clamp(30px, 5vw, 56px)", color: "#0a1f2b", lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: "24px" }}>
-                El metal sin la retórica
-              </h2>
-              <p style={{ fontSize: "clamp(14px, 1.8vw, 16px)", color: "rgba(10,31,43,0.55)", lineHeight: 1.75, maxWidth: "44ch", marginBottom: "32px" }}>
-                Especialistas en metales preciosos de alta pureza. Precio transparente sobre el spot de mercado, cadena de custodia trazable y discreción absoluta en cada operación.
-              </p>
-              <Link href="/catalogo/nosotros" className="cta-btn-dark"
-                style={{ display: "inline-flex", alignItems: "center", gap: "10px", padding: "12px 18px 12px 22px", borderRadius: "99px", color: "rgba(249,244,236,0.88)", fontFamily: "monospace", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.28em", textDecoration: "none", boxShadow: "0 4px 20px -4px rgba(10,31,43,0.22)" }}>
-                <span>Conoce nuestra historia</span>
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "99px", background: "rgba(249,244,236,0.12)", fontSize: "11px" }}>↗</span>
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: "999.9", unit: "‰",   label: "Pureza máxima garantizada" },
-                { value: "LBMA",  unit: "",    label: "Refinerías certificadas"    },
-                { value: "100%",  unit: "",    label: "Trazabilidad de cada lote"  },
-                { value: "Real",  unit: "time",label: "Precios al momento del spot"},
-              ].map((s) => (
-                <div key={s.label} style={{ padding: "3px", borderRadius: "20px", background: "rgba(154,114,48,0.04)", border: "1px solid rgba(154,114,48,0.12)" }}>
-                  <div style={{ borderRadius: "17px", background: "#FFFFFF", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.90)", padding: "24px 20px" }}>
-                    <div className="font-serif font-light leading-none tracking-[-0.03em]"
-                      style={{ fontSize: "clamp(24px, 3.5vw, 36px)", color: "rgba(154,114,48,0.70)", marginBottom: "8px" }}>
-                      {s.value}
-                      {s.unit && <span className="font-mono" style={{ fontSize: "0.45em", letterSpacing: "0.1em", marginLeft: "3px", verticalAlign: "middle" }}>{s.unit}</span>}
-                    </div>
-                    <div className="font-mono text-[8px] uppercase tracking-[0.25em]"
-                      style={{ color: "rgba(10,31,43,0.35)", lineHeight: 1.4 }}>{s.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ══════════════════════════════════════════════════════════════════
           PRODUCT GRID
