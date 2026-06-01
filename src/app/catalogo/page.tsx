@@ -7,6 +7,10 @@ import { BLOG_POSTS } from "./blog/data";
 
 export const dynamic = "force-dynamic";
 
+// IGIC incrementado de Canarias aplicado siempre al precio de la plata mostrado
+// en la web, con independencia del igic_rate configurado en cada producto.
+const SILVER_IGIC_RATE = 15;
+
 export default async function CatalogoPage() {
   const supabase = createTypedClient();
 
@@ -101,9 +105,10 @@ export default async function CatalogoPage() {
     const retailMarkupPct = Number(
       (p as typeof p & { retail_markup_pct?: number }).retail_markup_pct ?? 0
     );
-    const igicRate = Number(
-      (p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0
-    );
+    const igicRate =
+      p.metal === "plata"
+        ? SILVER_IGIC_RATE
+        : Number((p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0);
     const applyIgic = (price: number) =>
       igicRate > 0
         ? Math.round(price * (1 + igicRate / 100) * 100) / 100
@@ -124,7 +129,7 @@ export default async function CatalogoPage() {
       weight_g:    Number(p.weight_g),
       purity:      Number(p.purity),
       image_urls:  (p as typeof p & { image_urls?: string[] }).image_urls ?? [],
-      price:       isWholesale ? wholesaleFinal : (p.metal === "plata" ? retailPrice : null),
+      price:       isWholesale ? wholesaleFinal : retailPrice,
       inStock:
         Number(p.stock_current) > 0 &&
         !(p as typeof p & { catalog_out_of_stock?: boolean }).catalog_out_of_stock,

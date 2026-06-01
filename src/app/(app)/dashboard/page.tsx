@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
+import { stockValueFromLots } from "@/lib/inventory";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { requireRole } from "@/lib/require-role";
 import { KpiPdfButton } from "./kpi-pdf-button";
@@ -96,10 +97,7 @@ export default async function DashboardPage() {
   );
   const issuedCount = documents.filter((d) => d.status !== "borrador").length;
   const activeClients = clients.filter((c) => c.active).length;
-  const stockValue = allLots.reduce(
-    (sum, l) => sum + Number(l.cost_per_unit) * Number(l.quantity_remaining),
-    0
-  );
+  const stockValue = stockValueFromLots(allLots);
 
   const recent = documents.slice(0, 6);
 

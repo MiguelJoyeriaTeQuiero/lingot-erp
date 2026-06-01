@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { downloadDocumentPdf } from "@/lib/pdf/document-pdf";
+import { getClientDocumentPdfAction } from "./actions";
 
 interface Props {
   user: { email: string; name: string };
@@ -583,6 +585,57 @@ function MisReservas({ reservations }: { reservations: Props["reservations"] }) 
 
 // ── Mi histórico ──────────────────────────────────────────────────────────────
 
+function DownloadInvoiceButton({ documentId }: { documentId: string }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getClientDocumentPdfAction(documentId);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      await downloadDocumentPdf(result.payload);
+    } catch {
+      setError("No se pudo generar el PDF.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        style={{
+          fontFamily:    "monospace",
+          fontSize:      "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.16em",
+          color:         loading ? "rgba(10,31,43,0.30)" : "#9a7230",
+          background:    "rgba(154,114,48,0.06)",
+          border:        "1px solid rgba(154,114,48,0.22)",
+          borderRadius:  "999px",
+          padding:       "6px 14px",
+          cursor:        loading ? "default" : "pointer",
+        }}
+      >
+        {loading ? "Generando…" : "Descargar PDF"}
+      </button>
+      {error && (
+        <span style={{ fontFamily: "monospace", fontSize: "9px", color: "#b4452f" }}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function MiHistorico({ documents }: { documents: Props["documents"] }) {
   if (documents.length === 0) {
     return (
@@ -684,6 +737,7 @@ function MiHistorico({ documents }: { documents: Props["documents"] }) {
               }}>
                 {doc.total != null ? formatCurrency(doc.total) : "—"}
               </span>
+              <DownloadInvoiceButton documentId={doc.id} />
             </div>
           </div>
         </div>

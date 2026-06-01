@@ -384,7 +384,7 @@ async function generatePdf(data: KpiReportData) {
 
   // Almacén summary boxes
   const aW = (MR - ML) / 3 - 2;
-  kpiBox(ML, y, aW, 18, "Valor a coste", eur(data.stockValorTotal, 0), "stock × coste medio");
+  kpiBox(ML, y, aW, 18, "Valor a coste", eur(data.stockValorTotal, 0), "coste real de lotes");
   kpiBox(ML + aW + 3, y, aW, 18, "Valor a PVP", eur(data.stockPrecioTotal, 0), "a precio de venta actual");
   kpiBox(ML + (aW + 3) * 2, y, aW, 18, "Potencial", eur(data.stockPrecioTotal - data.stockValorTotal, 0), "margen latente en stock");
   y += 26;

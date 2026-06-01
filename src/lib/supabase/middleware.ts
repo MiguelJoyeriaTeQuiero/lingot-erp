@@ -35,7 +35,11 @@ export async function updateSession(request: NextRequest) {
   const isPublicAsset =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api/public");
+    pathname.startsWith("/api/public") ||
+    // Los cron de Vercel llegan sin cookies de sesión; el propio handler
+    // valida la autorización (x-vercel-cron / CRON_SECRET). Sin esto el
+    // middleware los redirige a /login y la actualización nunca se ejecuta.
+    pathname.startsWith("/api/cron");
   const isCatalogRoute = pathname.startsWith("/catalogo");
 
   if (isPublicAsset) return supabaseResponse;

@@ -3,6 +3,7 @@
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
 import { computeUnitPrice } from "@/lib/pricing";
+import { stockValueFromLots, stockValuationByProduct } from "@/lib/inventory";
 
 export interface KpiReportData {
   from: string;
@@ -176,32 +177,15 @@ export async function fetchKpiReport(
       totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
     // ── ALMACÉN SNAPSHOT ─────────────────────────────────────────────────────
-    // Agrupar lots por producto
-    const lotsByProduct = new Map<
-      string,
-      { costeUnit: number; qty: number }[]
-    >();
-    for (const lot of lots) {
-      const arr = lotsByProduct.get(lot.product_id) ?? [];
-      arr.push({
-        costeUnit: Number(lot.cost_per_unit),
-        qty: Number(lot.quantity_remaining),
-      });
-      lotsByProduct.set(lot.product_id, arr);
-    }
+    // Valoración a coste por lotes (fuente de verdad compartida con el dashboard).
+    const valuationByProduct = stockValuationByProduct(lots);
 
     const stockRows = products
-      .filter((p) => p.active)
       .map((p) => {
-        const productLots = lotsByProduct.get(p.id) ?? [];
-        const totalQtyLots = productLots.reduce((s, l) => s + l.qty, 0);
-        const weightedCost =
-          totalQtyLots > 0
-            ? productLots.reduce((s, l) => s + l.costeUnit * l.qty, 0) /
-              totalQtyLots
-            : 0;
+        const valuation = valuationByProduct.get(p.id);
+        const weightedCost = valuation?.weightedUnitCost ?? 0;
+        const valorTotal = valuation?.value ?? 0;
         const stockActual = Number(p.stock_current ?? 0);
-        const valorTotal = weightedCost * stockActual;
 
         const spot = spots[p.metal as "oro" | "plata"]?.price_eur_per_g ?? null;
         const precioVenta =
@@ -229,9 +213,13 @@ export async function fetchKpiReport(
           precioVenta,
         };
       })
+      // Incluye todos los productos (activos e inactivos), pero solo los que
+      // tienen stock o valor — para no llenar el informe de filas vacías.
+      .filter((r) => r.valorTotal > 0 || r.stockActual > 0)
       .sort((a, b) => b.valorTotal - a.valorTotal);
 
-    const stockValorTotal = stockRows.reduce((s, r) => s + r.valorTotal, 0);
+    // Total a coste con el mismo helper que el dashboard → cifras idénticas.
+    const stockValorTotal = stockValueFromLots(lots);
     const stockPrecioTotal = stockRows.reduce(
       (s, r) => s + (r.precioVenta ?? 0) * r.stockActual,
       0
