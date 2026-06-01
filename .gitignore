@@ -5,3 +5,8 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Tooling artifacts (local only)
+.claire/
+.claude/worktrees/
+.playwright-mcp/
