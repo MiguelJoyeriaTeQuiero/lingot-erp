@@ -125,7 +125,6 @@ export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<
     client.tax_id
       ? `${client.type === "empresa" ? "CIF" : "NIE"}: ${client.tax_id}`
       : null,
-    client.contact_name,
     client.address,
     client.postal_code ?? null,
     client.city?.toUpperCase() ?? null,
