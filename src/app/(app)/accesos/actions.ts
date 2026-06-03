@@ -62,29 +62,37 @@ export async function createCatalogUserAction(data: {
 
 export async function updateCatalogUserAction(
   userId: string,
-  data: { full_name: string; is_wholesale: boolean; password?: string }
+  data: { full_name: string; email: string; is_wholesale: boolean; password?: string }
 ): Promise<ActionResult> {
   const guard = await requireAdmin();
   if (!guard.ok) return { success: false, error: guard.error };
 
   const admin = createRawAdminClient();
 
+  const authUpdate: { email?: string; email_confirm?: boolean; password?: string } = {};
+  if (data.email && data.email.trim()) {
+    authUpdate.email = data.email.trim();
+    authUpdate.email_confirm = true;
+  }
+  if (data.password && data.password.length >= 6) {
+    authUpdate.password = data.password;
+  }
+
+  if (Object.keys(authUpdate).length > 0) {
+    const { error: authError } = await admin.auth.admin.updateUserById(userId, authUpdate);
+    if (authError) return { success: false, error: authError.message };
+  }
+
   const { error: profileError } = await admin
     .from("profiles")
     .update({
       full_name: data.full_name,
+      email: data.email.trim(),
       is_wholesale: data.is_wholesale,
     })
     .eq("id", userId);
 
   if (profileError) return { success: false, error: profileError.message };
-
-  if (data.password && data.password.length >= 6) {
-    const { error: pwError } = await admin.auth.admin.updateUserById(userId, {
-      password: data.password,
-    });
-    if (pwError) return { success: false, error: pwError.message };
-  }
 
   revalidatePath("/accesos");
   return { success: true };

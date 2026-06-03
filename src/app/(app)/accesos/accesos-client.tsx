@@ -104,14 +104,13 @@ export function AccesosClient({ customers }: { customers: Customer[] }) {
             value={form.full_name}
             onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
           />
-          {mode === "create" && (
-            <Input
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            />
-          )}
+          <Input
+            label="Email"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            help={mode === "edit" ? "Al cambiarlo, el cliente accederá con el nuevo email" : ""}
+          />
           <Input
             label={mode === "create" ? "Contraseña" : "Nueva contraseña (dejar vacío para no cambiar)"}
             type="password"
