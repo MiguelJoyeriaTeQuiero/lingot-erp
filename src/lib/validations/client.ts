@@ -54,34 +54,48 @@ export const clientBaseSchema = z.object({
 
 export const clientParticularSchema = clientBaseSchema.extend({
   type: z.literal("particular"),
+  // El dígito de control no se valida de forma bloqueante: se permite guardar
+  // un NIF/NIE que no cuadre y se avisa en la UI (ver taxIdWarning) para
+  // corregirlo después con el cliente.
   tax_id: z
     .string()
     .trim()
     .min(1, "El NIF/NIE es obligatorio")
-    .refine(
-      (v) => validateNIF(v) || validateNIE(v),
-      { message: "NIF o NIE no válido" }
-    )
     .transform((v) => v.toUpperCase()),
   contact_name: optionalString,
 });
 
 export const clientEmpresaSchema = clientBaseSchema.extend({
   type: z.literal("empresa"),
+  // Igual que en particulares: el CIF/NIF no se valida de forma bloqueante.
   tax_id: z
     .string()
     .trim()
     .min(1, "El CIF/NIF es obligatorio")
-    .refine(
-      (v) => validateCIF(v) || validateNIF(v),
-      { message: "CIF o NIF no válido" }
-    )
     .transform((v) => v.toUpperCase()),
   contact_name: z
     .string({ required_error: "La persona de contacto es obligatoria" })
     .trim()
     .min(2, "Introduce al menos 2 caracteres"),
 });
+
+// Aviso (no bloqueante) sobre el identificador fiscal. Devuelve un mensaje
+// cuando el valor no supera la validación oficial, o null si es correcto/vacío.
+export function taxIdWarning(
+  type: "particular" | "empresa",
+  value: string | null | undefined
+): string | null {
+  const v = (value ?? "").trim();
+  if (!v) return null;
+  const valid =
+    type === "empresa"
+      ? validateCIF(v) || validateNIF(v)
+      : validateNIF(v) || validateNIE(v);
+  if (valid) return null;
+  return type === "empresa"
+    ? "El CIF/NIF no supera la validación oficial. Puedes guardarlo igualmente, pero revísalo con el cliente."
+    : "El NIF/NIE no supera la validación oficial. Puedes guardarlo igualmente, pero revísalo con el cliente.";
+}
 
 export const clientSchema = z.discriminatedUnion("type", [
   clientParticularSchema,

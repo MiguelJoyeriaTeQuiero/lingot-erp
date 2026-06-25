@@ -9,7 +9,11 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useRole } from "@/lib/hooks/useRole";
-import { clientSchema, type ClientInput } from "@/lib/validations/client";
+import {
+  clientSchema,
+  taxIdWarning,
+  type ClientInput,
+} from "@/lib/validations/client";
 import {
   createClientAction,
   updateClientAction,
@@ -61,6 +65,8 @@ export function ClientForm({ mode, defaultValues, clientId }: ClientFormProps) {
   });
 
   const type = watch("type");
+  const taxId = watch("tax_id");
+  const taxIdNote = taxIdWarning(type, taxId);
 
   const onSubmit = async (values: ClientInput) => {
     const result =
@@ -163,12 +169,21 @@ export function ClientForm({ mode, defaultValues, clientId }: ClientFormProps) {
           error={errors.name?.message}
           disabled={readOnly}
         />
-        <Input
-          label={type === "empresa" ? "CIF / NIF" : "NIF / NIE"}
-          {...register("tax_id")}
-          error={(errors as { tax_id?: { message?: string } }).tax_id?.message}
-          disabled={readOnly}
-        />
+        <div className="space-y-1.5">
+          <Input
+            label={type === "empresa" ? "CIF / NIF" : "NIF / NIE"}
+            {...register("tax_id")}
+            error={
+              (errors as { tax_id?: { message?: string } }).tax_id?.message
+            }
+            disabled={readOnly}
+          />
+          {taxIdNote && !(errors as { tax_id?: unknown }).tax_id && (
+            <p className="text-[11px] leading-snug tracking-wide text-warning">
+              {taxIdNote}
+            </p>
+          )}
+        </div>
 
         {type === "empresa" && (
           <Input
