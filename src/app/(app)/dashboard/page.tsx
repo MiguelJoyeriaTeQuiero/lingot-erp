@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
-import { stockValueFromLots } from "@/lib/inventory";
+import { stockValueFromLots, excludeInTransitLots } from "@/lib/inventory";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { requireRole } from "@/lib/require-role";
 import { KpiPdfButton } from "./kpi-pdf-button";
@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   await requireRole(["admin"]);
   const supabase = createTypedClient();
 
-  const [docsRes, clientsRes, productsRes, spots, lotsRes, linesRes] = await Promise.all([
+  const [docsRes, clientsRes, productsRes, spots, lotsRes, linesRes, transitRes] = await Promise.all([
     supabase
       .from("documents")
       .select("*")
@@ -23,10 +23,11 @@ export default async function DashboardPage() {
     supabase.from("clients").select("*").limit(500),
     supabase.from("products").select("*").limit(500),
     getLatestSpots(),
-    supabase.from("stock_lots").select("id, product_id, cost_per_unit, quantity_remaining"),
+    supabase.from("stock_lots").select("id, product_id, cost_per_unit, quantity_remaining, purchase_order_id"),
     supabase
       .from("document_lines")
       .select("lot_id, quantity, line_subtotal, document_id"),
+    supabase.from("purchase_orders").select("id").eq("received", false),
   ]);
 
   const documents = docsRes.data ?? [];
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
   const products = productsRes.data ?? [];
   const allLots = lotsRes.data ?? [];
   const allLines = linesRes.data ?? [];
+  // Lotes en tránsito (pedidos no recibidos): siguen sirviendo para asignar
+  // ventas (pre-venta) pero no cuentan en la valoración de stock.
+  const inTransitOrderIds = new Set(
+    (transitRes.data ?? []).map((o) => o.id as string)
+  );
 
   // ── Rentabilidad ─────────────────────────────────────────────────────────
   const emittedDocIds = new Set(
@@ -97,7 +103,9 @@ export default async function DashboardPage() {
   );
   const issuedCount = documents.filter((d) => d.status !== "borrador").length;
   const activeClients = clients.filter((c) => c.active).length;
-  const stockValue = stockValueFromLots(allLots);
+  const stockValue = stockValueFromLots(
+    excludeInTransitLots(allLots, inTransitOrderIds)
+  );
 
   const recent = documents.slice(0, 6);
 

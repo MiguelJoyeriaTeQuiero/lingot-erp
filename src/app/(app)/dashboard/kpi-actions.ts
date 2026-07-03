@@ -2,8 +2,12 @@
 
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
-import { computeUnitPrice } from "@/lib/pricing";
-import { stockValueFromLots, stockValuationByProduct } from "@/lib/inventory";
+import { computeCatalogPricing } from "@/lib/pricing";
+import {
+  stockValueFromLots,
+  stockValuationByProduct,
+  excludeInTransitLots,
+} from "@/lib/inventory";
 
 export interface KpiReportData {
   from: string;
@@ -71,7 +75,7 @@ export async function fetchKpiReport(
 
     const toInclusive = to + "T23:59:59";
 
-    const [docsRes, linesRes, lotsRes, productsRes, clientsRes, companyRes, spots] =
+    const [docsRes, linesRes, lotsRes, productsRes, clientsRes, companyRes, spots, transitRes] =
       await Promise.all([
         supabase
           .from("documents")
@@ -85,7 +89,7 @@ export async function fetchKpiReport(
           .select("id, document_id, product_id, description, quantity, line_subtotal, lot_id"),
         supabase
           .from("stock_lots")
-          .select("id, product_id, cost_per_unit, quantity_remaining"),
+          .select("id, product_id, cost_per_unit, quantity_remaining, purchase_order_id"),
         supabase.from("products").select("*").limit(500),
         supabase.from("clients").select("id, name").limit(500),
         supabase
@@ -94,11 +98,18 @@ export async function fetchKpiReport(
           .eq("id", 1)
           .maybeSingle(),
         getLatestSpots(),
+        supabase.from("purchase_orders").select("id").eq("received", false),
       ]);
 
     const docs = docsRes.data ?? [];
     const lines = linesRes.data ?? [];
     const lots = lotsRes.data ?? [];
+    // Lotes en tránsito (pedidos no recibidos): se excluyen de la valoración de
+    // stock para que el coste no compute sin su contrapartida en unidades.
+    const inTransitOrderIds = new Set(
+      (transitRes.data ?? []).map((o) => o.id as string)
+    );
+    const physicalLots = excludeInTransitLots(lots, inTransitOrderIds);
     const products = productsRes.data ?? [];
     const clients = clientsRes.data ?? [];
     const company = companyRes.data;
@@ -178,7 +189,7 @@ export async function fetchKpiReport(
 
     // ── ALMACÉN SNAPSHOT ─────────────────────────────────────────────────────
     // Valoración a coste por lotes (fuente de verdad compartida con el dashboard).
-    const valuationByProduct = stockValuationByProduct(lots);
+    const valuationByProduct = stockValuationByProduct(physicalLots);
 
     const stockRows = products
       .map((p) => {
@@ -188,18 +199,27 @@ export async function fetchKpiReport(
         const stockActual = Number(p.stock_current ?? 0);
 
         const spot = spots[p.metal as "oro" | "plata"]?.price_eur_per_g ?? null;
-        const precioVenta =
+        // PVP público: mismo cálculo que el catálogo web (incluye cost_price,
+        // margen minorista e IGIC). Sin margen minorista configurado se usa el
+        // precio mayorista con IGIC — que es lo que ve un cliente en catálogo.
+        const pricing =
           spot != null
-            ? computeUnitPrice({
+            ? computeCatalogPricing({
                 weight_g: Number(p.weight_g),
                 purity: Number(p.purity),
                 metal: p.metal as "oro" | "plata",
                 markup_per_gram: Number(p.markup_per_gram),
                 markup_per_piece: Number(p.markup_per_piece),
+                cost_price: Number((p as typeof p & { cost_price?: number }).cost_price ?? 0),
+                retail_markup_pct: Number((p as typeof p & { retail_markup_pct?: number }).retail_markup_pct ?? 0),
+                igic_rate: (p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0,
                 spot_eur_per_g: spot,
                 global_markup_pct: globalMarkupPct,
               })
             : null;
+        const precioVenta = pricing
+          ? pricing.retail ?? pricing.wholesaleWithIgic
+          : null;
 
         return {
           nombre: p.name,
@@ -219,7 +239,7 @@ export async function fetchKpiReport(
       .sort((a, b) => b.valorTotal - a.valorTotal);
 
     // Total a coste con el mismo helper que el dashboard → cifras idénticas.
-    const stockValorTotal = stockValueFromLots(lots);
+    const stockValorTotal = stockValueFromLots(physicalLots);
     const stockPrecioTotal = stockRows.reduce(
       (s, r) => s + (r.precioVenta ?? 0) * r.stockActual,
       0

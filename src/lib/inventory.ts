@@ -17,6 +17,8 @@ export interface StockLotLite {
   product_id: string;
   cost_per_unit: number | string | null;
   quantity_remaining: number | string | null;
+  /** Pedido de compra que originó el lote (null en lotes manuales/heredados). */
+  purchase_order_id?: string | null;
 }
 
 export interface ProductStockValuation {
@@ -26,6 +28,29 @@ export interface ProductStockValuation {
   value: number;
   /** Coste medio ponderado por unidad (value / quantity), 0 si no hay stock. */
   weightedUnitCost: number;
+}
+
+/**
+ * Excluye los lotes en tránsito (pedidos de compra aún no recibidos).
+ *
+ * Al registrar un pedido de reposición se crea de inmediato su lote —para
+ * poder asignarlo a ventas antes de que llegue la mercancía (pre-venta)—, pero
+ * esas unidades todavía NO forman parte del inventario físico: `stock_current`
+ * solo se incrementa al marcar el pedido como recibido. Contar el coste de
+ * esos lotes en la valoración, mientras las unidades no cuentan como stock ni
+ * a PVP, infla el "valor a coste" y distorsiona el margen latente.
+ *
+ * La valoración de stock debe usar únicamente los lotes recibidos para ser
+ * coherente con las cantidades físicas. Los lotes sin pedido asociado
+ * (manuales o heredados) se consideran recibidos.
+ */
+export function excludeInTransitLots<T extends { purchase_order_id?: string | null }>(
+  lots: T[],
+  inTransitOrderIds: Set<string>
+): T[] {
+  return lots.filter(
+    (l) => l.purchase_order_id == null || !inTransitOrderIds.has(l.purchase_order_id)
+  );
 }
 
 /** Valor total de almacén a coste, sumando todos los lotes. */

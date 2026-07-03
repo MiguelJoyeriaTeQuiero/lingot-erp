@@ -1,15 +1,11 @@
 import { getLatestSpots } from "@/lib/metal-prices";
-import { computeUnitPrice } from "@/lib/pricing";
+import { computeCatalogPricing } from "@/lib/pricing";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { CatalogLanding } from "./catalog-landing";
 import { CatalogHeroWebGL } from "./catalog-hero-webgl";
 import { BLOG_POSTS } from "./blog/data";
 
 export const dynamic = "force-dynamic";
-
-// IGIC incrementado de Canarias aplicado siempre al precio de la plata mostrado
-// en la web, con independencia del igic_rate configurado en cada producto.
-const SILVER_IGIC_RATE = 15;
 
 export default async function CatalogoPage() {
   const supabase = createTypedClient();
@@ -88,36 +84,20 @@ export default async function CatalogoPage() {
   // ── Compute prices ─────────────────────────────────────────────────────────
   const products = (productsRes.data ?? []).map((p) => {
     const spot = spots[p.metal as "oro" | "plata"]?.price_eur_per_g ?? null;
-    const wholesalePrice =
+    const pricing =
       spot != null
-        ? computeUnitPrice({
+        ? computeCatalogPricing({
             weight_g:          Number(p.weight_g),
             purity:            Number(p.purity),
             metal:             p.metal as "oro" | "plata",
             markup_per_gram:   Number(p.markup_per_gram),
             markup_per_piece:  Number(p.markup_per_piece),
             cost_price:        Number((p as typeof p & { cost_price?: number }).cost_price ?? 0),
+            retail_markup_pct: Number((p as typeof p & { retail_markup_pct?: number }).retail_markup_pct ?? 0),
+            igic_rate:         (p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0,
             spot_eur_per_g:    spot,
             global_markup_pct: globalMarkupPct,
           })
-        : null;
-
-    const retailMarkupPct = Number(
-      (p as typeof p & { retail_markup_pct?: number }).retail_markup_pct ?? 0
-    );
-    const igicRate =
-      p.metal === "plata"
-        ? SILVER_IGIC_RATE
-        : Number((p as typeof p & { igic_rate?: number | null }).igic_rate ?? 0);
-    const applyIgic = (price: number) =>
-      igicRate > 0
-        ? Math.round(price * (1 + igicRate / 100) * 100) / 100
-        : price;
-
-    const wholesaleFinal = wholesalePrice != null ? applyIgic(wholesalePrice) : null;
-    const retailPrice =
-      wholesalePrice != null && retailMarkupPct > 0
-        ? applyIgic(Math.round(wholesalePrice * (1 + retailMarkupPct / 100) * 100) / 100)
         : null;
 
     return {
@@ -129,7 +109,7 @@ export default async function CatalogoPage() {
       weight_g:    Number(p.weight_g),
       purity:      Number(p.purity),
       image_urls:  (p as typeof p & { image_urls?: string[] }).image_urls ?? [],
-      price:       isWholesale ? wholesaleFinal : retailPrice,
+      price:       isWholesale ? (pricing?.wholesaleWithIgic ?? null) : (pricing?.retail ?? null),
       inStock:
         Number(p.stock_current) > 0 &&
         !(p as typeof p & { catalog_out_of_stock?: boolean }).catalog_out_of_stock,

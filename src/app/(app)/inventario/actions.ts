@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createTypedClient } from "@/lib/supabase/typed";
+import { createRawAdminClient } from "@/lib/supabase/admin";
 import {
   productSchema,
   stockMovementSchema,
@@ -136,15 +137,31 @@ export async function toggleProductActive(
   return { success: true, id };
 }
 
+export interface InventoryCountItem {
+  productId: string;
+  productName: string;
+  productSku: string | null;
+  expected: number;
+  counted: number;
+}
+
 export async function applyInventoryCountAction(
-  items: { productId: string; delta: number }[]
-): Promise<ActionResult & { appliedCount?: number }> {
+  items: InventoryCountItem[],
+  notes?: string | null
+): Promise<ActionResult & { appliedCount?: number; countId?: string }> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
 
-  const changes = items.filter((i) => i.delta !== 0);
-  if (changes.length === 0) return { success: true, appliedCount: 0 };
+  if (items.length === 0) return { success: true, appliedCount: 0 };
 
+  // Normaliza y calcula la diferencia por producto (contado - esperado).
+  const lines = items.map((i) => ({
+    ...i,
+    delta: Number(i.counted) - Number(i.expected),
+  }));
+  const changes = lines.filter((l) => l.delta !== 0);
+
+  // 1) Aplicar los ajustes de stock (solo las líneas con diferencia).
   for (const item of changes) {
     const { error } = await supabase.rpc("record_stock_movement", {
       p_product_id: item.productId,
@@ -156,9 +173,71 @@ export async function applyInventoryCountAction(
     if (error) return { success: false, error: error.message };
   }
 
+  // 2) Registrar la sesión de conteo en el histórico (siempre, incluso sin
+  //    diferencias) con fecha, usuario y el detalle por producto.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+  const countedByName =
+    (profile as { full_name?: string | null; email?: string | null } | null)
+      ?.full_name ||
+    (profile as { email?: string | null } | null)?.email ||
+    user.email ||
+    null;
+
+  const totalDelta = lines.reduce((s, l) => s + l.delta, 0);
+  const unitsOver = lines.reduce((s, l) => s + (l.delta > 0 ? l.delta : 0), 0);
+  const unitsShort = lines.reduce((s, l) => s + (l.delta < 0 ? -l.delta : 0), 0);
+
+  const admin = createRawAdminClient();
+  const { data: countRow, error: countErr } = await admin
+    .from("inventory_counts")
+    .insert({
+      counted_by: user.id,
+      counted_by_name: countedByName,
+      lines_total: lines.length,
+      diff_count: changes.length,
+      total_delta: totalDelta,
+      units_over: unitsOver,
+      units_short: unitsShort,
+      notes: notes?.trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (countErr || !countRow) {
+    // Los ajustes ya se aplicaron; avisamos de que el histórico falló.
+    return {
+      success: false,
+      error: `Ajustes aplicados, pero no se pudo guardar el histórico: ${countErr?.message ?? "error desconocido"}`,
+    };
+  }
+
+  const { error: linesErr } = await admin.from("inventory_count_lines").insert(
+    lines.map((l) => ({
+      count_id: countRow.id,
+      product_id: l.productId,
+      product_name: l.productName,
+      product_sku: l.productSku,
+      expected: l.expected,
+      counted: l.counted,
+      delta: l.delta,
+    }))
+  );
+
+  if (linesErr) {
+    return {
+      success: false,
+      error: `Ajustes aplicados, pero el detalle del histórico falló: ${linesErr.message}`,
+    };
+  }
+
   revalidatePath("/inventario");
   revalidatePath("/inventario/conteo");
-  return { success: true, appliedCount: changes.length };
+  revalidatePath("/inventario/conteo/historico");
+  return { success: true, appliedCount: changes.length, countId: countRow.id };
 }
 
 export async function createPurchaseOrderAction(

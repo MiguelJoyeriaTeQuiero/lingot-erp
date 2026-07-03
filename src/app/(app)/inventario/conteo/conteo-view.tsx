@@ -18,6 +18,7 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
   const [items, setItems] = useState<CountItem[]>([]);
   const [scanValue, setScanValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [notes, setNotes] = useState("");
   const [applying, setApplying] = useState(false);
 
   const scanRef = useRef<HTMLInputElement>(null);
@@ -111,31 +112,27 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
   }, [physicalProducts, searchQuery]);
 
   async function handleApply() {
-    const changes = items.map((i) => ({
+    if (items.length === 0) return;
+
+    const payload = items.map((i) => ({
       productId: i.product.id,
-      delta: i.counted - Number(i.product.stock_current),
+      productName: i.product.name,
+      productSku: i.product.sku,
+      expected: Number(i.product.stock_current),
+      counted: i.counted,
     }));
 
-    const withDiff = changes.filter((c) => c.delta !== 0);
+    const withDiff = payload.filter((p) => p.counted - p.expected !== 0);
 
-    if (withDiff.length === 0) {
-      toast({
-        variant: "success",
-        title: "Sin diferencias",
-        description: "El conteo coincide con el stock del sistema.",
-      });
-      return;
-    }
+    const confirmMsg =
+      withDiff.length === 0
+        ? `El conteo coincide con el sistema. ¿Registrar el conteo (${payload.length} pieza${payload.length !== 1 ? "s" : ""}) en el histórico?`
+        : `¿Aplicar conteo? Se registrarán ${withDiff.length} ajuste(s) de stock y quedará guardado en el histórico.`;
 
-    if (
-      !window.confirm(
-        `¿Aplicar conteo? Se registrarán ${withDiff.length} ajuste(s) de stock.`
-      )
-    )
-      return;
+    if (!window.confirm(confirmMsg)) return;
 
     setApplying(true);
-    const result = await applyInventoryCountAction(changes);
+    const result = await applyInventoryCountAction(payload, notes.trim() || null);
     setApplying(false);
 
     if (!result.success) {
@@ -149,9 +146,13 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
 
     toast({
       variant: "success",
-      title: `Conteo aplicado — ${result.appliedCount} ajuste(s) registrados`,
+      title:
+        result.appliedCount && result.appliedCount > 0
+          ? `Conteo aplicado — ${result.appliedCount} ajuste(s) registrados`
+          : "Conteo registrado — sin diferencias",
     });
     setItems([]);
+    setNotes("");
     refocusScan();
   }
 
@@ -383,6 +384,20 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Notas opcionales del conteo */}
+          <div>
+            <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
+              Nota del conteo (opcional)
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ej.: conteo mensual, vitrina principal…"
+              className="w-full border-b border-border bg-transparent pb-2 text-sm text-primary placeholder:text-text-dim/50 focus:border-gold focus:outline-none"
+            />
           </div>
 
           {/* Acciones */}

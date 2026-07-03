@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { History } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { ConteoView } from "./conteo-view";
 
@@ -18,6 +21,14 @@ export default async function ConteoInventarioPage() {
         eyebrow="Operación · 03 · Conteo"
         title="Conteo de inventario"
         description="Escanea o busca cada pieza física, ajusta la cantidad contada y aplica los movimientos de regularización en bloque."
+        action={
+          <Link href="/inventario/conteo/historico">
+            <Button variant="secondary">
+              <History className="h-4 w-4" strokeWidth={1.5} />
+              Histórico de conteos
+            </Button>
+          </Link>
+        }
       />
 
       {error ? (

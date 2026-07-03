@@ -11,20 +11,51 @@ interface Props {
   rows: SaleRow[];
 }
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function RentabilidadView({ rows }: Props) {
   const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<string>("all");
+
+  // Meses disponibles (YYYY-MM) derivados de las ventas, más recientes primero.
+  const months = useMemo(() => {
+    const byKey = new Map<string, string>();
+    for (const r of rows) {
+      const key = r.issue_date.slice(0, 7); // YYYY-MM
+      if (!byKey.has(key)) {
+        byKey.set(
+          key,
+          capitalize(
+            new Date(r.issue_date).toLocaleDateString("es-ES", {
+              month: "long",
+              year: "numeric",
+            })
+          )
+        );
+      }
+    }
+    return [...byKey.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [rows]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return rows;
-    const q = search.toLowerCase();
-    return rows.filter(
-      (r) =>
-        r.product_name.toLowerCase().includes(q) ||
-        (r.product_sku ?? "").toLowerCase().includes(q) ||
-        (r.client_name ?? "").toLowerCase().includes(q) ||
-        (r.doc_code ?? "").toLowerCase().includes(q)
-    );
-  }, [rows, search]);
+    let base = rows;
+    if (period !== "all") {
+      base = base.filter((r) => r.issue_date.slice(0, 7) === period);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      base = base.filter(
+        (r) =>
+          r.product_name.toLowerCase().includes(q) ||
+          (r.product_sku ?? "").toLowerCase().includes(q) ||
+          (r.client_name ?? "").toLowerCase().includes(q) ||
+          (r.doc_code ?? "").toLowerCase().includes(q)
+      );
+    }
+    return base;
+  }, [rows, search, period]);
 
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0);
   const totalCost = filtered.reduce((s, r) => s + r.total_cost, 0);
@@ -33,7 +64,7 @@ export function RentabilidadView({ rows }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
           placeholder="Buscar producto, cliente, factura…"
@@ -41,6 +72,28 @@ export function RentabilidadView({ rows }: Props) {
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-primary placeholder:text-text-dim focus:outline-none focus:ring-1 focus:ring-gold/50"
         />
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-primary focus:outline-none focus:ring-1 focus:ring-gold/50"
+          aria-label="Filtrar por mes"
+        >
+          <option value="all">Todos los periodos</option>
+          {months.map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {period !== "all" && (
+          <button
+            type="button"
+            onClick={() => setPeriod("all")}
+            className="text-xs uppercase tracking-widest text-text-muted transition-colors hover:text-primary"
+          >
+            Quitar filtro
+          </button>
+        )}
       </div>
 
       <div className="rounded-md border border-border bg-surface">

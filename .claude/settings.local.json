@@ -45,7 +45,11 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\itjoy\\\\Desarrollo\\\\lingot-erp\" -Recurse -Directory -Name)",
       "Bash(Select-Object -First 30)",
       "Bash(git commit -m 'fix: correcciones de facturas, precios web, cron de metales y valoración de almacén' -m '- Storage: bucket purchase-invoices a público para poder descargar facturas de pedidos \\(migración 027\\). *)",
-      "Bash(git commit -m 'fix: no mostrar la persona de contacto del cliente en las facturas *)"
+      "Bash(git commit -m 'fix: no mostrar la persona de contacto del cliente en las facturas *)",
+      "PowerShell(git add \"src/app/\\(app\\)/clientes/client-form.tsx\" \"src/lib/validations/client.ts\")",
+      "Bash(xargs grep -l \"purchase_order\\\\|gasto\\\\|expense\")",
+      "Bash(xargs grep -l \"total_cost\\\\|purchase_order\")",
+      "Bash(xargs grep -l \"gastos\\\\|expense\\\\|purchase.*expense\")"
     ]
   }
 }
