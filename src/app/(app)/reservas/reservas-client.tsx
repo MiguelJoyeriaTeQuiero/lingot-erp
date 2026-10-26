@@ -4,6 +4,7 @@ import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { updateReservationStatusAction } from "./actions";
+import { RESERVATIONS_CHANGED } from "@/components/layout/reservation-watcher";
 import type { ReservationRow } from "./page";
 
 const STATUSES = ["pendiente", "confirmada", "entregada", "cancelada"] as const;
@@ -72,6 +73,8 @@ export function ReservasClient({ rows }: Props) {
     startTransition(() => {
       router.refresh();
     });
+    // El contador de pendientes del menú se actualiza sin esperar al sondeo
+    window.dispatchEvent(new Event(RESERVATIONS_CHANGED));
   }
 
   const filterLabels: Record<FilterStatus, string> = {

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createTypedClient } from "@/lib/supabase/typed";
+import { createRawAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({
@@ -28,6 +29,25 @@ export default async function AppLayout({
     redirect("/");
   }
 
+  // Punto de partida de los avisos de reservas: cuántas hay por gestionar y la
+  // última que existe, para no avisar al entrar de las que ya estaban.
+  const admin = createRawAdminClient();
+  const [pendingRes, latestRes] = await Promise.all([
+    admin
+      .from("reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendiente"),
+    admin
+      .from("reservations")
+      .select("created_at")
+      .order("created_at", { ascending: false })
+      .limit(1),
+  ]);
+  const reservations = {
+    pending: pendingRes.count ?? 0,
+    since: (latestRes.data?.[0] as { created_at?: string } | undefined)?.created_at ?? new Date().toISOString(),
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-ink">
       {/* Ambient gradient orbs */}
@@ -40,6 +60,7 @@ export default async function AppLayout({
           email={profile?.email ?? user.email ?? ""}
           fullName={profile?.full_name ?? null}
           role={(profile?.role as "admin" | "contabilidad") ?? "contabilidad"}
+          reservations={reservations}
         >
           {children}
         </AppShell>

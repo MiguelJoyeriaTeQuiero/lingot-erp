@@ -18,6 +18,10 @@ export interface Toast {
   title: string;
   description?: string;
   variant: ToastVariant;
+  /** Botón opcional dentro del aviso (p. ej. «Ver»). Al pulsarlo se cierra. */
+  action?: { label: string; onClick: () => void };
+  /** Milisegundos en pantalla. Por defecto 4500. */
+  duration?: number;
 }
 
 interface ToastContextValue {
@@ -39,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (t: Omit<Toast, "id">) => {
       const id = Math.random().toString(36).slice(2, 10);
       setToasts((prev) => [...prev, { ...t, id }]);
-      setTimeout(() => dismiss(id), 4500);
+      setTimeout(() => dismiss(id), t.duration ?? 4500);
     },
     [dismiss]
   );
@@ -98,6 +102,15 @@ function ToastViewport() {
                 <div className="mt-0.5 text-xs text-text-muted">
                   {t.description}
                 </div>
+              )}
+              {t.action && (
+                <button
+                  type="button"
+                  onClick={() => { t.action?.onClick(); dismiss(t.id); }}
+                  className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] underline-offset-4 hover:underline"
+                >
+                  {t.action.label} →
+                </button>
               )}
             </div>
             <button

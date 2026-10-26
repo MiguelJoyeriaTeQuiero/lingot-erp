@@ -14,11 +14,15 @@ import {
   X,
   KeyRound,
   BookMarked,
+  Bell,
+  BellRing,
+  BellOff,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { LingotWordmark } from "./lingot-wordmark";
+import type { DesktopPermission } from "./reservation-watcher";
 
 type Role = "admin" | "contabilidad";
 
@@ -71,9 +75,13 @@ interface SidebarProps {
   role: "admin" | "contabilidad";
   open?: boolean;
   onClose?: () => void;
+  /** Contadores junto a una entrada del menú, por href (p. ej. reservas pendientes). */
+  badges?: Partial<Record<string, number>>;
+  /** Estado de las notificaciones del sistema para los avisos de reservas. */
+  alerts?: { permission: DesktopPermission; onEnable: () => void };
 }
 
-export function Sidebar({ email, fullName, role, open = false, onClose }: SidebarProps) {
+export function Sidebar({ email, fullName, role, open = false, onClose, badges, alerts }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -151,6 +159,7 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");
                   const Icon = item.icon;
+                  const count = badges?.[item.href] ?? 0;
                   return (
                     <li key={item.href}>
                       <Link
@@ -189,6 +198,14 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
                           strokeWidth={1.5}
                         />
                         <span className="flex-1 tracking-wide">{item.label}</span>
+                        {count > 0 && (
+                          <span
+                            className="min-w-[20px] rounded-full bg-gold px-1.5 py-px text-center font-mono text-[10px] leading-4 tabular text-surface-raised"
+                            aria-label={`${count} pendientes`}
+                          >
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        )}
                         {active && (
                           <span
                             aria-hidden
@@ -205,6 +222,35 @@ export function Sidebar({ email, fullName, role, open = false, onClose }: Sideba
             })}
         </ul>
       </nav>
+
+      {/* Avisos de reservas: el permiso del navegador solo se pide con un clic */}
+      {alerts && alerts.permission !== "unsupported" && (
+        <div className="border-t border-border px-4 py-3">
+          {alerts.permission === "default" ? (
+            <button
+              type="button"
+              onClick={alerts.onEnable}
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gold-deep transition-colors hover:text-primary"
+            >
+              <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+              Activar avisos de reservas
+            </button>
+          ) : alerts.permission === "granted" ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-text-dim">
+              <BellRing className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+              Avisos de reservas activos
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-text-dim"
+              title="Permite las notificaciones de este sitio desde el candado de la barra de direcciones"
+            >
+              <BellOff className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+              Avisos bloqueados en el navegador
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User block */}
       <div className="border-t border-border p-4">
