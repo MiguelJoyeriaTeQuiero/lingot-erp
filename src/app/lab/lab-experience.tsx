@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { formatCurrency } from "@/lib/utils";
 import { LabMotion, labScrollTo } from "./lab-motion";
 import { LabProductDetail } from "./lab-product-detail";
 import { LabMarketChart, type LabSerie } from "./lab-market-chart";
 import { LabThemeToggle, useLabTheme } from "./lab-theme";
 import { LabLangToggle, useLabLang } from "./lab-lang";
 import { LabAccess } from "./lab-access";
-import { LabPrinciples } from "./lab-principles";
+import { LabPrinciples, usePrincipleItems } from "./lab-principles";
+import { Eyebrow, FUNDADA, Rise, useBackingFacts } from "./lab-parts";
+import { LabFoot, NavAccessLabel } from "./lab-chrome";
+import { LAB_PATHS } from "./lab-paths";
 import { useLabSession } from "./lab-session";
 import {
   LabFilters, applyFilters, isPristine, purities, weightRange,
@@ -32,9 +34,6 @@ const TROY_OZ = 31.1034768;
  */
 const CADENA = true;
 const PREVIEW  = 8;
-
-/** Año de fundación de Te Quiero: el mismo dato que publica /catalogo. */
-const FUNDADA = 1988;
 
 export interface LabProduct {
   id:       string;
@@ -58,57 +57,6 @@ interface Props {
 /* ── Utilidades de composición ─────────────────────────────────────────── */
 
 type Vars = React.CSSProperties & Record<string, string | number>;
-
-/** Título enmascarado: cada línea sube desde debajo de su propio recorte. */
-function Rise({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
-  return (
-    <span className="lab-mask" style={{ "--d": `${delay}ms` } as Vars}>
-      <span className={className}>{children}</span>
-    </span>
-  );
-}
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 14 }}>
-      <i style={{
-        width: 40, height: 1, display: "block",
-        background: "linear-gradient(90deg, var(--lab-metal), transparent)",
-      }} />
-      <span className="lab-label" style={{ color: "var(--lab-metal)" }}>{children}</span>
-    </span>
-  );
-}
-
-/** Contador que se dispara al entrar en pantalla. */
-function Count({ value, format }: { value: number; format: (n: number) => string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [shown, setShown] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setShown(value); return; }
-
-    let raf = 0;
-    const io = new IntersectionObserver(([entry]) => {
-      if (!entry?.isIntersecting) return;
-      io.disconnect();
-      const start = performance.now();
-      const run = (now: number) => {
-        const t = Math.min(1, (now - start) / 1500);
-        setShown(value * (1 - Math.pow(1 - t, 4)));
-        if (t < 1) raf = requestAnimationFrame(run);
-      };
-      raf = requestAnimationFrame(run);
-    }, { threshold: 0.4 });
-
-    io.observe(el);
-    return () => { io.disconnect(); cancelAnimationFrame(raf); };
-  }, [value]);
-
-  return <span ref={ref}>{format(shown)}</span>;
-}
 
 /** Lingote dibujado en CSS para las fichas sin fotografía. */
 function BarGlyph({ metal }: { metal: string }) {
@@ -192,13 +140,7 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
     t("ticker.place"),
   ];
 
-  // El respaldo del grupo, en cifras. Los años se calculan: escritos a mano
-  // caducarían cada enero.
-  const facts = [
-    { k: String(FUNDADA), v: t("about.s1") },
-    { k: <Count value={17} format={(n) => `+${Math.round(n)}`} />, v: t("about.s2") },
-    { k: <Count value={new Date().getFullYear() - FUNDADA} format={(n) => String(Math.round(n))} />, v: t("about.s3") },
-  ];
+  const facts = useBackingFacts();
 
   // La rejilla abre con ocho piezas; el resto se despliega en vertical
   const [expanded, setExpanded] = useState(false);
@@ -241,20 +183,7 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
     window.setTimeout(() => setJustReserved((id) => (id === p.id ? null : id)), 3200);
   };
 
-  // Los cuatro principios son los de src/app/catalogo/nosotros/page.tsx.
-  // El texto vive en el diccionario; aquí solo se compone.
-  const principles = ([1, 2, 3, 4] as const).map((k) => ({
-    n:    `0${k}`,
-    name: t(`p${k}.name`),
-    tag:  t(`p${k}.tag`),
-    display:
-      k === 1 ? <Count value={999.9} format={(n) => n.toFixed(1)} />
-      : k === 2 ? (spots.oro != null ? money(spots.oro) : t("p2.tag"))
-      : k === 3 ? "LBMA"
-      : t("p4.display"),
-    unit: k === 2 && spots.oro == null ? t("p2.unitAlt") : t(`p${k}.unit`),
-    d:    t(`p${k}.body`),
-  }));
+  const principles = usePrincipleItems(spots.oro);
 
   const bounds        = useMemo(() => weightRange(products), [products]);
   const purityOptions = useMemo(() => purities(products), [products]);
@@ -322,17 +251,23 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
 
       {/* ══ NAVEGACIÓN ══════════════════════════════════════════════════ */}
       <nav className="lab-nav" data-solid="false" data-hidden="false" data-top="true">
-        <Link href="/lab" className="lab-nav-mark">{brandName}</Link>
+        <Link href={LAB_PATHS.home} className="lab-nav-mark">{brandName}</Link>
         <div className="lab-nav-links">
           <button type="button" className="lab-nav-link lab-nav-section" onClick={() => labScrollTo("#nosotros")}>{t("nav.about")}</button>
           <button type="button" className="lab-nav-link lab-nav-section" onClick={() => labScrollTo("#principios")}>{t("nav.principles")}</button>
           <button type="button" className="lab-nav-link lab-nav-section" onClick={() => labScrollTo("#coleccion")}>{t("nav.collection")}</button>
           <button type="button" className="lab-nav-link lab-nav-section" onClick={() => labScrollTo("#mercado")}>{t("nav.market")}</button>
           <button type="button" className="lab-nav-link lab-nav-section" onClick={() => labScrollTo("#faq")}>{t("nav.faq")}</button>
+          <Link href={LAB_PATHS.blog} className="lab-nav-link lab-nav-section">{t("nav.blog")}</Link>
           <LabLangToggle />
           <LabThemeToggle />
-          <button type="button" className="lab-cta" onClick={() => setAccess(true)}>
-            {session ? session.name.split(" ")[0] : t("nav.access")}
+          <button
+            type="button"
+            className="lab-cta"
+            onClick={() => setAccess(true)}
+            aria-label={session ? session.name.split(" ")[0] : t("nav.access")}
+          >
+            <NavAccessLabel label={session ? session.name.split(" ")[0] ?? "" : t("nav.access")} />
           </button>
         </div>
       </nav>
@@ -663,19 +598,7 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
       {access && <LabAccess onClose={() => setAccess(false)} />}
 
       {/* ══ FOOTER ══════════════════════════════════════════════════════ */}
-      <footer className="lab-foot">
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "space-between" }}>
-          <span className="lab-nav-mark">{brandName}</span>
-          <nav style={{ display: "flex", flexWrap: "wrap", gap: "clamp(18px, 3vw, 36px)" }}>
-            <Link href="/catalogo" className="lab-foot-link">{t("ft.catalog")}</Link>
-            <Link href="/catalogo/nosotros" className="lab-foot-link">{t("ft.about")}</Link>
-            <Link href="/catalogo/blog" className="lab-foot-link">{t("ft.blog")}</Link>
-          </nav>
-          <span className="lab-label" style={{ color: "var(--lab-ink-4)", letterSpacing: "0.34em" }}>
-            Te Quiero Group · {new Date().getFullYear()}
-          </span>
-        </div>
-      </footer>
+      <LabFoot brandName={brandName} />
     </>
   );
 }

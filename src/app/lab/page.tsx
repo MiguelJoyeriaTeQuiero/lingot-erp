@@ -1,15 +1,13 @@
 import { getLatestSpots } from "@/lib/metal-prices";
 import { computeCatalogPricing } from "@/lib/pricing";
 import { createTypedClient } from "@/lib/supabase/typed";
-import { loadClientArea } from "@/app/catalogo/client-area";
 import { LabExperience, type LabProduct } from "./lab-experience";
 import { LabComingSoon } from "./lab-coming-soon";
-import { LabSessionProvider, type LabEstado, type LabSession } from "./lab-session";
+import { LabSessionProvider } from "./lab-session";
+import { loadLabViewer } from "./lab-viewer";
 import type { LabSerie } from "./lab-market-chart";
 
 export const dynamic = "force-dynamic";
-
-const ESTADOS: LabEstado[] = ["pendiente", "confirmada", "entregada", "cancelada"];
 
 export default async function LabPage() {
   const supabase = createTypedClient();
@@ -33,7 +31,7 @@ export default async function LabPage() {
       .order("fetched_at", { ascending: true });
   });
 
-  const [companyRes, productsRes, spots, { data: { user } }, ...historyRes] = await Promise.all([
+  const [companyRes, productsRes, spots, viewer, ...historyRes] = await Promise.all([
     supabase
       .from("company_settings")
       .select("trade_name, catalog_enabled, metal_markup_pct")
@@ -47,36 +45,13 @@ export default async function LabPage() {
       .eq("active", true)
       .order("name"),
     getLatestSpots(),
-    supabase.auth.getUser(),
+    loadLabViewer(supabase),
     ...historyPages,
   ]);
 
   const company   = companyRes.data;
   const brandName = (company as { trade_name?: string } | null)?.trade_name ?? "Lingot";
-
-  // Mismas reglas que /catalogo: el personal del ERP ve precio mayorista y solo
-  // el administrador puede ver el catálogo mientras está desactivado.
-  let session: LabSession | null = null;
-  let isAdmin = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, is_wholesale, full_name")
-      .eq("id", user.id)
-      .single();
-    const role = profile?.role;
-    isAdmin = role === "admin";
-    session = {
-      name:
-        (profile as { full_name?: string | null } | null)?.full_name
-        ?? user.email?.split("@")[0]
-        ?? "",
-      email: user.email ?? "",
-      isWholesale:
-        role === "admin" || role === "contabilidad" ||
-        ((profile as { is_wholesale?: boolean } | null)?.is_wholesale ?? false),
-    };
-  }
+  const { session, isAdmin, orders, documents } = viewer;
 
   if (!(company?.catalog_enabled ?? false) && !isAdmin) {
     return <LabComingSoon brandName={brandName} />;
@@ -135,28 +110,6 @@ export default async function LabPage() {
         !(p as typeof p & { catalog_out_of_stock?: boolean }).catalog_out_of_stock,
     };
   });
-
-  const area = user ? await loadClientArea(user.id, user.email ?? null) : null;
-
-  const orders = (area?.reservations ?? []).map((r) => ({
-    id:       r.id,
-    name:     r.product_name,
-    sku:      r.product_sku,
-    quantity: r.quantity,
-    price:    Number(r.price_snapshot),
-    at:       r.created_at,
-    // Un estado desconocido se muestra como pendiente antes que como etiqueta vacía
-    estado:   ESTADOS.includes(r.status as LabEstado) ? (r.status as LabEstado) : "pendiente",
-  }));
-
-  const documents = (area?.documents ?? []).map((d) => ({
-    id:     d.id,
-    code:   d.code,
-    type:   d.doc_type,
-    date:   d.issue_date,
-    total:  d.total != null ? Number(d.total) : null,
-    estado: d.status,
-  }));
 
   return (
     <LabSessionProvider session={session} orders={orders} documents={documents}>

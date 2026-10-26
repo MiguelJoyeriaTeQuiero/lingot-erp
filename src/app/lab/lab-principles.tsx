@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLabLang } from "./lab-lang";
+import { Count } from "./lab-parts";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Principios en slider.
@@ -25,6 +26,27 @@ export interface LabPrinciple {
 }
 
 type Vars = React.CSSProperties & Record<string, string | number>;
+
+/**
+ * Los cuatro principios son los de src/app/catalogo/nosotros/page.tsx. El texto
+ * vive en el diccionario; aquí solo se compone. El segundo enseña el spot del
+ * oro por gramo cuando lo hay.
+ */
+export function usePrincipleItems(spotOro: number | null): LabPrinciple[] {
+  const { t, money } = useLabLang();
+  return ([1, 2, 3, 4] as const).map((k) => ({
+    n:    `0${k}`,
+    name: t(`p${k}.name`),
+    tag:  t(`p${k}.tag`),
+    display:
+      k === 1 ? <Count value={999.9} format={(n) => n.toFixed(1)} />
+      : k === 2 ? (spotOro != null ? money(spotOro) : t("p2.tag"))
+      : k === 3 ? "LBMA"
+      : t("p4.display"),
+    unit: k === 2 && spotOro == null ? t("p2.unitAlt") : t(`p${k}.unit`),
+    d:    t(`p${k}.body`),
+  }));
+}
 
 /** Píxeles de arrastre a partir de los cuales se decide el eje del gesto. */
 const AXIS_SLOP = 8;

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { downloadDocumentPdf } from "@/lib/pdf/document-pdf";
 import { getClientDocumentPdfAction } from "@/app/catalogo/mi-cuenta/actions";
 import { useLabLang } from "./lab-lang";
 import { useLabSession, type LabEstado } from "./lab-session";
 import { Segment } from "./lab-segment";
+import { LAB_PATHS } from "./lab-paths";
 
 /** Los mismos cuatro estados de mis-reservas.tsx, traducidos por diccionario. */
 const ESTADO_KEY: Record<LabEstado, string> = {
@@ -27,19 +29,26 @@ type Vista = "reservas" | "documentos";
 
    Reservas y documentos van en vistas separadas porque en la base no están
    unidos: una reserva no apunta a la factura que acaba generando.
+
+   La misma pantalla sirve de capa sobre la portada (LabAccess) y de página
+   propia en /mi-cuenta (LabAccountPage); solo cambia cómo se vuelve.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+function BackIcon() {
+  return (
+    <span aria-hidden className="lab-screen-back-icon">
+      <svg viewBox="0 0 16 16" width="13" height="13">
+        <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.4"
+              strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+/** Capa a pantalla completa sobre la portada. */
 export function LabAccess({ onClose }: { onClose: () => void }) {
-  const { session, orders, documents, signIn, signOut } = useLabSession();
-  const { t, money, date } = useLabLang();
-  const [vista, setVista] = useState<Vista>("reservas");
-  const [filtro, setFiltro] = useState<LabEstado | "todas">("todas");
-  const [pdfBusy, setPdfBusy] = useState<string | null>(null);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [pass, setPass]   = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy]   = useState(false);
+  const { session } = useLabSession();
+  const { t } = useLabLang();
   const screenRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,6 +61,58 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
+
+  return (
+    <div
+      className="lab-screen"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(session ? "ac.account" : "nav.access")}
+      data-lab-native
+      ref={screenRef}
+      tabIndex={-1}
+    >
+      <AccountScreen
+        back={
+          <button type="button" className="lab-screen-back" onClick={onClose}>
+            <BackIcon />
+            <span className="lab-label">{t("ac.back")}</span>
+          </button>
+        }
+        onSignedOut={onClose}
+      />
+    </div>
+  );
+}
+
+/** «Mi cuenta» como página: sin sesión enseña el acceso; al salir se queda en él. */
+export function LabAccountPage() {
+  const { t } = useLabLang();
+  return (
+    <main className="lab-screen lab-screen--page" data-lab-native>
+      <AccountScreen
+        back={
+          <Link href={LAB_PATHS.home} className="lab-screen-back">
+            <BackIcon />
+            <span className="lab-label">{t("ac.back")}</span>
+          </Link>
+        }
+      />
+    </main>
+  );
+}
+
+function AccountScreen({ back, onSignedOut }: { back: ReactNode; onSignedOut?: () => void }) {
+  const { session, orders, documents, signIn, signOut } = useLabSession();
+  const { t, money, date } = useLabLang();
+  const [vista, setVista] = useState<Vista>("reservas");
+  const [filtro, setFiltro] = useState<LabEstado | "todas">("todas");
+  const [pdfBusy, setPdfBusy] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [pass, setPass]   = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy]   = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,28 +152,12 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      className="lab-screen"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t(session ? "ac.account" : "nav.access")}
-      data-lab-native
-      ref={screenRef}
-      tabIndex={-1}
-    >
+    <>
       <div className="lab-screen-glow" aria-hidden />
 
       <header className="lab-screen-top">
-        <span className="lab-nav-mark">Lingot</span>
-        <button type="button" className="lab-screen-back" onClick={onClose}>
-          <span aria-hidden className="lab-screen-back-icon">
-            <svg viewBox="0 0 16 16" width="13" height="13">
-              <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.4"
-                    strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="lab-label">{t("ac.back")}</span>
-        </button>
+        <Link href={LAB_PATHS.home} className="lab-nav-mark">Lingot</Link>
+        {back}
       </header>
 
       {!session ? (
@@ -162,7 +207,7 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
             )}
 
             <button type="button" className="lab-cta lab-screen-out"
-                    onClick={() => { void signOut(); onClose(); }}>
+                    onClick={() => { void signOut(); onSignedOut?.(); }}>
               {t("ac.out")}
             </button>
           </div>
@@ -280,6 +325,6 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

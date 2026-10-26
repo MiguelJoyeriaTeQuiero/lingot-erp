@@ -48,8 +48,12 @@ const QUOTES = LANGS.map(({ v }) => {
   return { lang: v, lines, split, credit: DICT[v]["quote.credit"] ?? "" };
 });
 
-export function LabMotion({ chain = true }: { chain?: boolean }) {
-  const [ready, setReady] = useState(false);
+/**
+ * `curtain={false}` para las páginas interiores (blog, nosotros): la cita de
+ * entrada es la bienvenida a la portada, repetida en cada página cansaría.
+ */
+export function LabMotion({ chain = true, curtain = true }: { chain?: boolean; curtain?: boolean }) {
+  const [ready, setReady] = useState(!curtain);
   const curtainRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const dotRef    = useRef<HTMLDivElement>(null);
@@ -58,6 +62,7 @@ export function LabMotion({ chain = true }: { chain?: boolean }) {
 
   /* ── Cortina de entrada ─────────────────────────────────────────────── */
   useEffect(() => {
+    if (ready) return;
     const curtain = curtainRef.current;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
@@ -81,6 +86,7 @@ export function LabMotion({ chain = true }: { chain?: boolean }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // Solo al montar: la cortina corre una vez y no vuelve
   }, []);
 
   useEffect(() => {
@@ -348,18 +354,20 @@ export function LabMotion({ chain = true }: { chain?: boolean }) {
   return (
     <>
       {/* Cortina: la cita se llena de blanco y su relleno es la carga */}
-      <div ref={curtainRef} className="lab-curtain" data-done={ready ? "true" : "false"} aria-hidden>
-        <div className="lab-curtain-inner">
-          {QUOTES.map((q) => (
-            <div key={q.lang} lang={q.lang} className="lab-curtain-quote" style={{ "--split": q.split } as React.CSSProperties}>
-              {q.lines.map((line, i) => (
-                <span key={i} className="lab-curtain-line" data-text={line} data-line={i}>{line}</span>
-              ))}
-              <span className="lab-curtain-credit">{q.credit}</span>
-            </div>
-          ))}
+      {curtain && (
+        <div ref={curtainRef} className="lab-curtain" data-done={ready ? "true" : "false"} aria-hidden>
+          <div className="lab-curtain-inner">
+            {QUOTES.map((q) => (
+              <div key={q.lang} lang={q.lang} className="lab-curtain-quote" style={{ "--split": q.split } as React.CSSProperties}>
+                {q.lines.map((line, i) => (
+                  <span key={i} className="lab-curtain-line" data-text={line} data-line={i}>{line}</span>
+                ))}
+                <span className="lab-curtain-credit">{q.credit}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Cursor */}
       <div ref={cursorRef} className="lab-cursor" data-on="false" aria-hidden />
