@@ -26,7 +26,12 @@ import {
   purchaseOrderSchema,
   type PurchaseOrderInput,
 } from "@/lib/validations/product";
-import { createPurchaseOrderAction, markPurchaseOrderReceivedAction } from "../actions";
+import {
+  createPurchaseOrderAction,
+  markPurchaseOrderReceivedAction,
+  attachPurchaseOrderInvoicesAction,
+  detachPurchaseOrderInvoiceAction,
+} from "../actions";
 import { createClient } from "@/lib/supabase/client";
 
 export interface PurchaseOrderEntry {
@@ -62,6 +67,22 @@ const MAX_MB = 10;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Sube un documento al bucket de facturas de compra y devuelve su URL pública. */
+async function uploadInvoiceFile(productId: string, f: File): Promise<string> {
+  const supabase = createClient();
+  const ext = f.name.split(".").pop() ?? "pdf";
+  const path = `orders/${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data: up, error: upErr } = await supabase.storage
+    .from("purchase-invoices")
+    .upload(path, f, { contentType: f.type, upsert: false });
+  if (upErr) throw new Error(upErr.message);
+  return supabase.storage.from("purchase-invoices").getPublicUrl(up.path).data.publicUrl;
+}
+
+function tooBig(files: File[]) {
+  return files.some((f) => f.size > MAX_MB * 1024 * 1024);
 }
 
 export function PurchaseOrderSection({
@@ -107,8 +128,7 @@ export function PurchaseOrderSection({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     if (picked.length === 0) return;
-    const oversized = picked.filter((f) => f.size > MAX_MB * 1024 * 1024);
-    if (oversized.length > 0) {
+    if (tooBig(picked)) {
       toast({ variant: "error", title: "Archivo demasiado grande", description: `Máximo ${MAX_MB} MB por archivo.` });
       return;
     }
@@ -124,24 +144,13 @@ export function PurchaseOrderSection({
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function uploadFile(f: File): Promise<string> {
-    const supabase = createClient();
-    const ext = f.name.split(".").pop() ?? "pdf";
-    const path = `orders/${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { data: up, error: upErr } = await supabase.storage
-      .from("purchase-invoices")
-      .upload(path, f, { contentType: f.type, upsert: false });
-    if (upErr) throw new Error(upErr.message);
-    return supabase.storage.from("purchase-invoices").getPublicUrl(up.path).data.publicUrl;
-  }
-
   async function onSubmit(values: PurchaseOrderInput) {
     setSubmitting(true);
 
     let invoiceUrls: string[] = [];
     if (files.length > 0) {
       try {
-        invoiceUrls = await Promise.all(files.map(uploadFile));
+        invoiceUrls = await Promise.all(files.map((f) => uploadInvoiceFile(productId, f)));
       } catch (err) {
         toast({ variant: "error", title: "Error subiendo documentos", description: String(err) });
         setSubmitting(false);
@@ -292,6 +301,10 @@ export function PurchaseOrderSection({
               <div className="mb-1.5 text-[13px] font-medium text-primary">
                 Documentos del proveedor (opcional)
               </div>
+              <p className="mb-2 text-xs text-text-muted">
+                Si aún no tienes la factura, registra el pedido sin ella y adjúntala
+                más tarde desde la columna «Factura» de la lista de pedidos.
+              </p>
               <div className="space-y-1.5">
                 {files.map((f, i) => (
                   <div key={i} className="flex items-center gap-3 rounded-md border border-border bg-surface-raised px-3 py-2 text-sm">
@@ -375,7 +388,7 @@ export function PurchaseOrderSection({
                     <FluctuationCell delta={order.delta} deltaPct={order.deltaPct} />
                   </TD>
                   <TD>
-                    <OrderDocuments order={order} />
+                    <OrderDocuments order={order} productId={productId} canEdit={canReceive} />
                   </TD>
                   <TD>
                     {order.received ? (
@@ -416,28 +429,120 @@ export function PurchaseOrderSection({
   );
 }
 
-function OrderDocuments({ order }: { order: PurchaseOrderEntry }) {
+/**
+ * Documentos del pedido. La factura no se exige al registrar el pedido: aquí se
+ * puede adjuntar después (en envío o ya recibido) y quitar la que se subió mal.
+ */
+function OrderDocuments({
+  order,
+  productId,
+  canEdit,
+}: {
+  order: PurchaseOrderEntry;
+  productId: string;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const urls: string[] = [];
   if (order.invoice_urls && order.invoice_urls.length > 0) {
     urls.push(...order.invoice_urls);
   } else if (order.invoice_url) {
     urls.push(order.invoice_url);
   }
-  if (urls.length === 0) return <span className="text-text-dim text-xs">—</span>;
+
+  async function attach(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
+    if (inputRef.current) inputRef.current.value = "";
+    if (picked.length === 0) return;
+    if (tooBig(picked)) {
+      toast({ variant: "error", title: "Archivo demasiado grande", description: `Máximo ${MAX_MB} MB por archivo.` });
+      return;
+    }
+    setBusy(true);
+    try {
+      const uploaded = await Promise.all(picked.map((f) => uploadInvoiceFile(productId, f)));
+      const result = await attachPurchaseOrderInvoicesAction(order.id, productId, uploaded);
+      if (!result.success) {
+        toast({ variant: "error", title: "No se ha podido adjuntar", description: result.error });
+        return;
+      }
+      toast({ variant: "success", title: picked.length === 1 ? "Factura adjuntada" : "Documentos adjuntados" });
+      router.refresh();
+    } catch (err) {
+      toast({ variant: "error", title: "Error subiendo documentos", description: String(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function detach(url: string, label: string) {
+    if (!window.confirm(`¿Quitar «${label}» de este pedido?`)) return;
+    setBusy(true);
+    const result = await detachPurchaseOrderInvoiceAction(order.id, productId, url);
+    setBusy(false);
+    if (!result.success) {
+      toast({ variant: "error", title: "No se ha podido quitar", description: result.error });
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-1">
-      {urls.map((url, i) => (
-        <a
-          key={i}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs text-gold-deep underline-offset-2 hover:underline"
+      {urls.length === 0 && (
+        <span className="text-xs text-text-dim">Sin factura</span>
+      )}
+      {urls.map((url, i) => {
+        const label = `Doc ${urls.length > 1 ? i + 1 : ""}`.trim();
+        return (
+          <span key={url} className="inline-flex items-center gap-1.5">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-gold-deep underline-offset-2 hover:underline"
+            >
+              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {label}
+            </a>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => detach(url, label)}
+                disabled={busy}
+                aria-label={`Quitar ${label}`}
+                className="text-text-dim transition-colors hover:text-danger disabled:opacity-40"
+              >
+                <X className="h-3 w-3" strokeWidth={2} />
+              </button>
+            )}
+          </span>
+        );
+      })}
+      {canEdit && (
+        <label
+          className={
+            "inline-flex w-fit cursor-pointer items-center gap-1 text-xs text-text-muted transition-colors hover:text-primary" +
+            (busy ? " pointer-events-none opacity-50" : "")
+          }
         >
-          <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Doc {urls.length > 1 ? i + 1 : ""}
-        </a>
-      ))}
+          <Paperclip className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {busy ? "Subiendo…" : urls.length === 0 ? "Adjuntar" : "Añadir"}
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ACCEPTED}
+            multiple
+            className="sr-only"
+            onChange={attach}
+            disabled={busy}
+          />
+        </label>
+      )}
     </div>
   );
 }
