@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import { THEME_BOOTSTRAP } from "./lab-theme-boot";
 import { LANG_BOOTSTRAP } from "./lab-i18n";
 import { LabConsent } from "./lab-consent";
-import { HOME_DESCRIPTION, HOME_TITLE, OG_IMAGE, SITE_NAME, SITE_URL } from "./lab-seo";
+import { GOOGLE_SITE_VERIFICATION, HOME_DESCRIPTION, HOME_TITLE, OG_IMAGE, SITE_NAME, SITE_URL } from "./lab-seo";
 import "./lab.css";
 
 // Open Sauce Sans — superfamilia única de la marca. El drama tipográfico nace
@@ -31,6 +31,7 @@ export const metadata: Metadata = {
   title: { default: HOME_TITLE, template: `%s · ${SITE_NAME}` },
   description: HOME_DESCRIPTION,
   applicationName: SITE_NAME,
+  verification: { google: GOOGLE_SITE_VERIFICATION },
   robots: {
     index: true,
     follow: true,
