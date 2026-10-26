@@ -1,20 +1,15 @@
 import { getLatestSpots } from "@/lib/metal-prices";
 import { computeCatalogPricing } from "@/lib/pricing";
 import { createTypedClient } from "@/lib/supabase/typed";
-import { LabExperience, type LabCompany, type LabProduct } from "./lab-experience";
+import { loadClientArea } from "@/app/catalogo/client-area";
+import { LabExperience, type LabProduct } from "./lab-experience";
+import { LabComingSoon } from "./lab-coming-soon";
+import { LabSessionProvider, type LabEstado, type LabSession } from "./lab-session";
 import type { LabSerie } from "./lab-market-chart";
 
 export const dynamic = "force-dynamic";
 
-/** Piezas de muestra para que el laboratorio se pueda evaluar sin datos reales. */
-const FALLBACK: LabProduct[] = [
-  { id: "d1", name: "Lingote de oro 100 g",   sku: "AU-100",  metal: "oro",   weight_g: 100,  purity: 0.9999, price: 9850,  image: null, inStock: true  },
-  { id: "d2", name: "Lingote de oro 50 g",    sku: "AU-050",  metal: "oro",   weight_g: 50,   purity: 0.9999, price: 4980,  image: null, inStock: true  },
-  { id: "d3", name: "Moneda Krugerrand 1 oz", sku: "AU-KRU",  metal: "oro",   weight_g: 31.1, purity: 0.9167, price: 3120,  image: null, inStock: true  },
-  { id: "d4", name: "Lingote de plata 1 kg",  sku: "AG-1000", metal: "plata", weight_g: 1000, purity: 0.999,  price: 1180,  image: null, inStock: false },
-  { id: "d5", name: "Lingote de oro 250 g",   sku: "AU-250",  metal: "oro",   weight_g: 250,  purity: 0.9999, price: 24500, image: null, inStock: true  },
-  { id: "d6", name: "Moneda Maple Leaf 1 oz", sku: "AG-MAP",  metal: "plata", weight_g: 31.1, purity: 0.9999, price: 48,    image: null, inStock: true  },
-];
+const ESTADOS: LabEstado[] = ["pendiente", "confirmada", "entregada", "cancelada"];
 
 export default async function LabPage() {
   const supabase = createTypedClient();
@@ -38,11 +33,10 @@ export default async function LabPage() {
       .order("fetched_at", { ascending: true });
   });
 
-  const [companyRes, productsRes, spots, ...historyRes] = await Promise.all([
+  const [companyRes, productsRes, spots, { data: { user } }, ...historyRes] = await Promise.all([
     supabase
       .from("company_settings")
-      // Los campos del emisor son los que imprime la factura real
-      .select("legal_name, trade_name, tax_id, address, city, postal_code, country, email, phone, website, iban, default_igic_rate, invoice_footer, metal_markup_pct")
+      .select("trade_name, catalog_enabled, metal_markup_pct")
       .eq("id", 1)
       .maybeSingle(),
     supabase
@@ -53,8 +47,40 @@ export default async function LabPage() {
       .eq("active", true)
       .order("name"),
     getLatestSpots(),
+    supabase.auth.getUser(),
     ...historyPages,
   ]);
+
+  const company   = companyRes.data;
+  const brandName = (company as { trade_name?: string } | null)?.trade_name ?? "Lingot";
+
+  // Mismas reglas que /catalogo: el personal del ERP ve precio mayorista y solo
+  // el administrador puede ver el catálogo mientras está desactivado.
+  let session: LabSession | null = null;
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, is_wholesale, full_name")
+      .eq("id", user.id)
+      .single();
+    const role = profile?.role;
+    isAdmin = role === "admin";
+    session = {
+      name:
+        (profile as { full_name?: string | null } | null)?.full_name
+        ?? user.email?.split("@")[0]
+        ?? "",
+      email: user.email ?? "",
+      isWholesale:
+        role === "admin" || role === "contabilidad" ||
+        ((profile as { is_wholesale?: boolean } | null)?.is_wholesale ?? false),
+    };
+  }
+
+  if (!(company?.catalog_enabled ?? false) && !isAdmin) {
+    return <LabComingSoon brandName={brandName} />;
+  }
 
   type PriceRow = { metal: string; price_eur_per_g: number; fetched_at: string };
   const historial = (historyRes as { data: PriceRow[] | null }[])
@@ -71,12 +97,11 @@ export default async function LabPage() {
     return [...porDia.entries()].map(([t, p]) => ({ t, p }));
   }
 
-  const company = companyRes.data;
   const globalMarkupPct = Number(
     (company as { metal_markup_pct?: number } | null)?.metal_markup_pct ?? 4
   );
 
-  const live: LabProduct[] = (productsRes.data ?? []).map((p) => {
+  const products: LabProduct[] = (productsRes.data ?? []).map((p) => {
     const spot = spots[p.metal as "oro" | "plata"]?.price_eur_per_g ?? null;
     const pricing =
       spot != null
@@ -103,7 +128,7 @@ export default async function LabPage() {
       metal:    p.metal,
       weight_g: Number(p.weight_g),
       purity:   Number(p.purity),
-      price:    pricing?.retail ?? null,
+      price:    session?.isWholesale ? (pricing?.wholesaleWithIgic ?? null) : (pricing?.retail ?? null),
       image:    images[0] ?? null,
       inStock:
         Number(p.stock_current) > 0 &&
@@ -111,17 +136,39 @@ export default async function LabPage() {
     };
   });
 
+  const area = user ? await loadClientArea(user.id, user.email ?? null) : null;
+
+  const orders = (area?.reservations ?? []).map((r) => ({
+    id:       r.id,
+    name:     r.product_name,
+    sku:      r.product_sku,
+    quantity: r.quantity,
+    price:    Number(r.price_snapshot),
+    at:       r.created_at,
+    // Un estado desconocido se muestra como pendiente antes que como etiqueta vacía
+    estado:   ESTADOS.includes(r.status as LabEstado) ? (r.status as LabEstado) : "pendiente",
+  }));
+
+  const documents = (area?.documents ?? []).map((d) => ({
+    id:     d.id,
+    code:   d.code,
+    type:   d.doc_type,
+    date:   d.issue_date,
+    total:  d.total != null ? Number(d.total) : null,
+    estado: d.status,
+  }));
+
   return (
-    <LabExperience
-      brandName={(company as { trade_name?: string } | null)?.trade_name ?? "Lingot"}
-      company={(company ?? null) as LabCompany}
-      products={live.length >= 3 ? live : FALLBACK}
-      isDemo={live.length < 3}
-      spots={{
-        oro:   spots.oro?.price_eur_per_g   ?? null,
-        plata: spots.plata?.price_eur_per_g ?? null,
-      }}
-      history={{ oro: serie("oro"), plata: serie("plata") }}
-    />
+    <LabSessionProvider session={session} orders={orders} documents={documents}>
+      <LabExperience
+        brandName={brandName}
+        products={products}
+        spots={{
+          oro:   spots.oro?.price_eur_per_g   ?? null,
+          plata: spots.plata?.price_eur_per_g ?? null,
+        }}
+        history={{ oro: serie("oro"), plata: serie("plata") }}
+      />
+    </LabSessionProvider>
   );
 }

@@ -13,8 +13,9 @@ const LabIngotViewer = dynamic(() => import("./lab-ingot-viewer").then((m) => m.
 /* ═══════════════════════════════════════════════════════════════════════════
    Detalle de producto: la pieza en 3D y la reserva, sobre la propia página.
 
-   La reserva llama a la acción real del catálogo (createReservationAction), no
-   a una simulación: si no hay sesión responde pidiéndola, igual que en /catalogo.
+   La reserva llama a la acción real del catálogo (createReservationAction, vía
+   lab-session): queda en la tabla `reservations` y avisa por email. Sin sesión
+   se pide entrar, igual que en /catalogo.
 
    Solo hay mapa de relieve para las piezas que lo tienen generado; el resto cae
    a su fotografía. El visor 3D no se descarga si no hace falta.
@@ -58,7 +59,7 @@ interface Props {
 }
 
 export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsAccess }: Props) {
-  const { session, ready, reserve } = useLabSession();
+  const { session, reserve } = useLabSession();
   const { t, money } = useLabLang();
   const [quantity, setQuantity] = useState(initialQty);
   const [phone, setPhone]       = useState("");
@@ -93,12 +94,14 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
     };
   }, [onClose]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!session) { onNeedsAccess(); return; }
     setSending(true);
-    reserve(p, quantity);
+    setError(null);
+    const err = await reserve(p, quantity, { phone, note });
     setSending(false);
+    if (err) { setError(err); return; }
     setDone(true);
   }
 
@@ -203,7 +206,7 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
                   {t("d.doneBody")}
                 </p>
               </div>
-            ) : ready && !session ? (
+            ) : !session ? (
               <div className="lab-detail-gate">
                 <p className="lab-body" style={{ fontSize: "clamp(14px, 1.5vw, 16px)" }}>
                   {t("d.gate")}
@@ -242,7 +245,7 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
                   />
                 </div>
 
-                {error && <p className="lab-detail-error">{error}</p>}
+                {error && <p className="lab-detail-error">{t(error)}</p>}
 
                 <button type="submit" className="lab-cta lab-detail-submit" disabled={sending}>
                   {t(sending ? "d.sending" : "col.reserve")}

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { downloadDocumentPdf } from "@/lib/pdf/document-pdf";
+import { getClientDocumentPdfAction } from "@/app/catalogo/mi-cuenta/actions";
 import { useLabLang } from "./lab-lang";
-import { DEMO_EMAIL, DEMO_PASS, useLabSession, type LabEstado } from "./lab-session";
-import { downloadLabInvoice } from "./lab-invoice";
-import type { LabCompany, LabProduct } from "./lab-experience";
+import { useLabSession, type LabEstado } from "./lab-session";
 import { Segment } from "./lab-segment";
 
 /** Los mismos cuatro estados de mis-reservas.tsx, traducidos por diccionario. */
@@ -15,6 +15,8 @@ const ESTADO_KEY: Record<LabEstado, string> = {
   cancelada:  "st.cancelada",
 };
 
+type Vista = "reservas" | "documentos";
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Acceso privado: pantalla completa, no ventana.
 
@@ -23,19 +25,14 @@ const ESTADO_KEY: Record<LabEstado, string> = {
    propio aire: el argumento a un lado, el formulario al otro. Entrar a la zona
    privada debe sentirse como cruzar una puerta, no como abrir un diálogo.
 
-   ⚠ La sesión es simulada (ver lab-session.tsx). Las credenciales van escritas
-   en la propia pantalla porque esto es un prototipo para enseñar el diseño.
+   Reservas y documentos van en vistas separadas porque en la base no están
+   unidos: una reserva no apunta a la factura que acaba generando.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export function LabAccess({
-  products, company, onClose,
-}: {
-  products: LabProduct[];
-  company:  LabCompany;
-  onClose:  () => void;
-}) {
-  const { session, orders, signIn, signOut, seed } = useLabSession();
+export function LabAccess({ onClose }: { onClose: () => void }) {
+  const { session, orders, documents, signIn, signOut } = useLabSession();
   const { t, money, date } = useLabLang();
+  const [vista, setVista] = useState<Vista>("reservas");
   const [filtro, setFiltro] = useState<LabEstado | "todas">("todas");
   const [pdfBusy, setPdfBusy] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -56,22 +53,25 @@ export function LabAccess({
     };
   }, [onClose]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const err = signIn(email, pass);
-    setError(err);
-    // Historial de muestra solo si entra bien y aún no hay nada guardado
-    if (!err) seed(products);
-    setBusy(false);
+    setError(null);
+    const err = await signIn(email, pass);
+    // Si entra, el servidor vuelve a pintar la página y esta pantalla pasa sola
+    // a la zona de cliente: hasta entonces el botón sigue en «Entrando…».
+    if (err) { setError(err); setBusy(false); return; }
+    setPass("");
   }
 
-  async function getInvoice(id: string) {
-    const r = orders.find((o) => o.id === id);
-    if (!r) return;
+  async function getPdf(id: string) {
     setPdfBusy(id);
     setPdfError(null);
-    try { await downloadLabInvoice(r, company); }
+    try {
+      const result = await getClientDocumentPdfAction(id);
+      if (!result.success) { setPdfError(t("ac.pdfError")); return; }
+      await downloadDocumentPdf(result.payload);
+    }
     catch { setPdfError(t("ac.pdfError")); }
     finally { setPdfBusy(null); }
   }
@@ -83,6 +83,12 @@ export function LabAccess({
 
   const fmtDate = (iso: string) =>
     date(iso, { day: "2-digit", month: "long", year: "numeric" });
+
+  /** Un tipo o estado que el diccionario no conoce se enseña tal cual, no como clave. */
+  const label = (key: string, raw: string) => {
+    const s = t(key);
+    return s === key ? raw : s;
+  };
 
   return (
     <div
@@ -116,13 +122,6 @@ export function LabAccess({
             <h2 className="lab-screen-title">{t("ac.title1")}<br />{t("ac.title2")}</h2>
             <p className="lab-body lab-screen-lead">
               {t("ac.lead")}
-            </p>
-
-            {/* Prototipo: sin esto no hay forma de probar la pantalla de cliente */}
-            <p className="lab-screen-demo">
-              <b>{t("ac.demo")}</b>
-              <span>{DEMO_EMAIL} · {DEMO_PASS}</span>
-              <span>{t("ac.demoNote")}</span>
             </p>
           </div>
 
@@ -158,75 +157,125 @@ export function LabAccess({
             <span className="lab-label" style={{ color: "var(--lab-metal)" }}>{t("ac.account")}</span>
             <h2 className="lab-screen-title">{t("ac.hi")}<br />{session.name.split(" ")[0]}.</h2>
             <p className="lab-body lab-screen-lead">{session.email}</p>
+            {session.isWholesale && (
+              <span className="lab-chip lab-screen-tier">{t("ac.wholesale")}</span>
+            )}
 
             <button type="button" className="lab-cta lab-screen-out"
-                    onClick={() => { signOut(); onClose(); }}>
+                    onClick={() => { void signOut(); onClose(); }}>
               {t("ac.out")}
             </button>
           </div>
 
           <div className="lab-screen-panel">
-            <div className="lab-screen-orders-head">
-              <span className="lab-label" style={{ color: "var(--lab-metal-deep)" }}>{t("ac.orders")}</span>
-              <span className="lab-label" style={{ color: "var(--lab-ink-3)" }}>
-                {String(visibles.length).padStart(2, "0")} / {String(orders.length).padStart(2, "0")}
-              </span>
+            <div className="lab-screen-filter lab-screen-tabs">
+              <Segment<Vista>
+                label={t("ac.account")}
+                value={vista}
+                onChange={setVista}
+                options={[
+                  { v: "reservas",   t: t("ac.tabOrders") },
+                  { v: "documentos", t: t("ac.tabDocs") },
+                ]}
+              />
             </div>
 
-            {presentes.length > 1 && (
-              <div className="lab-screen-filter">
-                <Segment<LabEstado | "todas">
-                  label={t("f.state")}
-                  value={filtro}
-                  onChange={setFiltro}
-                  options={[
-                    { v: "todas" as const, t: t("st.all") },
-                    ...presentes.map((e) => ({ v: e, t: t(ESTADO_KEY[e]) })),
-                  ]}
-                />
-              </div>
-            )}
+            {vista === "reservas" ? (
+              <>
+                <div className="lab-screen-orders-head">
+                  <span className="lab-label" style={{ color: "var(--lab-metal-deep)" }}>{t("ac.orders")}</span>
+                  <span className="lab-label" style={{ color: "var(--lab-ink-3)" }}>
+                    {String(visibles.length).padStart(2, "0")} / {String(orders.length).padStart(2, "0")}
+                  </span>
+                </div>
 
-            {pdfError && <p className="lab-detail-error">{pdfError}</p>}
+                {presentes.length > 1 && (
+                  <div className="lab-screen-filter">
+                    <Segment<LabEstado | "todas">
+                      label={t("f.state")}
+                      value={filtro}
+                      onChange={setFiltro}
+                      options={[
+                        { v: "todas" as const, t: t("st.all") },
+                        ...presentes.map((e) => ({ v: e, t: t(ESTADO_KEY[e]) })),
+                      ]}
+                    />
+                  </div>
+                )}
 
-            {orders.length === 0 ? (
-              <p className="lab-body lab-screen-empty">
-                {t("ac.none")}
-              </p>
-            ) : visibles.length === 0 ? (
-              <p className="lab-body lab-screen-empty">
-                {t("ac.noneState")}
-              </p>
+                {orders.length === 0 ? (
+                  <p className="lab-body lab-screen-empty">
+                    {t("ac.none")}
+                  </p>
+                ) : visibles.length === 0 ? (
+                  <p className="lab-body lab-screen-empty">
+                    {t("ac.noneState")}
+                  </p>
+                ) : (
+                  <ul className="lab-screen-list" data-lab-native>
+                    {visibles.map((o) => (
+                      <li key={o.id} className="lab-screen-item">
+                        <div>
+                          <div className="lab-h lab-screen-item-name">{o.name}</div>
+                          <div className="lab-label lab-screen-item-meta">
+                            {fmtDate(o.at)} · {o.quantity} {t(o.quantity === 1 ? "ac.unit" : "ac.units")}
+                          </div>
+                        </div>
+                        <div className="lab-screen-item-right">
+                          <span className="lab-num lab-screen-item-price">
+                            {o.price != null ? money(o.price * o.quantity) : t("d.ask")}
+                          </span>
+                          <span className="lab-estado" data-estado={o.estado}>{t(ESTADO_KEY[o.estado])}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             ) : (
-              <ul className="lab-screen-list" data-lab-native>
-                {visibles.map((o) => (
-                  <li key={o.id} className="lab-screen-item">
-                    <div>
-                      <div className="lab-h lab-screen-item-name">{o.name}</div>
-                      <div className="lab-label lab-screen-item-meta">
-                        {fmtDate(o.at)} · {o.quantity} {t(o.quantity === 1 ? "ac.unit" : "ac.units")}
-                      </div>
-                    </div>
-                    <div className="lab-screen-item-right">
-                      <span className="lab-num lab-screen-item-price">
-                        {o.price != null ? money(o.price * o.quantity) : t("d.ask")}
-                      </span>
-                      <span className="lab-estado" data-estado={o.estado}>{t(ESTADO_KEY[o.estado])}</span>
+              <>
+                <div className="lab-screen-orders-head">
+                  <span className="lab-label" style={{ color: "var(--lab-metal-deep)" }}>{t("ac.docs")}</span>
+                  <span className="lab-label" style={{ color: "var(--lab-ink-3)" }}>
+                    {String(documents.length).padStart(2, "0")}
+                  </span>
+                </div>
 
-                      {o.factura && (
-                        <button
-                          type="button"
-                          className="lab-invoice"
-                          onClick={() => getInvoice(o.id)}
-                          disabled={pdfBusy === o.id}
-                        >
-                          {pdfBusy === o.id ? t("ac.generating") : t("ac.invoice", { code: o.factura })}
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                {pdfError && <p className="lab-detail-error">{pdfError}</p>}
+
+                {documents.length === 0 ? (
+                  <p className="lab-body lab-screen-empty">
+                    {t("ac.noDocs")}
+                  </p>
+                ) : (
+                  <ul className="lab-screen-list" data-lab-native>
+                    {documents.map((d) => (
+                      <li key={d.id} className="lab-screen-item">
+                        <div>
+                          <div className="lab-h lab-screen-item-name">{d.code ?? "—"}</div>
+                          <div className="lab-label lab-screen-item-meta">
+                            {label(`doc.${d.type}`, d.type)} · {fmtDate(d.date)}
+                          </div>
+                        </div>
+                        <div className="lab-screen-item-right">
+                          <span className="lab-num lab-screen-item-price">
+                            {d.total != null ? money(d.total) : "—"}
+                          </span>
+                          <span className="lab-estado" data-estado={d.estado}>{label(`ds.${d.estado}`, d.estado)}</span>
+                          <button
+                            type="button"
+                            className="lab-invoice"
+                            onClick={() => getPdf(d.id)}
+                            disabled={pdfBusy === d.id}
+                          >
+                            {pdfBusy === d.id ? t("ac.generating") : t("ac.pdf")}
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </div>
         </div>

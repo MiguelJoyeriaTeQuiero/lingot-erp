@@ -48,29 +48,10 @@ export interface LabProduct {
   inStock:  boolean;
 }
 
-/** Datos del emisor que imprime la factura. Los mismos que usa el ERP. */
-export type LabCompany = {
-  legal_name?:      string | null;
-  trade_name?:      string | null;
-  tax_id?:          string | null;
-  address?:         string | null;
-  city?:            string | null;
-  postal_code?:     string | null;
-  country?:         string | null;
-  email?:           string | null;
-  phone?:           string | null;
-  website?:         string | null;
-  iban?:            string | null;
-  default_igic_rate?: number | null;
-  invoice_footer?:  string | null;
-} | null;
-
 interface Props {
   brandName: string;
-  company:   LabCompany;
   history:   { oro: LabSerie; plata: LabSerie };
   products:  LabProduct[];
-  isDemo:    boolean;
   spots:     { oro: number | null; plata: number | null };
 }
 
@@ -197,7 +178,7 @@ function FaqItem({ q, children, defaultOpen = false }: { q: string; children: Re
 /* ── Experiencia ───────────────────────────────────────────────────────── */
 
 
-export function LabExperience({ brandName, company, history, products, isDemo, spots }: Props) {
+export function LabExperience({ brandName, history, products, spots }: Props) {
   const { t, money } = useLabLang();
   const goldOz   = spots.oro   != null ? spots.oro   * TROY_OZ : null;
   const silverOz = spots.plata != null ? spots.plata * TROY_OZ : null;
@@ -224,10 +205,12 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
   const [detail, setDetail] = useState<LabProduct | null>(null);
   // Cambiar de metal exige rehacer el entorno PMREM: se remonta la escena
   const theme = useLabTheme();
-  const { session, ready, reserve } = useLabSession();
+  const { session, reserve } = useLabSession();
   const [access, setAccess] = useState(false);
   // Confirmación por ficha: el aviso se queda donde se pulsó, no en una esquina
   const [justReserved, setJustReserved] = useState<string | null>(null);
+  const [reserving, setReserving]       = useState<string | null>(null);
+  const [failed, setFailed]             = useState<string | null>(null);
   // Unidades elegidas en cada ficha. Solo se guarda lo que difiere de 1, así
   // que el objeto se mantiene vacío mientras nadie toque nada.
   const [unidades, setUnidades] = useState<Record<string, number>>({});
@@ -245,9 +228,13 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
     setUnidades((u) => ({ ...u, [id]: acotar((u[id] ?? 1) + d) }));
 
   /** Reserva de una unidad sin salir de la rejilla. Sin sesión, pide entrar. */
-  const quickReserve = (p: LabProduct) => {
+  const quickReserve = async (p: LabProduct) => {
     if (!session) { setAccess(true); return; }
-    reserve(p, uds(p.id));
+    setReserving(p.id);
+    setFailed(null);
+    const err = await reserve(p, uds(p.id));
+    setReserving(null);
+    if (err) { setFailed(p.id); return; }
     setJustReserved(p.id);
     // La ficha vuelve a una unidad: dejarla en 5 invita a reservar cinco más
     setUnidades((u) => ({ ...u, [p.id]: 1 }));
@@ -345,7 +332,7 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
           <LabLangToggle />
           <LabThemeToggle />
           <button type="button" className="lab-cta" onClick={() => setAccess(true)}>
-            {ready && session ? session.name.split(" ")[0] : t("nav.access")}
+            {session ? session.name.split(" ")[0] : t("nav.access")}
           </button>
         </div>
       </nav>
@@ -476,7 +463,7 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
               </h2>
             </div>
             <p className="lab-body" style={{ maxWidth: "34ch", fontSize: 15 }}>
-              {t(isDemo ? "col.noteDemo" : "col.noteReal")}
+              {t("col.noteReal")}
             </p>
           </div>
 
@@ -532,8 +519,8 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
                   <div className="lab-card-actions">
                     {/* Sin sesión no se puede reservar, así que tampoco se
                         ofrece: elegir unidades que no vas a poder usar es una
-                        trampa. `ready` evita el parpadeo de quien sí tiene sesión. */}
-                    {!ready || session ? (
+                        trampa. */}
+                    {session ? (
                       <>
                         <div className="lab-uds" role="group" aria-label={t("col.units", { name: p.name })}>
                           <button
@@ -558,9 +545,15 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
                           type="button"
                           className="lab-card-reserve"
                           data-done={justReserved === p.id ? "true" : "false"}
+                          disabled={reserving === p.id}
                           onClick={() => quickReserve(p)}
                         >
-                          {t(justReserved === p.id ? "col.reserved" : "col.reserve")}
+                          {t(
+                            reserving === p.id   ? "d.sending"
+                            : justReserved === p.id ? "col.reserved"
+                            : failed === p.id    ? "col.failed"
+                            : "col.reserve"
+                          )}
                         </button>
                       </>
                     ) : (
@@ -667,7 +660,7 @@ export function LabExperience({ brandName, company, history, products, isDemo, s
         />
       )}
 
-      {access && <LabAccess products={products} company={company} onClose={() => setAccess(false)} />}
+      {access && <LabAccess onClose={() => setAccess(false)} />}
 
       {/* ══ FOOTER ══════════════════════════════════════════════════════ */}
       <footer className="lab-foot">

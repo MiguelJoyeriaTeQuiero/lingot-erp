@@ -1562,28 +1562,7 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
   max-width: 40ch;
 }
 .lab-screen-out { margin-top: clamp(28px, 3.6vw, 40px); }
-
-.lab-screen-demo {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: clamp(30px, 4vw, 46px);
-  padding: 16px 18px;
-  border-radius: 12px;
-  border: 1px dashed var(--lab-hair);
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--lab-ink-3);
-  max-width: 40ch;
-}
-.lab-screen-demo b {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--lab-metal-deep);
-}
-.lab-screen-demo span:nth-of-type(1) { color: var(--lab-ink-2); font-variant-numeric: tabular-nums; }
+.lab-screen-tier { display: flex; margin-top: 18px; color: var(--lab-metal-lit); }
 
 .lab-screen-panel {
   min-width: 0;
@@ -1617,6 +1596,8 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
 .lab-screen-filter::-webkit-scrollbar { display: none; }
 .lab-screen-filter .lab-filter-label { display: none; }
 .lab-screen-filter .lab-seg-btn { padding: 8px 13px; letter-spacing: 0.15em; font-size: 9px; }
+/* Reservas | Documentos: encabeza el panel, por encima del título de la lista */
+.lab-screen-tabs { margin: 0 0 22px; }
 
 .lab-screen-list {
   display: flex;
@@ -1672,9 +1653,16 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
 .lab-estado[data-estado="confirmada"] { color: var(--lab-brand-lit); }
 .lab-estado[data-estado="entregada"]  { color: #4c9c74; }
 .lab-estado[data-estado="cancelada"]  { color: #b4655c; opacity: 0.85; }
+/* Estados de los documentos del ERP (los borradores nunca llegan aquí) */
+.lab-estado[data-estado="emitido"]    { color: var(--lab-brand-lit); }
+.lab-estado[data-estado="pagado"]     { color: #4c9c74; }
+.lab-estado[data-estado="vencido"]    { color: var(--lab-metal); }
+.lab-estado[data-estado="cancelado"]  { color: #b4655c; opacity: 0.85; }
 /* Lo cancelado no debe pesar tanto como lo vivo */
 .lab-screen-item:has(.lab-estado[data-estado="cancelada"]) .lab-screen-item-name,
-.lab-screen-item:has(.lab-estado[data-estado="cancelada"]) .lab-screen-item-price {
+.lab-screen-item:has(.lab-estado[data-estado="cancelada"]) .lab-screen-item-price,
+.lab-screen-item:has(.lab-estado[data-estado="cancelado"]) .lab-screen-item-name,
+.lab-screen-item:has(.lab-estado[data-estado="cancelado"]) .lab-screen-item-price {
   opacity: 0.5;
   text-decoration: line-through;
   text-decoration-thickness: 1px;
