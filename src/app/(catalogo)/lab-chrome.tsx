@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LabLangToggle, useLabLang } from "./lab-lang";
 import { LabThemeToggle } from "./lab-theme";
-import { LAB_PATHS } from "./lab-paths";
+import { LAB_PATHS, LEGAL_LINKS } from "./lab-paths";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Navegación y pie de las páginas interiores (Nosotros, blog).
@@ -83,6 +83,12 @@ export function LabFoot({ brandName = "Lingot" }: { brandName?: string }) {
           Te Quiero Group · {new Date().getFullYear()}
         </span>
       </div>
+      {/* Accesible desde cualquier página, como pide el art. 10 LSSI */}
+      <nav className="lab-foot-legal" aria-label={t("lg.eyebrow")}>
+        {LEGAL_LINKS.map((l) => (
+          <Link key={l.doc} href={l.href} className="lab-foot-legal-link">{t(l.key)}</Link>
+        ))}
+      </nav>
     </footer>
   );
 }

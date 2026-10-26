@@ -9,6 +9,7 @@ import { LabMarketChart, type LabSerie } from "./lab-market-chart";
 import { LabThemeToggle, useLabTheme } from "./lab-theme";
 import { LabLangToggle, useLabLang } from "./lab-lang";
 import { LabAccess } from "./lab-access";
+import { LabLegalBasic } from "./lab-legal";
 import { LabPrinciples, usePrincipleItems } from "./lab-principles";
 import { Eyebrow, FUNDADA, Rise, useBackingFacts } from "./lab-parts";
 import { LabFoot, NavAccessLabel } from "./lab-chrome";
@@ -542,6 +543,10 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
               </button>
             )}
           </div>
+
+          {/* La reserva rápida de las tarjetas no pasa por el formulario de la
+              ficha: la información y las condiciones tienen que estar aquí */}
+          {session && <LabLegalBasic purpose="reserve" />}
         </div>
       </section>
 

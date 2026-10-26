@@ -8,6 +8,7 @@ import { useLabLang } from "./lab-lang";
 import { useLabSession, type LabEstado } from "./lab-session";
 import { Segment } from "./lab-segment";
 import { LAB_PATHS } from "./lab-paths";
+import { LabLegalBasic } from "./lab-legal";
 
 /** Los mismos cuatro estados de mis-reservas.tsx, traducidos por diccionario. */
 const ESTADO_KEY: Record<LabEstado, string> = {
@@ -209,6 +210,8 @@ function AccountScreen({
               <a className="lab-detail-alt" href="tel:+34669393197">
                 {t("ac.noAccount")}
               </a>
+
+              <LabLegalBasic purpose="login" />
             </form>
           </div>
         </div>
