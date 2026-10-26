@@ -315,6 +315,11 @@ export async function markPurchaseOrderReceivedAction(
 ): Promise<ActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
+  // Recibir lo pueden hacer admin y contabilidad (así lo ofrece la ficha), pero
+  // la política de la base solo deja modificar pedidos al admin: el cambio de
+  // estado va con el cliente de servicio tras comprobar el rol.
+  const staff = await requireStaff();
+  if (!staff) return { success: false, error: "No autorizado" };
 
   const { data: order } = await supabase
     .from("purchase_orders")
@@ -325,12 +330,19 @@ export async function markPurchaseOrderReceivedAction(
   if (!order) return { success: false, error: "Pedido no encontrado" };
   if (order.received) return { success: false, error: "Este pedido ya fue marcado como recibido" };
 
-  const { error: updErr } = await supabase
+  // Solo pasa de «en envío» a recibido si seguía sin recibir: dos clics
+  // seguidos no pueden sumar el stock dos veces.
+  const { data: updated, error: updErr } = await staff
     .from("purchase_orders")
     .update({ received: true, received_at: new Date().toISOString() })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("received", false)
+    .select("id");
 
   if (updErr) return { success: false, error: updErr.message };
+  if (!updated?.length) {
+    return { success: false, error: "El pedido no se ha podido marcar como recibido (puede que ya lo estuviera)" };
+  }
 
   const { data: product } = await supabase
     .from("products")
@@ -351,7 +363,8 @@ export async function markPurchaseOrderReceivedAction(
     p_movement_type: "entrada",
     p_quantity: order.quantity,
     p_reason: reason,
-    p_invoice_url: null,
+    // Si el pedido ya tiene factura, el movimiento de entrada la enlaza
+    p_invoice_url: order.invoice_urls?.[0] ?? order.invoice_url ?? null,
   });
 
   if (movErr) return { success: false, error: `Estado actualizado pero error en stock: ${movErr.message}` };
@@ -377,6 +390,111 @@ export async function markPurchaseOrderReceivedAction(
   }
 
   revalidatePath("/inventario");
+  revalidatePath(`/inventario/${productId}`);
+  return { success: true, id: orderId };
+}
+
+/**
+ * Solo personal del ERP (admin o contabilidad), igual que quien puede recibir
+ * pedidos. Devuelve el cliente de servicio: las políticas de la base solo dejan
+ * modificar pedidos al admin, y con la sesión de contabilidad el UPDATE no
+ * fallaba, simplemente no cambiaba nada.
+ */
+async function requireStaff() {
+  const supabase = createTypedClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const role = (profile as { role?: string } | null)?.role;
+  return role === "admin" || role === "contabilidad" ? createRawAdminClient() : null;
+}
+
+/** Solo se aceptan archivos subidos al bucket de facturas de compra. */
+function isPurchaseInvoiceUrl(url: unknown): url is string {
+  return typeof url === "string" && url.includes("/storage/v1/object/public/purchase-invoices/");
+}
+
+/**
+ * Adjunta facturas a un pedido de reposición ya registrado. La factura no es
+ * obligatoria al dar de alta la mercancía: se puede incorporar después, con el
+ * pedido en envío o ya recibido.
+ */
+export async function attachPurchaseOrderInvoicesAction(
+  orderId: string,
+  productId: string,
+  urls: string[]
+): Promise<ActionResult> {
+  const supabase = await requireStaff();
+  if (!supabase) return { success: false, error: "No autorizado" };
+  if (!Array.isArray(urls) || urls.length === 0 || !urls.every(isPurchaseInvoiceUrl)) {
+    return { success: false, error: "Documentos no válidos" };
+  }
+
+  const { data: order, error: readErr } = await supabase
+    .from("purchase_orders")
+    .select("invoice_url, invoice_urls")
+    .eq("id", orderId)
+    .single();
+  if (readErr || !order) return { success: false, error: "Pedido no encontrado" };
+
+  const current = (order as { invoice_urls?: string[] | null; invoice_url?: string | null });
+  // Los pedidos antiguos guardaban un único documento en invoice_url
+  const existing = current.invoice_urls?.length
+    ? current.invoice_urls
+    : current.invoice_url ? [current.invoice_url] : [];
+  const merged = [...existing, ...urls.filter((u) => !existing.includes(u))];
+
+  const { data: saved, error } = await supabase
+    .from("purchase_orders")
+    .update({ invoice_urls: merged, invoice_url: merged[0] ?? null })
+    .eq("id", orderId)
+    .select("id");
+  if (error) return { success: false, error: error.message };
+  if (!saved?.length) return { success: false, error: "No se ha podido guardar el documento" };
+
+  revalidatePath(`/inventario/${productId}`);
+  return { success: true, id: orderId };
+}
+
+/**
+ * Quita un documento adjuntado por error. Solo desvincula: el archivo se queda
+ * en el almacenamiento, por si hiciera falta recuperarlo.
+ */
+export async function detachPurchaseOrderInvoiceAction(
+  orderId: string,
+  productId: string,
+  url: string
+): Promise<ActionResult> {
+  const supabase = await requireStaff();
+  if (!supabase) return { success: false, error: "No autorizado" };
+
+  const { data: order, error: readErr } = await supabase
+    .from("purchase_orders")
+    .select("invoice_url, invoice_urls")
+    .eq("id", orderId)
+    .single();
+  if (readErr || !order) return { success: false, error: "Pedido no encontrado" };
+
+  const current = (order as { invoice_urls?: string[] | null; invoice_url?: string | null });
+  const existing = current.invoice_urls?.length
+    ? current.invoice_urls
+    : current.invoice_url ? [current.invoice_url] : [];
+  const remaining = existing.filter((u) => u !== url);
+
+  const { data: saved, error } = await supabase
+    .from("purchase_orders")
+    .update({ invoice_urls: remaining, invoice_url: remaining[0] ?? null })
+    .eq("id", orderId)
+    .select("id");
+  if (error) return { success: false, error: error.message };
+  if (!saved?.length) return { success: false, error: "No se ha podido quitar el documento" };
+
   revalidatePath(`/inventario/${productId}`);
   return { success: true, id: orderId };
 }
