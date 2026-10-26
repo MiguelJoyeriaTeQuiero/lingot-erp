@@ -15,7 +15,9 @@ export type SaleRow = {
   product_sku: string | null;
   quantity: number;
   revenue: number;         // line_subtotal (sin IGIC) — negativo si es rectificativa
-  cost_per_unit: number;   // del lote de compra
+  revenue_with_igic: number; // line_total (con IGIC): lo que paga el cliente
+  igic_rate: number;       // IGIC de la línea (%), p. ej. 15 en la plata
+  cost_per_unit: number;   // del lote de compra, sin IGIC
   total_cost: number;      // cost_per_unit × quantity — negativo si es rectificativa
   profit: number;          // revenue - total_cost
   is_rectification: boolean;
@@ -27,7 +29,7 @@ export default async function RentabilidadPage() {
 
   const { data: rawLines } = await supabase
     .from("document_lines")
-    .select("id, document_id, product_id, description, quantity, line_subtotal, lot_id");
+    .select("id, document_id, product_id, description, quantity, line_subtotal, line_total, igic_rate, lot_id");
 
   const lines = (rawLines ?? []).filter((l) => l.lot_id);
   if (lines.length === 0) {
@@ -88,6 +90,10 @@ export default async function RentabilidadPage() {
     );
     if (isRectification) continue;
 
+    // El beneficio se calcula SIN IGIC en los dos lados: el IGIC cobrado se
+    // ingresa a Hacienda y el de la compra se deduce, no es ingreso ni coste.
+    // Por eso el coste del lote tiene que estar sin IGIC (ver la casilla
+    // «El coste incluye IGIC» de los pedidos de reposición).
     const quantity = Number(line.quantity);
     const revenue = Number(line.line_subtotal);
     const costPerUnit = Number(lot.cost_per_unit);
@@ -107,6 +113,8 @@ export default async function RentabilidadPage() {
       product_sku: product?.sku ?? null,
       quantity,
       revenue,
+      revenue_with_igic: Number(line.line_total ?? line.line_subtotal),
+      igic_rate: Number(line.igic_rate ?? 0),
       cost_per_unit: costPerUnit,
       total_cost: totalCost,
       profit,
@@ -121,7 +129,7 @@ export default async function RentabilidadPage() {
       <PageHeader
         eyebrow="Contabilidad · 06"
         title="Rentabilidad"
-        description="Beneficio por venta — precio cobrado menos coste de compra por unidad. Las rectificativas no se contabilizan."
+        description="Beneficio por venta — precio cobrado menos coste de compra por unidad, ambos sin IGIC. El PVP se muestra con IGIC y, debajo, sin él. Las rectificativas no se contabilizan."
       />
       <RentabilidadView rows={rows} />
     </div>

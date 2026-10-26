@@ -262,12 +262,25 @@ export async function createPurchaseOrderAction(
     .single();
 
   const weightG = Number((product as { weight_g?: number } | null)?.weight_g ?? 0);
-  const costPerUnit = parsed.data.cost_per_unit;
+
+  // Pedidos y lotes guardan el coste SIN IGIC: el IGIC de la compra se deduce
+  // y no es coste. Si el importe introducido lo lleva, se descuenta aquí y se
+  // deja constancia en las notas del pedido.
+  const igicRate = parsed.data.cost_includes_igic ? parsed.data.igic_rate : 0;
+  const netOf = (v: number) => (igicRate > 0 ? v / (1 + igicRate / 100) : v);
+  const costPerUnit = Math.round(netOf(parsed.data.cost_per_unit) * 10000) / 10000;
   // cost_per_gram = coste/u ÷ gramos por unidad (para seguimiento de fluctuación de metal)
   const costPerGram = weightG > 0 ? costPerUnit / weightG : costPerUnit;
   const totalCost =
-    parsed.data.total_cost ??
-    Math.round(costPerUnit * parsed.data.quantity * 100) / 100;
+    parsed.data.total_cost != null
+      ? Math.round(netOf(parsed.data.total_cost) * 100) / 100
+      : Math.round(costPerUnit * parsed.data.quantity * 100) / 100;
+
+  const eur = (n: number) => n.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const igicNote = igicRate > 0
+    ? `Coste registrado sin IGIC: se descontó el ${igicRate} % de ${eur(parsed.data.cost_per_unit)} €/u introducidos.`
+    : null;
+  const notes = [parsed.data.notes, igicNote].filter(Boolean).join(" · ") || null;
 
   const { data, error } = await supabase
     .from("purchase_orders")
@@ -279,7 +292,7 @@ export async function createPurchaseOrderAction(
       cost_per_gram: costPerGram,
       spot_price_per_g: parsed.data.spot_price_per_g,
       total_cost: totalCost,
-      notes: parsed.data.notes,
+      notes,
       created_by: user.id,
       invoice_url: invoiceUrls?.[0] ?? null,
       invoice_urls: invoiceUrls ?? [],

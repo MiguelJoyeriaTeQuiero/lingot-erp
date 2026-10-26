@@ -297,7 +297,7 @@ async function generatePdf(data: KpiReportData) {
     doc.setFont("helvetica", "normal");
     doc.setTextColor(C.muted);
     doc.text(
-      `Ingresos: ${eur(data.totalRevenue)}   ·   Costes: ${eur(data.totalCost)}   ·   Beneficio: ${eur(data.totalProfit)}   ·   Margen global: ${data.margenGlobal.toFixed(1)}%`,
+      `Sin IGIC — Ingresos: ${eur(data.totalRevenue)}   ·   Costes: ${eur(data.totalCost)}   ·   Beneficio: ${eur(data.totalProfit)}   ·   Margen global: ${data.margenGlobal.toFixed(1)}%`,
       ML,
       y
     );
@@ -305,14 +305,14 @@ async function generatePdf(data: KpiReportData) {
 
     autoTable(doc, {
       startY: y,
-      head: [["Fecha", "Factura", "Cliente", "Producto", "Cant.", "PVP/u", "Coste/u", "Beneficio", "Margen"]],
+      head: [["Fecha", "Factura", "Cliente", "Producto", "Cant.", "PVP/u c/IGIC", "Coste/u", "Beneficio", "Margen"]],
       body: data.ventas.map((v) => [
         fmtDate(v.fecha),
         v.esRectificacion ? `${v.factura} ®` : v.factura,
         v.cliente.length > 18 ? v.cliente.slice(0, 16) + "…" : v.cliente,
         (v.producto.length > 20 ? v.producto.slice(0, 18) + "…" : v.producto) + (v.sku ? ` · ${v.sku}` : ""),
         String(v.cantidad),
-        eur(v.pvpUnit),
+        eur(v.pvpUnitConIgic),
         eur(v.costeUnit),
         (v.beneficioUnit >= 0 ? "+" : "") + eur(v.beneficioUnit),
         pct(v.margenPct),

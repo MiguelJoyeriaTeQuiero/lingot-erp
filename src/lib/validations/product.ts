@@ -149,6 +149,15 @@ export const purchaseOrderSchema = z.object({
   spot_price_per_g: optionalPositiveNumber,
   total_cost: optionalPositiveNumber,
   notes: optionalString,
+  // Si el coste introducido lleva el IGIC de la compra (lo habitual en la
+  // plata), la acción lo descuenta: los lotes guardan siempre el coste sin
+  // IGIC, que es el que cuenta para el beneficio y la valoración.
+  cost_includes_igic: z.boolean().default(false),
+  igic_rate: z.coerce
+    .number({ invalid_type_error: "IGIC no válido" })
+    .min(0, "El IGIC no puede ser negativo")
+    .max(30, "El IGIC no parece correcto")
+    .default(0),
 });
 
 export type PurchaseOrderInput = z.infer<typeof purchaseOrderSchema>;

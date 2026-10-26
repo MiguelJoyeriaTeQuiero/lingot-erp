@@ -31,7 +31,11 @@ export interface KpiReportData {
     producto: string;
     sku: string | null;
     cantidad: number;
+    /** Precio unitario sin IGIC (base de la línea). */
     pvpUnit: number;
+    /** Precio unitario con IGIC, el que figura en la factura. */
+    pvpUnitConIgic: number;
+    /** Coste del lote, sin IGIC. */
     costeUnit: number;
     beneficioUnit: number;
     margenPct: number;
@@ -86,7 +90,7 @@ export async function fetchKpiReport(
           .limit(2000),
         supabase
           .from("document_lines")
-          .select("id, document_id, product_id, description, quantity, line_subtotal, lot_id"),
+          .select("id, document_id, product_id, description, quantity, line_subtotal, line_total, lot_id"),
         supabase
           .from("stock_lots")
           .select("id, product_id, cost_per_unit, quantity_remaining, purchase_order_id"),
@@ -155,8 +159,11 @@ export async function fetchKpiReport(
         const product = productMap.get(ln.product_id ?? "");
         const doc = docMap.get(ln.document_id);
         const qty = Number(ln.quantity);
+        // Beneficio y margen sin IGIC (base menos coste sin IGIC); el PVP con
+        // IGIC solo se muestra, como en la factura
         const totalLinea = Number(ln.line_subtotal);
         const pvpUnit = qty > 0 ? totalLinea / qty : 0;
+        const pvpUnitConIgic = qty > 0 ? Number(ln.line_total ?? ln.line_subtotal) / qty : 0;
         const costeUnit = Number(lot?.cost_per_unit ?? 0);
         const beneficioUnit = pvpUnit - costeUnit;
         const margenPct = pvpUnit > 0 ? (beneficioUnit / pvpUnit) * 100 : 0;
@@ -169,6 +176,7 @@ export async function fetchKpiReport(
           sku: product?.sku ?? null,
           cantidad: qty,
           pvpUnit,
+          pvpUnitConIgic,
           costeUnit,
           beneficioUnit,
           margenPct,
