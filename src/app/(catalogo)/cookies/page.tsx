@@ -1,18 +1,19 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { LabLegalPage, type LegalSection } from "../lab-legal";
 import { LegalTable, TitularMail } from "../lab-legal-parts";
 import { TITULAR } from "../lab-legal-data";
 import { LAB_PATHS } from "../lab-paths";
+import { pageMeta } from "../lab-seo";
 import { THEME_KEY } from "../lab-theme-boot";
 import { LANG_KEY } from "../lab-i18n";
 import { CONSENT_COOKIE, CONSENT_MAX_AGE_DAYS } from "../lab-consent-store";
 import { ConsentSettingsButton } from "../lab-consent";
 
-export const metadata: Metadata = {
-  title: "Política de cookies · Lingot",
+export const metadata = pageMeta({
+  title:       "Política de cookies",
   description: "Qué cookies usa Lingot, cuáles son opcionales y cómo aceptarlas, rechazarlas o cambiar tu elección.",
-};
+  path:        "/cookies",
+});
 
 /* Inventario real (octubre de 2026): la cookie de sesión de Supabase
    (@supabase/ssr, 400 días por defecto) y dos claves de localStorage que solo

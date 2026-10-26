@@ -2848,6 +2848,19 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
 .lab-prose li::marker { color: var(--lab-metal); }
 
 .lab-article-rule { width: 100%; margin: clamp(56px, 8vw, 80px) 0 clamp(40px, 6vw, 56px); }
+.lab-article-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  margin-bottom: clamp(40px, 6vw, 56px);
+  padding: clamp(22px, 3vw, 30px);
+  border: 1px solid var(--lab-metal-line);
+  border-radius: 20px;
+  background: var(--lab-metal-tint);
+}
+.lab-article-cta .lab-body { flex: 1 1 280px; margin: 0; font-size: 15px; color: var(--lab-ink); }
 .lab-article-nav {
   display: grid;
   gap: 14px;

@@ -218,7 +218,9 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
   // Firma del filtro: remonta la rejilla para que la entrada se repita
   const gridKey = `${filters.metal}|${filters.kind}|${filters.purity}|${filters.min}|${filters.max}|${expanded}`;
 
+  // El orden se repite en faqLd (lab-seo.tsx): el marcado debe coincidir con lo que se ve
   const faqItems: { q: string; a: React.ReactNode }[] = [
+    { q: t("faq.q6"), a: <FaqP>{t("faq.a6")}</FaqP> },
     { q: t("faq.q1"), a: <FaqP>{t("faq.a1")}</FaqP> },
     { q: t("faq.q2"), a: <FaqP>{t("faq.a2")}</FaqP> },
     {
@@ -295,14 +297,18 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
         <div className="lab-hero-veil" aria-hidden />
 
         <div className="lab-hero-body">
-          <span
-            className="lab-label"
-            style={{ color: "var(--lab-metal)", marginBottom: "clamp(18px, 2.6vw, 32px)", animation: "lab-down 1.1s var(--e-expo) 50ms both" }}
-          >
-            {t("hero.eyebrow")}
-          </span>
-
-          <h1 className="lab-hero-word" aria-label={brandName}>
+          {/* La línea de arriba forma parte del H1: así el titular de la página
+              dice qué se vende y dónde, no solo la marca. Se ve igual que antes. */}
+          <h1 className="lab-hero-word" aria-label={`${t("hero.eyebrow")} — ${brandName}`}>
+            <span
+              className="lab-label"
+              style={{
+                display: "block", color: "var(--lab-metal)", lineHeight: 1.4, textShadow: "none",
+                marginBottom: "clamp(18px, 2.6vw, 32px)", animation: "lab-down 1.1s var(--e-expo) 50ms both",
+              }}
+            >
+              {t("hero.eyebrow")}
+            </span>{" "}
             <span aria-hidden style={{ display: "block", overflow: "hidden", paddingBottom: "0.34em", marginBottom: "-0.06em" }}>
               {brandName.split("").map((ch, i) => (
                 <span

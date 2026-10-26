@@ -169,6 +169,12 @@ export function LabBlogArticle({
           <i /><span style={{ fontSize: 8, color: "var(--lab-metal)" }}>✦</span><i />
         </div>
 
+        {/* Del análisis a la pieza: el enlace interno que lleva a la colección */}
+        <aside className="lab-article-cta">
+          <p className="lab-body">{t("blog.ctaLead")}</p>
+          <Link href={LAB_PATHS.collection} className="lab-cta">{t("blog.ctaBtn")}</Link>
+        </aside>
+
         {(prev || next) && (
           <nav className="lab-article-nav" aria-label={t("blog.more")}>
             {prev ? (

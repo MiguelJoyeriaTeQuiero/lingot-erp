@@ -6,8 +6,15 @@ import { LabComingSoon } from "./lab-coming-soon";
 import { LabSessionProvider } from "./lab-session";
 import { loadLabViewer } from "./lab-viewer";
 import type { LabSerie } from "./lab-market-chart";
+import { HOME_DESCRIPTION, HOME_TITLE, JsonLd, faqLd, pageMeta, siteGraphLd } from "./lab-seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = pageMeta({
+  title:       { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  path:        "/",
+});
 
 export default async function CatalogoPage() {
   const supabase = createTypedClient();
@@ -54,7 +61,12 @@ export default async function CatalogoPage() {
   const { session, isAdmin, orders, documents } = viewer;
 
   if (!(company?.catalog_enabled ?? false) && !isAdmin) {
-    return <LabComingSoon brandName={brandName} />;
+    return (
+      <>
+        <JsonLd data={siteGraphLd()} />
+        <LabComingSoon brandName={brandName} />
+      </>
+    );
   }
 
   type PriceRow = { metal: string; price_eur_per_g: number; fetched_at: string };
@@ -113,6 +125,8 @@ export default async function CatalogoPage() {
 
   return (
     <LabSessionProvider session={session} orders={orders} documents={documents}>
+      {/* Tienda, web y las preguntas frecuentes que se ven en la portada */}
+      <JsonLd data={siteGraphLd([faqLd()])} />
       <LabExperience
         brandName={brandName}
         products={products}

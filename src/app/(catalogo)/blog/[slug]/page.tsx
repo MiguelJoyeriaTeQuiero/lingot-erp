@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BLOG_POSTS, getPostBySlug } from "../data";
 import { LabBlogArticle } from "../../lab-blog";
+import { JsonLd, PUBLISHER_LD, SITE_URL, breadcrumbLd, pageMeta } from "../../lab-seo";
 
 export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }));
@@ -9,22 +10,45 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const post = getPostBySlug(params.slug);
-  if (!post) return { title: "Artículo no encontrado" };
-  return {
-    title: `${post.title} · Lingot`,
+  if (!post) return { title: "Artículo no encontrado", robots: { index: false } };
+  return pageMeta({
+    title:       post.title,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, images: [post.imageUrl], type: "article", publishedTime: post.date },
-  };
+    path:        `/blog/${post.slug}`,
+    image:       { url: post.imageUrl, width: 1200, alt: post.imageAlt },
+    article:     { publishedTime: post.date, section: post.category },
+  });
 }
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const post = getPostBySlug(params.slug);
   if (!post) notFound();
 
+  const url = `${SITE_URL}/blog/${post.slug}`;
   const jsonLd = {
-    "@context": "https://schema.org", "@type": "Article",
-    headline: post.title, description: post.excerpt, datePublished: post.date, image: post.imageUrl,
-    author: { "@type": "Organization", name: "Lingot" }, publisher: { "@type": "Organization", name: "Lingot" },
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type":          "BlogPosting",
+        "@id":            `${url}#articulo`,
+        mainEntityOfPage: url,
+        url,
+        headline:         post.title,
+        description:      post.excerpt,
+        image:            [post.imageUrl],
+        datePublished:    post.date,
+        dateModified:     post.date,
+        articleSection:   post.category,
+        inLanguage:       "es-ES",
+        timeRequired:     `PT${post.readMinutes}M`,
+        author:           PUBLISHER_LD,
+        publisher:        PUBLISHER_LD,
+      },
+      breadcrumbLd([
+        { name: "Análisis", path: "/blog" },
+        { name: post.title, path: `/blog/${post.slug}` },
+      ]),
+    ],
   };
 
   // BLOG_POSTS va de más reciente a más antiguo: «anterior» es el siguiente del array
@@ -37,7 +61,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <LabBlogArticle
         post={post}
         prev={card(BLOG_POSTS[idx + 1])}

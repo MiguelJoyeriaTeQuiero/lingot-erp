@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { THEME_BOOTSTRAP } from "./lab-theme-boot";
 import { LANG_BOOTSTRAP } from "./lab-i18n";
 import { LabConsent } from "./lab-consent";
+import { HOME_DESCRIPTION, HOME_TITLE, OG_IMAGE, SITE_NAME, SITE_URL } from "./lab-seo";
 import "./lab.css";
 
 // Open Sauce Sans — superfamilia única de la marca. El drama tipográfico nace
@@ -22,16 +23,21 @@ const openSauce = localFont({
   fallback: ["Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
 });
 
-// Las páginas interiores ponen su propio título; esto vale para la portada
+// Valores de partida del catálogo. Cada página pone los suyos con pageMeta
+// (lab-seo.tsx); esto cubre lo que ninguna sobrescribe. El layout raíz es
+// noindex (el ERP no debe salir en Google): aquí se reabre para el catálogo.
 export const metadata: Metadata = {
-  title: "Lingot — Metales preciosos de alta pureza",
-  description:
-    "Oro y plata de alta pureza con precio calculado sobre el spot del momento. Lingot, de Te Quiero Group.",
-  openGraph: {
-    title: "Lingot — Metales preciosos de alta pureza",
-    description: "Oro y plata de alta pureza con precio calculado sobre el spot del momento.",
-    type: "website",
+  metadataBase: new URL(SITE_URL),
+  title: { default: HOME_TITLE, template: `%s · ${SITE_NAME}` },
+  description: HOME_DESCRIPTION,
+  applicationName: SITE_NAME,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "es_ES", images: [OG_IMAGE] },
+  twitter: { card: "summary_large_image" },
 };
 
 /** Sin JavaScript no hay motor de movimiento: el contenido debe verse igual. */
