@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import { THEME_BOOTSTRAP } from "./lab-theme-boot";
 import { LANG_BOOTSTRAP } from "./lab-i18n";
+import { LabConsent } from "./lab-consent";
 import "./lab.css";
 
 // Open Sauce Sans — superfamilia única de la marca. El drama tipográfico nace
@@ -49,6 +50,8 @@ export default function CatalogoLayout({ children }: { children: ReactNode }) {
       <script dangerouslySetInnerHTML={{ __html: LANG_BOOTSTRAP }} />
       <noscript><style>{NO_JS}</style></noscript>
       {children}
+      {/* Después de la página: así sabe si hay cortina de entrada que esperar */}
+      <LabConsent />
     </div>
   );
 }
