@@ -111,14 +111,17 @@ export function RentabilidadView({ rows }: Props) {
                 <TH>Producto</TH>
                 <TH className="text-right">Cant.</TH>
                 <TH className="text-right">PVP/u</TH>
-                <TH className="text-right">Coste/u</TH>
-                <TH className="text-right">Beneficio</TH>
+                <TH className="text-right" title="Coste de compra sin IGIC">Coste/u</TH>
+                <TH className="text-right" title="Sin IGIC: precio sin IGIC menos coste sin IGIC">Beneficio</TH>
                 <TH className="text-right">Margen</TH>
               </TR>
             </THead>
             <TBody>
               {filtered.map((row) => {
+                // Base (sin IGIC) para el beneficio y el margen; con IGIC, lo que
+                // pagó el cliente, para que el PVP se lea como en la factura
                 const pvpPerUnit = row.quantity > 0 ? row.revenue / row.quantity : 0;
+                const pvpWithIgic = row.quantity > 0 ? row.revenue_with_igic / row.quantity : 0;
                 const profitPerUnit = pvpPerUnit - row.cost_per_unit;
                 const marginPct = pvpPerUnit > 0 ? (profitPerUnit / pvpPerUnit) * 100 : null;
                 return (
@@ -151,7 +154,12 @@ export function RentabilidadView({ rows }: Props) {
                     </TD>
                     <TD className="text-right tabular-nums">{row.quantity}</TD>
                     <TD className="text-right font-mono text-sm">
-                      {formatCurrency(Math.abs(pvpPerUnit))}
+                      {formatCurrency(Math.abs(pvpWithIgic))}
+                      {row.igic_rate > 0 && (
+                        <div className="text-[10px] text-text-dim" title={`IGIC ${row.igic_rate} %`}>
+                          {formatCurrency(Math.abs(pvpPerUnit))} sin IGIC
+                        </div>
+                      )}
                     </TD>
                     <TD className="text-right font-mono text-sm text-text-muted">
                       {formatCurrency(row.cost_per_unit)}
@@ -178,10 +186,10 @@ export function RentabilidadView({ rows }: Props) {
               Total ({filtered.length} ventas)
             </span>
             <span className="font-mono text-sm tabular-nums text-text-muted">
-              Ingreso: {formatCurrency(totalRevenue)}
+              Ingreso sin IGIC: {formatCurrency(totalRevenue)}
             </span>
             <span className="font-mono text-sm tabular-nums text-text-muted">
-              Coste: {formatCurrency(totalCost)}
+              Coste sin IGIC: {formatCurrency(totalCost)}
             </span>
             <span className={`font-mono text-sm tabular-nums font-medium ${totalProfit >= 0 ? "text-success" : "text-danger"}`}>
               {totalProfit >= 0 ? "+" : ""}{formatCurrency(totalProfit)}

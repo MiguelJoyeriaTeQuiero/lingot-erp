@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { SILVER_IGIC_RATE } from "@/lib/pricing";
 import {
   purchaseOrderSchema,
   type PurchaseOrderInput,
@@ -88,6 +89,7 @@ function tooBig(files: File[]) {
 export function PurchaseOrderSection({
   productId,
   weightG,
+  metal,
   currentSpotPerG,
   orders,
   isAdmin = true,
@@ -101,6 +103,20 @@ export function PurchaseOrderSection({
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // La plata lleva IGIC en la compra y normalmente se apunta lo que se ha
+  // pagado; el oro de inversión está exento. De ahí el valor por defecto.
+  const blankOrder = (): PurchaseOrderInput => ({
+    order_date: today(),
+    supplier_name: null,
+    quantity: undefined as unknown as number,
+    cost_per_unit: undefined as unknown as number,
+    spot_price_per_g: currentSpotPerG ?? null,
+    total_cost: null,
+    notes: null,
+    cost_includes_igic: metal === "plata",
+    igic_rate: metal === "plata" ? SILVER_IGIC_RATE : 7,
+  });
+
   const {
     register,
     handleSubmit,
@@ -109,21 +125,17 @@ export function PurchaseOrderSection({
     formState: { errors },
   } = useForm<PurchaseOrderInput>({
     resolver: zodResolver(purchaseOrderSchema),
-    defaultValues: {
-      order_date: today(),
-      supplier_name: null,
-      quantity: undefined as unknown as number,
-      cost_per_unit: undefined as unknown as number,
-      spot_price_per_g: currentSpotPerG ?? null,
-      total_cost: null,
-      notes: null,
-    },
+    defaultValues: blankOrder(),
   });
 
   const qty = Number(watch("quantity") ?? 0);
   const cpu = Number(watch("cost_per_unit") ?? 0);
+  const includesIgic = Boolean(watch("cost_includes_igic"));
+  const igicRate = Number(watch("igic_rate") ?? 0);
+  // Lo que se guardará como coste: sin IGIC
+  const netCpu = includesIgic && igicRate > 0 ? cpu / (1 + igicRate / 100) : cpu;
   const estimatedTotal = qty > 0 && cpu > 0 ? qty * cpu : null;
-  const cpgDisplay = cpu > 0 && weightG > 0 ? cpu / weightG : null;
+  const cpgDisplay = netCpu > 0 && weightG > 0 ? netCpu / weightG : null;
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -171,15 +183,7 @@ export function PurchaseOrderSection({
     }
 
     toast({ variant: "success", title: "Pedido registrado — lote creado y disponible para asignar a ventas" });
-    reset({
-      order_date: today(),
-      supplier_name: null,
-      quantity: undefined as unknown as number,
-      cost_per_unit: undefined as unknown as number,
-      spot_price_per_g: currentSpotPerG ?? null,
-      total_cost: null,
-      notes: null,
-    });
+    reset(blankOrder());
     setFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsOpen(false);
@@ -273,11 +277,44 @@ export function PurchaseOrderSection({
               />
             </div>
 
+            {/* IGIC de la compra: el coste se guarda siempre sin él */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-surface-raised px-4 py-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-primary">
+                <input
+                  type="checkbox"
+                  {...register("cost_includes_igic")}
+                  className="h-4 w-4 border-border bg-surface-raised accent-primary"
+                />
+                El coste incluye IGIC
+              </label>
+              {includesIgic && (
+                <label className="flex items-center gap-2 text-sm text-text-muted">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="30"
+                    {...register("igic_rate")}
+                    className="w-16 border-b border-border bg-transparent py-0.5 text-right font-mono text-sm text-primary focus:border-gold focus:outline-none"
+                  />
+                  %
+                </label>
+              )}
+              <span className="text-xs text-text-dim">
+                {includesIgic
+                  ? "Se guardará el coste sin IGIC, que es el que cuenta para el beneficio."
+                  : "Márcalo si el importe es el de la factura con IGIC (lo habitual en la plata)."}
+              </span>
+              {errors.igic_rate?.message && (
+                <span className="w-full text-xs text-danger">{errors.igic_rate.message}</span>
+              )}
+            </div>
+
             {estimatedTotal != null && (
               <div className="rounded-md border border-gold/30 bg-gold/5 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-text-muted">
-                    Coste total del pedido
+                    Coste total del pedido{includesIgic && igicRate > 0 ? " (con IGIC)" : ""}
                     <span className="ml-1 text-xs">
                       ({qty} u × {formatCurrency(cpu)})
                     </span>
@@ -286,6 +323,14 @@ export function PurchaseOrderSection({
                     {formatCurrency(estimatedTotal)}
                   </span>
                 </div>
+                {includesIgic && igicRate > 0 && (
+                  <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
+                    <span>Se guarda sin IGIC ({igicRate} %)</span>
+                    <span className="font-mono">
+                      {formatCurrency(netCpu)}/u · {formatCurrency(netCpu * qty)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
