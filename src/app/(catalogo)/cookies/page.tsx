@@ -6,17 +6,23 @@ import { TITULAR } from "../lab-legal-data";
 import { LAB_PATHS } from "../lab-paths";
 import { THEME_KEY } from "../lab-theme-boot";
 import { LANG_KEY } from "../lab-i18n";
+import { CONSENT_COOKIE, CONSENT_MAX_AGE_DAYS } from "../lab-consent-store";
+import { ConsentSettingsButton } from "../lab-consent";
 
 export const metadata: Metadata = {
   title: "Política de cookies · Lingot",
-  description: "Lingot solo usa la cookie de sesión del área de clientes y guarda tu idioma y tema. Sin cookies de análisis ni de publicidad.",
+  description: "Qué cookies usa Lingot, cuáles son opcionales y cómo aceptarlas, rechazarlas o cambiar tu elección.",
 };
 
 /* Inventario real (octubre de 2026): la cookie de sesión de Supabase
    (@supabase/ssr, 400 días por defecto) y dos claves de localStorage que solo
    se escriben al pulsar el selector. Ni analítica, ni píxeles, ni fuentes de
-   terceros: las tipografías se sirven desde la propia web. Si eso cambia, esta
-   página y el aviso de consentimiento cambian con ello. */
+   terceros: las tipografías se sirven desde la propia web. El aviso de cookies
+   (lab-consent.tsx) ya recoge permiso para análisis y marketing, pero ninguna
+   herramienta lo usa todavía. Al añadir una, va a la tabla con su titular y
+   duración, y se sube CONSENT_VERSION (lab-consent-store.ts). */
+
+const CONSENT_MONTHS = Math.round(CONSENT_MAX_AGE_DAYS / 30.4);
 
 const BROWSERS: [string, string][] = [
   ["Google Chrome", "https://support.google.com/chrome/answer/95647?hl=es"],
@@ -44,7 +50,10 @@ const SECTIONS: LegalSection[] = [
     title: "Qué cookies usamos",
     body: (
       <>
-        <p>Todas son propias: las crea {TITULAR.web} y no se comparten con terceros.</p>
+        <p>
+          Hoy la web solo usa cookies necesarias. Todas son propias: las crea {TITULAR.web} y no se comparten con
+          terceros.
+        </p>
         <LegalTable
           head={["Nombre", "Tipo", "Para qué sirve", "Duración"]}
           rows={[
@@ -53,6 +62,12 @@ const SECTIONS: LegalSection[] = [
               "Cookie técnica",
               "Mantener tu sesión iniciada en el área privada de clientes. Solo se crea cuando inicias sesión.",
               "Hasta que cierras la sesión y, como máximo, 400 días.",
+            ],
+            [
+              <code>{CONSENT_COOKIE}</code>,
+              "Cookie técnica",
+              "Guardar tu elección sobre las cookies opcionales, para no volver a preguntarte en cada visita.",
+              `${CONSENT_MONTHS} meses, o hasta que cambies tu elección.`,
             ],
             [
               <code>{LANG_KEY}</code>,
@@ -78,19 +93,38 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: "consentimiento",
-    title: "Por qué no te pedimos consentimiento",
+    title: "Cookies opcionales y tu consentimiento",
     body: (
       <>
         <p>
-          Las cookies anteriores están exentas de consentimiento según el artículo 22.2 de la LSSI y la Guía sobre
-          el uso de las cookies de la Agencia Española de Protección de Datos: la de sesión es imprescindible para
-          prestarte el servicio que pides al iniciar sesión, y las de idioma y tema solo guardan una preferencia que
-          tú eliges de forma expresa. Por eso esta web no muestra un aviso de cookies.
+          Las cookies de la tabla anterior están exentas de consentimiento según el artículo 22.2 de la LSSI y la
+          Guía sobre el uso de las cookies de la Agencia Española de Protección de Datos: la de sesión es
+          imprescindible para prestarte el servicio que pides al iniciar sesión, las de idioma y tema guardan una
+          preferencia que eliges de forma expresa y la de consentimiento recuerda tu decisión.
+        </p>
+        <p>Además, el aviso de cookies te pide permiso para dos categorías opcionales:</p>
+        <ul>
+          <li>
+            <strong>Análisis:</strong> nos dicen, de forma agregada, qué páginas se visitan y cómo se llega a ellas,
+            para mejorar la web.
+          </li>
+          <li>
+            <strong>Marketing:</strong> miden la eficacia de nuestros anuncios y campañas y permiten mostrarte
+            publicidad relevante.
+          </li>
+        </ul>
+        <p>
+          Hoy no usamos ninguna cookie de estas categorías, así que aceptarlas todavía no activa nada. Cuando
+          incorporemos alguna herramienta, la añadiremos a la tabla —con su titular, su finalidad y su duración— y
+          te volveremos a pedir permiso antes de usarla.
         </p>
         <p>
-          No usamos cookies de análisis, de publicidad ni de redes sociales, y no permitimos que terceros las
-          instalen a través de la web. Si algún día las incorporamos, te pediremos antes tu consentimiento, con la
-          opción de rechazarlas tan visible y sencilla como la de aceptarlas, y actualizaremos esta política.
+          Las cookies opcionales nunca se instalan sin tu consentimiento; rechazarlas es tan sencillo como
+          aceptarlas y no te impide usar la web. Puedes cambiar tu elección o retirar el consentimiento en
+          cualquier momento desde «Configurar cookies», al pie de cada página o aquí mismo:
+        </p>
+        <p>
+          <ConsentSettingsButton className="lab-cta" />
         </p>
       </>
     ),
@@ -146,7 +180,7 @@ export default function CookiesPage() {
     <LabLegalPage
       doc="cookies"
       title="Política de cookies"
-      lead="Esta web solo usa la cookie imprescindible para el área de clientes y recuerda el idioma y el tema que elijas. Sin cookies de análisis ni de publicidad."
+      lead="Qué cookies usa la web, cuáles son opcionales y cómo aceptarlas, rechazarlas o cambiar de opinión cuando quieras."
       sections={SECTIONS}
     />
   );

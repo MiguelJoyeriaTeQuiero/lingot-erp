@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { LabLangToggle, useLabLang } from "./lab-lang";
 import { LabThemeToggle } from "./lab-theme";
 import { LAB_PATHS, LEGAL_LINKS } from "./lab-paths";
+import { ConsentSettingsButton } from "./lab-consent";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Navegación y pie de las páginas interiores (Nosotros, blog).
@@ -88,6 +89,8 @@ export function LabFoot({ brandName = "Lingot" }: { brandName?: string }) {
         {LEGAL_LINKS.map((l) => (
           <Link key={l.doc} href={l.href} className="lab-foot-legal-link">{t(l.key)}</Link>
         ))}
+        {/* Retirar el consentimiento tiene que ser tan fácil como darlo */}
+        <ConsentSettingsButton className="lab-foot-legal-link lab-foot-legal-btn" />
       </nav>
     </footer>
   );

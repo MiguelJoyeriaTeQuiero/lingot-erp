@@ -3064,6 +3064,157 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
   transition: color 0.3s ease;
 }
 .lab-foot-legal-link:hover { color: var(--lab-metal-lit); }
+.lab-foot-legal-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ══ AVISO DE COOKIES ═══════════════════════════════════════════════
+   Tarjeta abajo a la izquierda en escritorio, hoja inferior en móvil. Por
+   encima de la ficha y del acceso (260/280), por debajo de la cortina de
+   entrada (300). Aceptar y rechazar comparten clase: mismo peso visual.     */
+.lab-consent {
+  position: fixed;
+  z-index: 290;
+  left: clamp(12px, 2vw, 28px);
+  bottom: clamp(12px, 2vw, 28px);
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: clamp(20px, 2.4vw, 28px);
+  border: 1px solid var(--lab-metal-line);
+  border-radius: 22px;
+  background: linear-gradient(160deg, var(--lab-surface-hi), transparent 55%), var(--lab-bg);
+  box-shadow: var(--lab-shadow-panel);
+  color: var(--lab-ink-2);
+  outline: none;
+  animation: lab-consent-in 0.7s var(--e-expo) both;
+}
+@keyframes lab-consent-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .lab-consent { animation: none; } }
+@media (max-width: 560px) {
+  .lab-consent { left: 10px; right: 10px; bottom: 10px; width: auto; border-radius: 18px; }
+}
+
+.lab-consent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lab-consent-head .lab-label { margin: 0; color: var(--lab-metal); }
+.lab-consent-x {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--lab-hair-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--lab-ink-3);
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.lab-consent-x:hover { color: var(--lab-ink); border-color: var(--lab-metal-line-hi); }
+
+.lab-consent-text {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.lab-consent-text a,
+.lab-consent-more {
+  color: var(--lab-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lab-consent-cats { list-style: none; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--lab-hair); }
+.lab-consent-cat {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--lab-hair);
+}
+.lab-consent-cat-name { display: block; font-size: 13px; font-weight: 500; color: var(--lab-ink); cursor: pointer; }
+.lab-consent-cat p { margin: 4px 0 0; font-size: 12px; line-height: 1.55; color: var(--lab-ink-3); }
+.lab-consent-always {
+  flex: none;
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lab-metal);
+  white-space: nowrap;
+}
+
+.lab-switch {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border: 1px solid var(--lab-hair-2);
+  border-radius: 999px;
+  background: var(--lab-inset);
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.lab-switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--lab-ink-3);
+  transition: transform 0.35s var(--e-over), background 0.3s ease;
+}
+.lab-switch:checked { background: var(--lab-metal-tint-2); border-color: var(--lab-metal-line-hi); }
+.lab-switch:checked::before { transform: translateX(18px); background: var(--lab-metal); }
+.lab-switch:focus-visible { outline: 2px solid var(--lab-metal); outline-offset: 2px; }
+
+.lab-consent-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+.lab-consent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 14px;
+  border: 1px solid var(--lab-metal-line);
+  border-radius: 999px;
+  background: var(--lab-metal-tint);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lab-metal-lit);
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+.lab-consent-btn:hover { color: var(--lab-ink); border-color: var(--lab-metal-line-hi); background: var(--lab-metal-tint-2); }
+.lab-consent-btn--wide { grid-column: 1 / -1; }
+.lab-consent-more {
+  grid-column: 1 / -1;
+  justify-self: center;
+  padding: 6px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.lab-consent-more:hover { color: var(--lab-metal-lit); }
 
 /* ── Nosotros · filosofía ─────────────────────────────────────────── */
 .lab-ethos {
