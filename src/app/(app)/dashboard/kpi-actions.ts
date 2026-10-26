@@ -7,6 +7,7 @@ import {
   stockValueFromLots,
   stockValuationByProduct,
   excludeInTransitLots,
+  onlyInTransitLots,
 } from "@/lib/inventory";
 
 export interface KpiReportData {
@@ -56,9 +57,16 @@ export interface KpiReportData {
     costeUnit: number;
     valorTotal: number;
     precioVenta: number | null;
+    /** Unidades «En envío»: pedidas y aún sin recibir. No están en stockActual. */
+    enEnvio: number;
+    /** Coste de lo que está en envío y no se ha vendido por adelantado. */
+    valorEnEnvio: number;
   }[];
   stockValorTotal: number;
   stockPrecioTotal: number;
+  /** Totales «En envío», aparte del stock físico (nunca sumados a él). */
+  stockEnEnvioUnidades: number;
+  stockEnEnvioValor: number;
 
   // Spots
   spotOro: number | null;
@@ -98,18 +106,23 @@ export async function fetchKpiReport(
           .eq("id", 1)
           .maybeSingle(),
         getLatestSpots(),
-        supabase.from("purchase_orders").select("id").eq("received", false),
+        supabase.from("purchase_orders").select("id, product_id, quantity").eq("received", false),
       ]);
 
     const docs = docsRes.data ?? [];
     const lines = linesRes.data ?? [];
     const lots = lotsRes.data ?? [];
     // Lotes en tránsito (pedidos no recibidos): se excluyen de la valoración de
-    // stock para que el coste no compute sin su contrapartida en unidades.
-    const inTransitOrderIds = new Set(
-      (transitRes.data ?? []).map((o) => o.id as string)
-    );
+    // stock para que el coste no compute sin su contrapartida en unidades, y
+    // se informan aparte como «En envío».
+    const transitOrders = (transitRes.data ?? []) as { id: string; product_id: string; quantity: number }[];
+    const inTransitOrderIds = new Set(transitOrders.map((o) => o.id));
     const physicalLots = excludeInTransitLots(lots, inTransitOrderIds);
+    const transitLots = onlyInTransitLots(lots, inTransitOrderIds);
+    const enEnvioByProduct = new Map<string, number>();
+    for (const o of transitOrders) {
+      enEnvioByProduct.set(o.product_id, (enEnvioByProduct.get(o.product_id) ?? 0) + Number(o.quantity));
+    }
     const products = productsRes.data ?? [];
     const clients = clientsRes.data ?? [];
     const company = companyRes.data;
@@ -190,6 +203,7 @@ export async function fetchKpiReport(
     // ── ALMACÉN SNAPSHOT ─────────────────────────────────────────────────────
     // Valoración a coste por lotes (fuente de verdad compartida con el dashboard).
     const valuationByProduct = stockValuationByProduct(physicalLots);
+    const transitValuationByProduct = stockValuationByProduct(transitLots);
 
     const stockRows = products
       .map((p) => {
@@ -231,11 +245,14 @@ export async function fetchKpiReport(
           costeUnit: weightedCost,
           valorTotal,
           precioVenta,
+          enEnvio: enEnvioByProduct.get(p.id) ?? 0,
+          valorEnEnvio: transitValuationByProduct.get(p.id)?.value ?? 0,
         };
       })
       // Incluye todos los productos (activos e inactivos), pero solo los que
-      // tienen stock o valor — para no llenar el informe de filas vacías.
-      .filter((r) => r.valorTotal > 0 || r.stockActual > 0)
+      // tienen stock, valor o mercancía en envío — para no llenar el informe
+      // de filas vacías.
+      .filter((r) => r.valorTotal > 0 || r.stockActual > 0 || r.enEnvio > 0)
       .sort((a, b) => b.valorTotal - a.valorTotal);
 
     // Total a coste con el mismo helper que el dashboard → cifras idénticas.
@@ -244,6 +261,8 @@ export async function fetchKpiReport(
       (s, r) => s + (r.precioVenta ?? 0) * r.stockActual,
       0
     );
+    const stockEnEnvioUnidades = transitOrders.reduce((s, o) => s + Number(o.quantity), 0);
+    const stockEnEnvioValor = stockValueFromLots(transitLots);
 
     return {
       data: {
@@ -265,6 +284,8 @@ export async function fetchKpiReport(
         stockRows,
         stockValorTotal,
         stockPrecioTotal,
+        stockEnEnvioUnidades,
+        stockEnEnvioValor,
         spotOro: spots.oro?.price_eur_per_g ?? null,
         spotPlata: spots.plata?.price_eur_per_g ?? null,
         globalMarkupPct,

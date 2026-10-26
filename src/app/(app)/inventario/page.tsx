@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
 import { requireRole } from "@/lib/require-role";
+import { onlyInTransitLots, stockValuationByProduct } from "@/lib/inventory";
 import { ProductsTable } from "./products-table";
 
 export const dynamic = "force-dynamic";
@@ -28,22 +29,36 @@ export default async function InventarioPage() {
       getLatestSpots(),
       supabase
         .from("purchase_orders")
-        .select("product_id, quantity")
+        .select("id, product_id, quantity")
         .eq("received", false),
       supabase
         .from("stock_lots")
-        .select("product_id, cost_per_unit, cost_per_gram, quantity_remaining, order_date")
+        .select("product_id, cost_per_unit, cost_per_gram, quantity_remaining, order_date, purchase_order_id")
         .order("order_date", { ascending: true }),
     ]);
 
+  // «En envío»: pedidos de reposición aún sin recibir. No forman parte del
+  // stock (stock_current solo sube al recibirlos) ni del disponible en la web.
+  const pendingOrders = (pendingOrdersResult.data ?? []) as Array<{ id: string; product_id: string; quantity: number }>;
+  const inTransitOrderIds = new Set(pendingOrders.map((o) => o.id));
   const pendingByProductId: Record<string, number> = {};
-  for (const o of (pendingOrdersResult.data ?? []) as Array<{ product_id: string; quantity: number }>) {
+  for (const o of pendingOrders) {
     pendingByProductId[o.product_id] = (pendingByProductId[o.product_id] ?? 0) + Number(o.quantity);
   }
 
-  type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string };
+  const allLots = (lotsResult.data ?? []) as Array<{
+    product_id: string; cost_per_unit: number; cost_per_gram: number;
+    quantity_remaining: number; order_date: string; purchase_order_id: string | null;
+  }>;
+
+  const transitValueByProductId: Record<string, number> = {};
+  for (const [productId, v] of stockValuationByProduct(onlyInTransitLots(allLots, inTransitOrderIds))) {
+    transitValueByProductId[productId] = v.value;
+  }
+
+  type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string; inTransit: boolean };
   const lotsByProductId: Record<string, LotSummary[]> = {};
-  for (const l of (lotsResult.data ?? []).filter((l) => Number(l.quantity_remaining) > 0) as Array<LotSummary & { product_id: string }>) {
+  for (const l of allLots.filter((l) => Number(l.quantity_remaining) > 0)) {
     if (!lotsByProductId[l.product_id]) lotsByProductId[l.product_id] = [];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     lotsByProductId[l.product_id]!.push({
@@ -51,6 +66,7 @@ export default async function InventarioPage() {
       cost_per_gram: Number(l.cost_per_gram),
       quantity_remaining: Number(l.quantity_remaining),
       order_date: l.order_date,
+      inTransit: l.purchase_order_id != null && inTransitOrderIds.has(l.purchase_order_id),
     });
   }
 
@@ -99,6 +115,7 @@ export default async function InventarioPage() {
           }}
           globalMarkupPct={globalMarkupPct}
           pendingByProductId={pendingByProductId}
+          transitValueByProductId={transitValueByProductId}
           lotsByProductId={lotsByProductId}
         />
       )}

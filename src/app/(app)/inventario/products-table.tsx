@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, AlertTriangle } from "lucide-react";
+import { Search, AlertTriangle, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -15,14 +15,17 @@ import type {
   MetalType,
 } from "@/lib/supabase/typed";
 
-type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string };
+type LotSummary = { cost_per_unit: number; cost_per_gram: number; quantity_remaining: number; order_date: string; inTransit: boolean };
 
 interface ProductsTableProps {
   products: ProductRow[];
   categories: ProductCategoryRow[];
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
+  /** Unidades «En envío» (pedidas y sin recibir) por producto. */
   pendingByProductId?: Record<string, number>;
+  /** Coste de lo que está en envío y aún no se ha vendido, por producto. */
+  transitValueByProductId?: Record<string, number>;
   lotsByProductId?: Record<string, LotSummary[]>;
 }
 
@@ -32,6 +35,7 @@ export function ProductsTable({
   spotByMetal,
   globalMarkupPct,
   pendingByProductId = {},
+  transitValueByProductId = {},
   lotsByProductId = {},
 }: ProductsTableProps) {
   const router = useRouter();
@@ -40,6 +44,20 @@ export function ProductsTable({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showInactive, setShowInactive] = useState(false);
   const [onlyLowStock, setOnlyLowStock] = useState(false);
+  const [onlyInTransit, setOnlyInTransit] = useState(false);
+
+  // Resumen de lo que está en camino, sobre todo el catálogo (no solo lo filtrado)
+  const transit = useMemo(() => {
+    let units = 0, value = 0, refs = 0;
+    for (const p of products) {
+      const u = pendingByProductId[p.id] ?? 0;
+      if (u <= 0) continue;
+      units += u;
+      value += transitValueByProductId[p.id] ?? 0;
+      refs += 1;
+    }
+    return { units, value, refs };
+  }, [products, pendingByProductId, transitValueByProductId]);
 
   const categoryById = useMemo(() => {
     const map = new Map<string, ProductCategoryRow>();
@@ -57,6 +75,7 @@ export function ProductsTable({
       if (onlyLowStock) {
         if (p.stock_current > p.stock_min) return false;
       }
+      if (onlyInTransit && (pendingByProductId[p.id] ?? 0) <= 0) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -64,7 +83,7 @@ export function ProductsTable({
         (p.description ?? "").toLowerCase().includes(q)
       );
     });
-  }, [products, search, metalFilter, categoryFilter, showInactive, onlyLowStock]);
+  }, [products, search, metalFilter, categoryFilter, showInactive, onlyLowStock, onlyInTransit, pendingByProductId]);
 
   function priceOf(p: ProductRow): number | null {
     const spot = spotByMetal[p.metal];
@@ -83,7 +102,33 @@ export function ProductsTable({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-[1fr_160px_180px_auto_auto]">
+      {/* Mercancía en camino: se controla aquí, pero no cuenta como stock ni
+          como disponible en la web hasta marcar el pedido como recibido */}
+      {transit.units > 0 && (
+        <button
+          type="button"
+          onClick={() => setOnlyInTransit((v) => !v)}
+          aria-pressed={onlyInTransit}
+          className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 border border-sky-700/25 bg-sky-50/70 px-4 py-3 text-left text-sm transition-colors hover:border-sky-700/40"
+        >
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-sky-800">
+            <Truck className="h-4 w-4" strokeWidth={1.5} />
+            En envío
+          </span>
+          <span className="text-primary">
+            <strong className="font-medium tabular">{transit.units} u</strong> pendientes de recibir
+            {" "}en {transit.refs} {transit.refs === 1 ? "referencia" : "referencias"}
+          </span>
+          <span className="text-text-muted">
+            {formatCurrency(transit.value)} a coste
+          </span>
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.2em] text-sky-800">
+            {onlyInTransit ? "Ver todo" : "Ver solo en envío"}
+          </span>
+        </button>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-[1fr_160px_180px_auto_auto_auto]">
         <div className="relative">
           <Search
             aria-hidden
@@ -129,6 +174,15 @@ export function ProductsTable({
         <label className="flex items-center gap-2 text-xs text-text-muted">
           <input
             type="checkbox"
+            checked={onlyInTransit}
+            onChange={(e) => setOnlyInTransit(e.target.checked)}
+            className="h-4 w-4 border-border bg-surface-raised accent-primary"
+          />
+          En envío
+        </label>
+        <label className="flex items-center gap-2 text-xs text-text-muted">
+          <input
+            type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
             className="h-4 w-4 border-border bg-surface-raised accent-primary"
@@ -146,7 +200,7 @@ export function ProductsTable({
               <TH>Metal</TH>
               <TH className="text-right">Peso · Ley</TH>
               <TH className="text-right">Precio</TH>
-              <TH className="text-right">Stock</TH>
+              <TH className="text-right">Stock físico</TH>
               <TH>Estado</TH>
             </TR>
           </THead>
@@ -222,6 +276,9 @@ export function ProductsTable({
                                   : null;
                                 return (
                                   <div key={i} className="flex items-center justify-end gap-1.5 text-[10px] font-mono tabular text-text-muted">
+                                    {lot.inTransit && (
+                                      <span className="text-sky-800" title="Lote de un pedido aún sin recibir">en envío</span>
+                                    )}
                                     <span>{formatCurrency(lot.cost_per_unit)}</span>
                                     <span className="text-text-dim">×{lot.quantity_remaining}</span>
                                     {margin != null && (
@@ -253,18 +310,20 @@ export function ProductsTable({
                         )}
                         {p.stock_current}
                       </span>
-                      {(pendingByProductId[p.id] ?? 0) > 0 && (
-                        <div className="text-[11px] text-gold-deep">
-                          +{pendingByProductId[p.id]} en tránsito
-                        </div>
-                      )}
                     </TD>
                     <TD>
-                      {p.active ? (
-                        <Badge variant="pagado">Activo</Badge>
-                      ) : (
-                        <Badge variant="cancelado">Inactivo</Badge>
-                      )}
+                      <div className="flex flex-col items-start gap-1">
+                        {p.active ? (
+                          <Badge variant="pagado">Activo</Badge>
+                        ) : (
+                          <Badge variant="cancelado">Inactivo</Badge>
+                        )}
+                        {(pendingByProductId[p.id] ?? 0) > 0 && (
+                          <Badge variant="emitido" title="Pedido sin recibir: no cuenta como stock ni como disponible en la web">
+                            En envío · {pendingByProductId[p.id]} u
+                          </Badge>
+                        )}
+                      </div>
                     </TD>
                   </TR>
                 );

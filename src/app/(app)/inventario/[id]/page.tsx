@@ -214,7 +214,7 @@ export default async function ProductoDetailPage({
               <div className="flex items-start gap-5">
                 <div className="text-right">
                   <div className="text-xs uppercase tracking-widest text-text-muted">
-                    Stock real
+                    Stock físico
                   </div>
                   <div
                     className={
@@ -226,14 +226,24 @@ export default async function ProductoDetailPage({
                   </div>
                 </div>
                 {stockPending > 0 && (
-                  <div className="text-right">
-                    <div className="text-xs uppercase tracking-widest text-text-muted">
-                      En tránsito
+                  <>
+                    <div className="text-right" title="Pedidos sin recibir: no cuentan como stock ni como disponible en la web">
+                      <div className="text-xs uppercase tracking-widest text-text-muted">
+                        En envío
+                      </div>
+                      <div className="font-display text-2xl text-sky-800">
+                        +{stockPending}
+                      </div>
                     </div>
-                    <div className="font-display text-2xl text-gold">
-                      +{stockPending}
+                    <div className="text-right">
+                      <div className="text-xs uppercase tracking-widest text-text-muted">
+                        Al recibir
+                      </div>
+                      <div className="font-display text-2xl text-text">
+                        {product.stock_current + stockPending}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             )}

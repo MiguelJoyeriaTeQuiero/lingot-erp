@@ -382,16 +382,18 @@ async function generatePdf(data: KpiReportData) {
   newPageIfNeeded(40);
   sectionDivider("03", "Almacén · snapshot actual");
 
-  // Almacén summary boxes
-  const aW = (MR - ML) / 3 - 2;
-  kpiBox(ML, y, aW, 18, "Valor a coste", eur(data.stockValorTotal, 0), "coste real de lotes");
-  kpiBox(ML + aW + 3, y, aW, 18, "Valor a PVP", eur(data.stockPrecioTotal, 0), "a precio de venta actual");
-  kpiBox(ML + (aW + 3) * 2, y, aW, 18, "Potencial", eur(data.stockPrecioTotal - data.stockValorTotal, 0), "margen latente en stock");
+  // Almacén summary boxes. «En envío» va aparte: no es stock físico y no se
+  // suma al valor a coste ni al potencial.
+  const aW = (MR - ML) / 4 - 2.25;
+  kpiBox(ML, y, aW, 18, "Valor a coste", eur(data.stockValorTotal, 0), "stock físico, coste de lotes");
+  kpiBox(ML + aW + 3, y, aW, 18, "En envío", eur(data.stockEnEnvioValor, 0), `${data.stockEnEnvioUnidades} u pendientes de recibir`);
+  kpiBox(ML + (aW + 3) * 2, y, aW, 18, "Valor a PVP", eur(data.stockPrecioTotal, 0), "stock físico a precio actual");
+  kpiBox(ML + (aW + 3) * 3, y, aW, 18, "Potencial", eur(data.stockPrecioTotal - data.stockValorTotal, 0), "margen latente en stock");
   y += 26;
 
   autoTable(doc, {
     startY: y,
-    head: [["Producto", "SKU", "Metal", "Stock", "Mín.", "Coste/u", "Valor coste", "PVP/u", "Alerta"]],
+    head: [["Producto", "SKU", "Metal", "Stock", "En envío", "Mín.", "Coste/u", "Valor coste", "PVP/u", "Alerta"]],
     body: data.stockRows.map((r) => {
       const purityLabel =
         r.metal === "oro"
@@ -399,10 +401,11 @@ async function generatePdf(data: KpiReportData) {
           : `${(r.purity * 1000).toFixed(0)}‰`;
       const alerta = r.stockActual <= r.stockMin ? "⚠ Bajo" : "";
       return [
-        r.nombre.length > 24 ? r.nombre.slice(0, 22) + "…" : r.nombre,
+        r.nombre.length > 20 ? r.nombre.slice(0, 18) + "…" : r.nombre,
         r.sku ?? "—",
         `${r.metal === "oro" ? "Oro" : "Plata"} ${purityLabel}`,
         String(r.stockActual),
+        r.enEnvio > 0 ? `+${r.enEnvio}` : "",
         String(r.stockMin),
         eur(r.costeUnit),
         eur(r.valorTotal),
@@ -411,7 +414,9 @@ async function generatePdf(data: KpiReportData) {
       ];
     }),
     foot: [[
-      "TOTAL", "", "", "", "", "",
+      "TOTAL", "", "", "",
+      data.stockEnEnvioUnidades > 0 ? `+${data.stockEnEnvioUnidades}` : "",
+      "", "",
       eur(data.stockValorTotal),
       eur(data.stockPrecioTotal),
       "",
@@ -441,21 +446,26 @@ async function generatePdf(data: KpiReportData) {
     columnStyles: {
       0: { cellWidth: "auto" },
       1: { cellWidth: 18 },
-      2: { cellWidth: 22 },
+      2: { cellWidth: 18 },
       3: { halign: "right", cellWidth: 12 },
-      4: { halign: "right", cellWidth: 10 },
-      5: { halign: "right", cellWidth: 20 },
-      6: { halign: "right", cellWidth: 22 },
+      4: { halign: "right", cellWidth: 14 },
+      5: { halign: "right", cellWidth: 10 },
+      6: { halign: "right", cellWidth: 18 },
       7: { halign: "right", cellWidth: 22 },
-      8: { halign: "center", cellWidth: 14 },
+      8: { halign: "right", cellWidth: 22 },
+      9: { halign: "center", cellWidth: 14 },
     },
     margin: { left: ML, right: ML },
     didParseCell: (hookData) => {
-      if (hookData.section === "body" && hookData.column.index === 8) {
+      if (hookData.section === "body" && hookData.column.index === 9) {
         if (hookData.cell.text[0] === "⚠ Bajo") {
           hookData.cell.styles.textColor = C.danger;
           hookData.cell.styles.fontStyle = "bold";
         }
+      }
+      // Lo que está en envío, en el dorado de la marca: se lee aparte del stock
+      if ((hookData.section === "body" || hookData.section === "foot") && hookData.column.index === 4) {
+        hookData.cell.styles.textColor = C.gold;
       }
     },
   });
