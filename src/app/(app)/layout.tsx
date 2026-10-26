@@ -29,7 +29,10 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-ink">
+    // overflow-clip y no overflow-hidden: recorta igual, pero no crea un
+    // contenedor de scroll, así que los elementos `sticky` (la barra del
+    // conteo de inventario) se pueden quedar fijos al bajar por la página.
+    <div className="relative min-h-screen overflow-clip bg-ink">
       {/* Ambient gradient orbs */}
       <div className="ambient-canvas" aria-hidden />
       {/* Film grain */}
