@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { createReservationAction } from "@/app/catalogo/actions";
+import { createReservationAction } from "./actions";
 import type { LabProduct } from "./lab-experience";
 
 /* ═══════════════════════════════════════════════════════════════════════════

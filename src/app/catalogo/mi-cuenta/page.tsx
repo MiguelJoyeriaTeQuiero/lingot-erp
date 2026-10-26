@@ -1,45 +1,22 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { createTypedClient } from "@/lib/supabase/typed";
-import { loadClientArea } from "../client-area";
-import { MiCuentaView } from "./mi-cuenta-view";
+import { LabAccountPage } from "../lab-access";
+import { LabSessionProvider } from "../lab-session";
+import { loadLabViewer } from "../lab-viewer";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "Mi cuenta · Lingot",
+};
+
 export default async function MiCuentaPage() {
-  const supabase = createTypedClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/catalogo");
-  }
-
-  const [profileRes, { reservations, documents }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name, is_wholesale")
-      .eq("id", user.id)
-      .maybeSingle(),
-    loadClientArea(user.id, user.email ?? null),
-  ]);
-
-  const profile = profileRes.data;
+  // Sin sesión no se redirige: la propia página enseña el acceso
+  const { session, orders, documents } = await loadLabViewer(createTypedClient());
 
   return (
-    <MiCuentaView
-      user={{
-        email: user.email ?? "",
-        name:
-          (profile as { full_name?: string } | null)?.full_name ??
-          user.email ??
-          "",
-      }}
-      isWholesale={
-        (profile as { is_wholesale?: boolean } | null)?.is_wholesale ?? false
-      }
-      reservations={reservations}
-      documents={documents}
-    />
+    <LabSessionProvider session={session} orders={orders} documents={documents}>
+      <LabAccountPage />
+    </LabSessionProvider>
   );
 }

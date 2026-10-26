@@ -30,7 +30,7 @@ interface Piece {
 }
 
 const PIECES: Piece[] = [
-  { test: /argor.*heraeus.*(classic\s*)?20\s*g/i, relief: "/lab/argor-20g-relief.png" },
+  { test: /argor.*heraeus.*(classic\s*)?20\s*g/i, relief: "/relieves/argor-20g-relief.png" },
   // Valcambi 20 x 1 g: cinco columnas por cuatro filas, según su propia foto
   { test: /combibar/i, grid: { cols: 5, rows: 4 } },
 ];

@@ -2,7 +2,7 @@
  * Rutas del catálogo en un solo sitio. Cuando el Lab pase a /catalogo (y
  * después a la raíz), solo cambia BASE.
  */
-const BASE = "/lab";
+const BASE = "/catalogo";
 
 export const LAB_PATHS = {
   home:       BASE,

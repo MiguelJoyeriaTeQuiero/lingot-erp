@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { BlogPost } from "@/app/catalogo/blog/data";
+import type { BlogPost } from "./blog/data";
 import { useLabLang } from "./lab-lang";
 import { LabMotion } from "./lab-motion";
 import { LabFoot, LabSubNav } from "./lab-chrome";

@@ -6,7 +6,7 @@
    como referencia de cliente en vez de como texto y el <script> no llegaría a
    renderizarse: la página entraría siempre en oro y luego saltaría.
 
-   El atributo se escribe en el contenedor del lab —el padre de este script— y
+   El atributo se escribe en el contenedor del catálogo —el padre de este script— y
    no en <html>: React reconcilia los atributos de <html> y avisaría de que el
    servidor mandó uno de más. Así el tema no se sale de /lab.
    ═══════════════════════════════════════════════════════════════════════════ */

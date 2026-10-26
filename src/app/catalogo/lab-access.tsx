@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { downloadDocumentPdf } from "@/lib/pdf/document-pdf";
-import { getClientDocumentPdfAction } from "@/app/catalogo/mi-cuenta/actions";
+import { getClientDocumentPdfAction } from "./mi-cuenta/actions";
 import { useLabLang } from "./lab-lang";
 import { useLabSession, type LabEstado } from "./lab-session";
 import { Segment } from "./lab-segment";
@@ -131,6 +130,8 @@ function AccountScreen({ back, onSignedOut }: { back: ReactNode; onSignedOut?: (
     try {
       const result = await getClientDocumentPdfAction(id);
       if (!result.success) { setPdfError(t("ac.pdfError")); return; }
+      // El generador de PDF pesa: solo se descarga cuando alguien pide una factura
+      const { downloadDocumentPdf } = await import("@/lib/pdf/document-pdf");
       await downloadDocumentPdf(result.payload);
     }
     catch { setPdfError(t("ac.pdfError")); }

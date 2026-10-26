@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { DICT, LANGS } from "./lab-i18n";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Motor de movimiento del LAB.
+   Motor de movimiento del catálogo.
 
    Un único bucle rAF gobierna todo el sitio:
      · scroll suavizado (lerp sobre el scroll nativo — mantiene position:sticky)

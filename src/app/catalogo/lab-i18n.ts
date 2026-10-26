@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Diccionario del laboratorio — español, inglés y alemán.
+   Diccionario del catálogo — español, inglés y alemán.
 
    Módulo sin "use client" a propósito: el layout es de servidor y necesita la
    cadena de arranque como texto, no como referencia de cliente.

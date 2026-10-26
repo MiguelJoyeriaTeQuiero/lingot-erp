@@ -1,13 +1,12 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Suspense } from "react";
 import localFont from "next/font/local";
-import { createTypedClient } from "@/lib/supabase/typed";
-import { CatalogNav } from "./catalog-nav";
-import { CatalogReveal } from "./catalog-reveal";
+import { THEME_BOOTSTRAP } from "./lab-theme-boot";
+import { LANG_BOOTSTRAP } from "./lab-i18n";
+import "./lab.css";
 
-// ── Open Sauce Sans — la tipografía oficial de la marca Lingot ────────────────
-// Superfamilia única: el drama tipográfico nace de la escala y el peso, no de
-// una serif ornamentada (fiel al manual: "minimalismo y reducción como estrategia").
+// Open Sauce Sans — superfamilia única de la marca. El drama tipográfico nace
+// de la escala y el peso, nunca de una serif ornamentada.
 const openSauce = localFont({
   src: [
     { path: "../../../public/fonts/open-sauce-sans-300.woff2", weight: "300", style: "normal" },
@@ -17,46 +16,38 @@ const openSauce = localFont({
     { path: "../../../public/fonts/open-sauce-sans-700.woff2", weight: "700", style: "normal" },
     { path: "../../../public/fonts/open-sauce-sans-800.woff2", weight: "800", style: "normal" },
   ],
-  variable: "--font-catalog",
-  display:  "swap",
+  variable: "--font-lab",
+  display: "swap",
   fallback: ["Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
 });
 
-export default async function CatalogoLayout({ children }: { children: ReactNode }) {
-  // Identidad para la barra de navegación (botón de acceso / cuenta).
-  // Se envuelve en try/catch para que una sesión caducada (refresh token
-  // inválido) no rompa el layout: simplemente se muestra "Acceso profesional".
-  let isLoggedIn = false;
-  let isWholesale = false;
-  let userName = "";
-  try {
-    const supabase = createTypedClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      isLoggedIn = true;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, is_wholesale, full_name")
-        .eq("id", user.id)
-        .single();
-      isWholesale = (profile as { is_wholesale?: boolean } | null)?.is_wholesale ?? false;
-      if (profile?.role === "admin" || profile?.role === "contabilidad") isWholesale = true;
-      userName = (profile as { full_name?: string } | null)?.full_name
-        ?? (user as unknown as { user_metadata?: { full_name?: string } }).user_metadata?.full_name
-        ?? user.email?.split("@")[0]
-        ?? "";
-    }
-  } catch {
-    /* sesión inválida — nav sin usuario */
-  }
+// Las páginas interiores ponen su propio título; esto vale para la portada
+export const metadata: Metadata = {
+  title: "Lingot — Metales preciosos de alta pureza",
+  description:
+    "Oro y plata de alta pureza con precio calculado sobre el spot del momento. Lingot, de Te Quiero Group.",
+  openGraph: {
+    title: "Lingot — Metales preciosos de alta pureza",
+    description: "Oro y plata de alta pureza con precio calculado sobre el spot del momento.",
+    type: "website",
+  },
+};
 
+/** Sin JavaScript no hay motor de movimiento: el contenido debe verse igual. */
+const NO_JS = `
+  .lab-curtain { display: none !important; }
+  .lab-hero * { animation-play-state: running !important; }
+  [data-lab-in] { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .lab-mask > * { transform: none !important; }
+`;
+
+export default function CatalogoLayout({ children }: { children: ReactNode }) {
   return (
-    <div className={`${openSauce.variable} lg-scope`} style={{ isolation: "isolate" }}>
-      <CatalogNav isLoggedIn={isLoggedIn} isWholesale={isWholesale} userName={userName} />
-      {/* CatalogReveal uses useSearchParams() — must be inside Suspense */}
-      <Suspense fallback={null}>
-        <CatalogReveal />
-      </Suspense>
+    <div className={`${openSauce.variable} lab-scope`} suppressHydrationWarning>
+      {/* Antes de pintar: si no, quien tenga el tema plata vería un fogonazo oscuro */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      <script dangerouslySetInnerHTML={{ __html: LANG_BOOTSTRAP }} />
+      <noscript><style>{NO_JS}</style></noscript>
       {children}
     </div>
   );

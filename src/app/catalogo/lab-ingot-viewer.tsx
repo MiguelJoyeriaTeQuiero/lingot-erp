@@ -14,7 +14,7 @@ import { buildGoldEnvironment } from "./lab-gold-env";
    la pieza rotase.
 
    El mapa de relieve se genera a partir de la foto de producto con un filtro
-   de paso alto (quita la rampa de luz, conserva el cuño) — ver public/lab/.
+   de paso alto (quita la rampa de luz, conserva el cuño) — ver public/relieves/.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const damp = (c: number, t: number, l: number, dt: number) => c + (t - c) * (1 - Math.exp(-l * dt));

@@ -1,6 +1,6 @@
 import "server-only";
 import { createTypedClient } from "@/lib/supabase/typed";
-import { loadClientArea } from "@/app/catalogo/client-area";
+import { loadClientArea } from "./client-area";
 import type { LabDocumento, LabEstado, LabReserva, LabSession } from "./lab-session";
 
 const ESTADOS: LabEstado[] = ["pendiente", "confirmada", "entregada", "cancelada"];

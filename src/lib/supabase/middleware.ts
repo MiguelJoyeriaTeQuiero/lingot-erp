@@ -62,7 +62,7 @@ export async function updateSession(request: NextRequest) {
     // valida la autorización (x-vercel-cron / CRON_SECRET). Sin esto el
     // middleware los redirige a /login y la actualización nunca se ejecuta.
     pathname.startsWith("/api/cron");
-  const isCatalogRoute = pathname.startsWith("/catalogo") || pathname.startsWith("/lab"); // TEMP-VERIFY
+  const isCatalogRoute = pathname.startsWith("/catalogo");
 
   if (isPublicAsset) return clearStale(supabaseResponse);
 
