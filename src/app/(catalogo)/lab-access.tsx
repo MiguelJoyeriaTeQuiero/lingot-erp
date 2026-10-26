@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getClientDocumentPdfAction } from "./mi-cuenta/actions";
 import { useLabLang } from "./lab-lang";
 import { useLabSession, type LabEstado } from "./lab-session";
@@ -31,6 +32,9 @@ type Vista = "reservas" | "documentos";
 
    La misma pantalla sirve de capa sobre la portada (LabAccess) y de página
    propia en /mi-cuenta (LabAccountPage); solo cambia cómo se vuelve.
+
+   Al entrar, el cliente va a la colección, no a su cuenta: quien inicia sesión
+   viene a ver precios o a reservar. La cuenta queda a un clic en la barra.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function BackIcon() {
@@ -44,8 +48,8 @@ function BackIcon() {
   );
 }
 
-/** Capa a pantalla completa sobre la portada. */
-export function LabAccess({ onClose }: { onClose: () => void }) {
+/** Capa a pantalla completa sobre la portada. `onSignedIn` decide adónde ir al entrar. */
+export function LabAccess({ onClose, onSignedIn }: { onClose: () => void; onSignedIn?: () => void }) {
   const { session } = useLabSession();
   const { t } = useLabLang();
   const screenRef = useRef<HTMLDivElement>(null);
@@ -79,6 +83,7 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
           </button>
         }
         onSignedOut={onClose}
+        onSignedIn={onSignedIn ?? onClose}
       />
     </div>
   );
@@ -87,6 +92,7 @@ export function LabAccess({ onClose }: { onClose: () => void }) {
 /** «Mi cuenta» como página: sin sesión enseña el acceso; al salir se queda en él. */
 export function LabAccountPage() {
   const { t } = useLabLang();
+  const router = useRouter();
   return (
     <main className="lab-screen lab-screen--page" data-lab-native>
       <AccountScreen
@@ -96,12 +102,20 @@ export function LabAccountPage() {
             <span className="lab-label">{t("ac.back")}</span>
           </Link>
         }
+        onSignedIn={() => router.push(LAB_PATHS.collection)}
       />
     </main>
   );
 }
 
-function AccountScreen({ back, onSignedOut }: { back: ReactNode; onSignedOut?: () => void }) {
+function AccountScreen({
+  back, onSignedOut, onSignedIn,
+}: {
+  back: ReactNode;
+  onSignedOut?: () => void;
+  /** Sin esto, al entrar la pantalla pasaría a mostrar la cuenta del cliente. */
+  onSignedIn?: () => void;
+}) {
   const { session, orders, documents, signIn, signOut } = useLabSession();
   const { t, money, date } = useLabLang();
   const [vista, setVista] = useState<Vista>("reservas");
@@ -118,10 +132,11 @@ function AccountScreen({ back, onSignedOut }: { back: ReactNode; onSignedOut?: (
     setBusy(true);
     setError(null);
     const err = await signIn(email, pass);
-    // Si entra, el servidor vuelve a pintar la página y esta pantalla pasa sola
-    // a la zona de cliente: hasta entonces el botón sigue en «Entrando…».
     if (err) { setError(err); setBusy(false); return; }
     setPass("");
+    // Entró: a la colección (o a la ficha que quería reservar). Si nadie lo
+    // decide, el servidor vuelve a pintar y esta pantalla pasa a la cuenta.
+    onSignedIn?.();
   }
 
   async function getPdf(id: string) {

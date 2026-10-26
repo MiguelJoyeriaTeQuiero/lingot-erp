@@ -26,7 +26,8 @@ export default async function AppLayout({
 
   const erpRoles = ["admin", "contabilidad"];
   if (!erpRoles.includes((profile as { role?: string } | null)?.role ?? "")) {
-    redirect("/");
+    // Un cliente del catálogo que entra por el login del ERP va a la colección
+    redirect("/#coleccion");
   }
 
   // Punto de partida de los avisos de reservas: cuántas hay por gestionar y la

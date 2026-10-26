@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { LabMotion, labScrollTo } from "./lab-motion";
@@ -149,6 +149,21 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
   const theme = useLabTheme();
   const { session, reserve } = useLabSession();
   const [access, setAccess] = useState(false);
+  // Ficha desde la que se pidió entrar para reservar: al entrar se vuelve a ella
+  const [resumeProduct, setResumeProduct] = useState<LabProduct | null>(null);
+  // Acaba de iniciar sesión: en cuanto llegue la sesión, a la colección o a esa ficha
+  const [justSignedIn, setJustSignedIn] = useState(false);
+
+  useEffect(() => {
+    if (!justSignedIn || !session) return;
+    setJustSignedIn(false);
+    if (resumeProduct) {
+      setDetail(resumeProduct);
+      setResumeProduct(null);
+    } else {
+      labScrollTo("#coleccion");
+    }
+  }, [justSignedIn, session, resumeProduct]);
   // Confirmación por ficha: el aviso se queda donde se pulsó, no en una esquina
   const [justReserved, setJustReserved] = useState<string | null>(null);
   const [reserving, setReserving]       = useState<string | null>(null);
@@ -591,11 +606,18 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
           product={detail}
           initialQty={uds(detail.id)}
           onClose={() => setDetail(null)}
-          onNeedsAccess={() => { setDetail(null); setAccess(true); }}
+          onNeedsAccess={() => { setResumeProduct(detail); setDetail(null); setAccess(true); }}
         />
       )}
 
-      {access && <LabAccess onClose={() => setAccess(false)} />}
+      {access && (
+        <LabAccess
+          onClose={() => { setAccess(false); setResumeProduct(null); }}
+          // Al entrar no se enseña la cuenta: se cierra el acceso y, cuando la
+          // sesión llega, se va a la colección (o a la ficha que quería reservar)
+          onSignedIn={() => { setAccess(false); setJustSignedIn(true); }}
+        />
+      )}
 
       {/* ══ FOOTER ══════════════════════════════════════════════════════ */}
       <LabFoot brandName={brandName} />
