@@ -20,9 +20,13 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [notes, setNotes] = useState("");
   const [applying, setApplying] = useState(false);
+  // Última pieza escaneada: se resalta y se lleva a la vista
+  const [touched, setTouched] = useState<{ id: string; at: number } | null>(null);
 
   const scanRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
   const { toast } = useToast();
 
   const physicalProducts = useMemo(
@@ -30,14 +34,47 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
     [products]
   );
 
-  // Mantiene el foco en el campo de escáner salvo que el usuario esté escribiendo en búsqueda
+  /* El lector vuelve a tener el foco, pero sin desplazar la página
+     (preventScroll). Antes, cada vez que recuperaba el foco o la pistola
+     escribía en él, el navegador saltaba arriba hasta el campo y no había
+     forma de trabajar con las últimas filas. */
   const refocusScan = useCallback(() => {
-    setTimeout(() => scanRef.current?.focus(), 50);
+    setTimeout(() => scanRef.current?.focus({ preventScroll: true }), 50);
   }, []);
 
+  /** Solo se recupera el foco si se ha ido «a ninguna parte»: si el usuario
+   *  ha entrado en otro campo o botón (corregir un contado, la nota…), se respeta. */
+  const handleScanBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    const next = e.relatedTarget as HTMLElement | null;
+    if (next?.closest("input, textarea, select, button, a")) return;
+    refocusScan();
+  }, [refocusScan]);
+
+  /** Al salir de un campo de la lista sin ir a otro, el lector vuelve a estar listo. */
+  const releaseToScanner = useCallback((e: React.FocusEvent<HTMLElement>) => {
+    if (!e.relatedTarget) refocusScan();
+  }, [refocusScan]);
+
   useEffect(() => {
-    scanRef.current?.focus();
+    scanRef.current?.focus({ preventScroll: true });
   }, []);
+
+  // La pieza recién escaneada se trae a la vista y el resaltado se apaga solo
+  useEffect(() => {
+    if (!touched) return;
+    const row = rowRefs.current.get(touched.id);
+    if (row) {
+      // Que no quede tapada por la barra fija (ni por la cabecera del móvil):
+      // el margen es justo donde acaba la barra en este momento
+      const barBottom = captureRef.current?.getBoundingClientRect().bottom ?? 0;
+      row.style.scrollMarginTop = `${Math.max(0, barBottom) + 8}px`;
+      // Instantáneo: con la pistola se escanea seguido y una animación por
+      // lectura solo retrasaría ver la fila
+      row.scrollIntoView({ block: "nearest" });
+    }
+    const t = setTimeout(() => setTouched((cur) => (cur === touched ? null : cur)), 1600);
+    return () => clearTimeout(t);
+  }, [touched]);
 
   function findBySku(sku: string): ProductRow | undefined {
     return physicalProducts.find(
@@ -53,8 +90,10 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
           i === idx ? { ...item, counted: item.counted + qty } : item
         );
       }
-      return [...prev, { product, counted: qty }];
+      // Las piezas nuevas entran arriba, justo debajo del lector
+      return [{ product, counted: qty }, ...prev];
     });
+    setTouched({ id: product.id, at: Date.now() });
   }
 
   function handleScanKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -170,22 +209,29 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
   return (
     <div className="space-y-8">
 
-      {/* Zona de captura */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Zona de captura: fija arriba al bajar por la lista, para que escanear
+          no tenga que desplazar la página hasta el campo del lector. Los
+          márgenes negativos la estiran a todo el ancho de la columna y su
+          fondo tapa las filas que pasan por debajo. */}
+      <div
+        ref={captureRef}
+        className="sticky top-14 z-20 -mx-4 bg-ink/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:top-0 lg:-mx-10 lg:px-10"
+      >
+      <div className="grid gap-3 lg:grid-cols-2 lg:gap-6">
 
         {/* Pistola lectora */}
-        <div className="relative rounded-none border border-border bg-surface-raised p-6 shadow-paper">
+        <div className="relative rounded-none border border-border bg-surface-raised p-4 shadow-paper sm:p-6">
           <span
             aria-hidden
             className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-gold/50 to-transparent"
           />
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-3 flex items-center gap-3 sm:mb-4">
             <ScanLine className="h-5 w-5 text-gold" strokeWidth={1.5} />
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-gold-deep">
                 Pistola lectora
               </div>
-              <div className="text-xs text-text-muted">
+              <div className="hidden text-xs text-text-muted sm:block">
                 Apunta aquí y escanea — el campo siempre está activo
               </div>
             </div>
@@ -196,31 +242,31 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
             value={scanValue}
             onChange={(e) => setScanValue(e.target.value)}
             onKeyDown={handleScanKey}
-            onBlur={refocusScan}
+            onBlur={handleScanBlur}
             placeholder="Esperando lectura de código…"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
             className="w-full border-b-2 border-gold/60 bg-transparent pb-2 font-mono text-lg tracking-widest text-primary placeholder:text-text-dim/50 focus:border-gold focus:outline-none"
           />
-          <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
+          <div className="mt-3 hidden font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim sm:block">
             También puedes escribir el SKU manualmente y pulsar Enter
           </div>
         </div>
 
         {/* Búsqueda manual */}
-        <div className="relative rounded-none border border-border bg-surface-raised p-6 shadow-paper">
+        <div className="relative rounded-none border border-border bg-surface-raised p-4 shadow-paper sm:p-6">
           <span
             aria-hidden
             className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent"
           />
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-3 flex items-center gap-3 sm:mb-4">
             <Search className="h-5 w-5 text-primary/60" strokeWidth={1.5} />
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-primary/70">
                 Búsqueda manual
               </div>
-              <div className="text-xs text-text-muted">
+              <div className="hidden text-xs text-text-muted sm:block">
                 Escribe nombre o SKU y selecciona el producto
               </div>
             </div>
@@ -259,6 +305,7 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Lista de conteo */}
@@ -332,7 +379,14 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
                   return (
                     <tr
                       key={item.product.id}
-                      className="transition-colors hover:bg-surface-sunken/40"
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(item.product.id, el);
+                        else rowRefs.current.delete(item.product.id);
+                      }}
+                      className={cn(
+                        "transition-colors duration-700 hover:bg-surface-sunken/40",
+                        touched?.id === item.product.id && "bg-gold/15"
+                      )}
                     >
                       <td className="px-4 py-3 font-medium text-primary">
                         {item.product.name}
@@ -352,6 +406,7 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
                           onChange={(e) =>
                             updateCount(item.product.id, e.target.value)
                           }
+                          onBlur={releaseToScanner}
                           className="w-20 border-b border-border bg-transparent py-0.5 text-right font-mono text-[13px] tabular text-primary focus:border-gold focus:outline-none"
                         />
                       </td>
@@ -395,6 +450,7 @@ export function ConteoView({ products }: { products: ProductRow[] }) {
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              onBlur={releaseToScanner}
               placeholder="Ej.: conteo mensual, vitrina principal…"
               className="w-full border-b border-border bg-transparent pb-2 text-sm text-primary placeholder:text-text-dim/50 focus:border-gold focus:outline-none"
             />
