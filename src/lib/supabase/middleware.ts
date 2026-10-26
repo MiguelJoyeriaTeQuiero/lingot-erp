@@ -26,9 +26,31 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Un token de refresco caducado o revocado hace que getUser() lance
+  // AuthApiError. Sin capturarlo, el middleware corre en TODAS las rutas y
+  // devuelve 500 en cada petición; y como la cookie muerta sigue viajando, el
+  // error se repite indefinidamente. Por eso además la borramos.
+  const staleAuthCookies: string[] = [];
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    user = null;
+    for (const cookie of request.cookies.getAll()) {
+      if (cookie.name.startsWith("sb-") && cookie.name.includes("auth-token")) {
+        staleAuthCookies.push(cookie.name);
+      }
+    }
+  }
+
+  /** Las cookies muertas hay que soltarlas en la respuesta que salga de aquí,
+   *  sea la normal o una redirección: si no, vuelven en la siguiente petición. */
+  const clearStale = <T extends NextResponse>(res: T): T => {
+    for (const name of staleAuthCookies) res.cookies.delete(name);
+    return res;
+  };
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login");
@@ -42,13 +64,13 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/cron");
   const isCatalogRoute = pathname.startsWith("/catalogo");
 
-  if (isPublicAsset) return supabaseResponse;
+  if (isPublicAsset) return clearStale(supabaseResponse);
 
   // Raíz: decidir según sesión
   if (pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = user ? "/dashboard" : "/login";
-    return NextResponse.redirect(url);
+    return clearStale(NextResponse.redirect(url));
   }
 
   // Sin sesión y ruta protegida → /login
@@ -56,15 +78,15 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isAuthRoute && !isCatalogRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return clearStale(NextResponse.redirect(url));
   }
 
   // Con sesión y entrando a /login → /dashboard
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return clearStale(NextResponse.redirect(url));
   }
 
-  return supabaseResponse;
+  return clearStale(supabaseResponse);
 }

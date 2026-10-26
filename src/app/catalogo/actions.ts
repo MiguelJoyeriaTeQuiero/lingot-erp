@@ -2,6 +2,7 @@
 
 import { createTypedClient } from "@/lib/supabase/typed";
 import { createRawAdminClient } from "@/lib/supabase/admin";
+import { sendReservationNotice } from "@/lib/email/reservation-notice";
 
 export async function createReservationAction(data: {
   product_id: string;
@@ -51,6 +52,19 @@ export async function createReservationAction(data: {
     if (error) {
       return { error: "Error al crear la reserva. Inténtalo de nuevo." };
     }
+
+    // Aviso al responsable de Lingot (no bloquea la reserva si falla)
+    await sendReservationNotice({
+      customerName,
+      customerEmail: user.email ?? null,
+      phone: data.phone || null,
+      productName: data.product_name,
+      productSku: data.product_sku,
+      quantity: data.quantity,
+      priceSnapshot: data.price_snapshot,
+      note: data.note || null,
+      createdAt: new Date(),
+    });
 
     return { success: true };
   } catch {
