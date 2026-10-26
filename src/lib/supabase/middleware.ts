@@ -62,19 +62,17 @@ export async function updateSession(request: NextRequest) {
     // valida la autorización (x-vercel-cron / CRON_SECRET). Sin esto el
     // middleware los redirige a /login y la actualización nunca se ejecuta.
     pathname.startsWith("/api/cron");
-  const isCatalogRoute = pathname.startsWith("/catalogo");
+  // El catálogo es la web pública y vive en la raíz (lingot.vip): su portada y
+  // sus páginas no piden sesión. /catalogo solo queda para redirigir a lo nuevo.
+  const isCatalogRoute =
+    pathname === "/" ||
+    ["/blog", "/nosotros", "/mi-cuenta", "/catalogo"].some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
 
   if (isPublicAsset) return clearStale(supabaseResponse);
 
-  // Raíz: decidir según sesión
-  if (pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = user ? "/dashboard" : "/login";
-    return clearStale(NextResponse.redirect(url));
-  }
-
-  // Sin sesión y ruta protegida → /login
-  // El catálogo público (/catalogo) es accesible sin autenticación
+  // Sin sesión y ruta protegida (el ERP) → /login
   if (!user && !isAuthRoute && !isCatalogRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

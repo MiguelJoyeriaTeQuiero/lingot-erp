@@ -25,7 +25,7 @@ export default async function AppLayout({
 
   const erpRoles = ["admin", "contabilidad"];
   if (!erpRoles.includes((profile as { role?: string } | null)?.role ?? "")) {
-    redirect("/catalogo");
+    redirect("/");
   }
 
   return (

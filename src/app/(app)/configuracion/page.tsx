@@ -16,7 +16,7 @@ export default async function ConfiguracionPage() {
   const headersList = await headers();
   const host = headersList.get("host") ?? "localhost:3000";
   const protocol = host.startsWith("localhost") ? "http" : "https";
-  const catalogUrl = `${protocol}://${host}/catalogo`;
+  const catalogUrl = `${protocol}://${host}/`;
 
   const [companyRes, spots] = await Promise.all([
     supabase.from("company_settings").select("*").eq("id", 1).maybeSingle(),

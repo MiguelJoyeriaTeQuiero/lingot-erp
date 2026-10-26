@@ -55,6 +55,6 @@ export async function toggleCatalogAction(
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/configuracion");
-  revalidatePath("/catalogo");
+  revalidatePath("/");
   return { success: true };
 }
