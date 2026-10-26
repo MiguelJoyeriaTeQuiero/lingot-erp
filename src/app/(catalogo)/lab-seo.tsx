@@ -32,6 +32,11 @@ export const HOME_TITLE = "Comprar oro y plata de inversión en Tenerife · Ling
 export const HOME_DESCRIPTION =
   "Lingotes y monedas de oro y plata de inversión en Tenerife, con certificado de pureza y precio sobre el spot cada hora. Argor-Heraeus, Metalor, Krugerrand.";
 
+/** Verificación de Google Search Console (propiedad https://www.lingot.vip/).
+ *  Tiene que seguir publicada: si se quita, la propiedad deja de estar
+ *  verificada. */
+export const GOOGLE_SITE_VERIFICATION = "dDq52ys7OqnZGySyz5CyXVVZVftN8MWVHdUEuEx2SL0";
+
 type OgImage = { url: string; width?: number; height?: number; alt?: string };
 
 /**
