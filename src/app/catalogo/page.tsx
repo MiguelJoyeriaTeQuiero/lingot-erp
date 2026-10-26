@@ -55,25 +55,22 @@ export default async function CatalogoPage() {
   if (!catalogEnabled && !isAdmin) {
     return (
       <div
-        className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6 text-center"
-        style={{ background: "#F0E9DA" }}
+        className="lg-scope relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6 text-center"
+        style={{ background: "radial-gradient(120% 90% at 50% 8%, #0f4a5c 0%, #0a3746 42%, #06272f 100%)" }}
       >
         <CatalogHeroWebGL />
         <div aria-hidden className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(240,233,218,0.30), rgba(240,233,218,0.88))", zIndex: 2 }} />
-        <div aria-hidden className="catalog-grain-overlay" />
+          style={{ background: "radial-gradient(140% 120% at 50% 45%, transparent 40%, rgba(4,20,26,0.6) 100%)", zIndex: 2 }} />
+        <div aria-hidden className="lg-grain" />
         <div className="relative flex flex-col items-center" style={{ zIndex: 3 }}>
           <div className="mb-8 inline-flex items-center rounded-full px-4 py-1.5"
-            style={{ background: "rgba(10,31,43,0.05)", border: "1px solid rgba(10,31,43,0.12)" }}>
-            <span className="font-mono text-[9px] uppercase tracking-[0.42em]"
-              style={{ color: "rgba(10,31,43,0.45)" }}>Próximamente</span>
+            style={{ background: "rgba(238,242,244,0.05)", border: "1px solid rgba(238,242,244,0.14)" }}>
+            <span className="lg-label" style={{ fontSize: "9px", letterSpacing: "0.42em", color: "rgba(228,200,143,0.72)" }}>Próximamente</span>
           </div>
-          <h1 className="select-none font-serif font-light italic leading-none tracking-[-0.04em]"
-            style={{ fontSize: "clamp(80px, 15vw, 180px)", color: "#0a1f2b" }}>
+          <h1 className="lg-display select-none" style={{ fontSize: "clamp(80px, 15vw, 200px)", color: "var(--lg-light)", fontWeight: 300 }}>
             Lingot
           </h1>
-          <p className="mt-8 font-serif italic"
-            style={{ fontSize: "clamp(14px,2.2vw,18px)", color: "rgba(10,31,43,0.38)", letterSpacing: "0.03em" }}>
+          <p className="lg-label mt-8" style={{ fontSize: "clamp(11px,1.6vw,13px)", letterSpacing: "0.4em", color: "var(--lg-light-dim)" }}>
             Metales preciosos · Alta pureza
           </p>
         </div>
@@ -120,6 +117,11 @@ export default async function CatalogoPage() {
   const year        = new Date().getFullYear();
   const latestPosts = BLOG_POSTS.slice(0, 3);
 
+  const spotsForHero = {
+    oro:   spots.oro?.price_eur_per_g   ?? null,
+    plata: spots.plata?.price_eur_per_g ?? null,
+  };
+
   return (
     <CatalogLanding
       products={products}
@@ -131,6 +133,7 @@ export default async function CatalogoPage() {
       isAdmin={isAdmin}
       catalogEnabled={catalogEnabled}
       userName={userName}
+      spots={spotsForHero}
     />
   );
 }

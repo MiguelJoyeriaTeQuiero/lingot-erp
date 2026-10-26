@@ -1,318 +1,115 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getPaginatedPosts, BLOG_POSTS } from "./data";
+import { CatalogFooter } from "../catalog-footer";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Blog · Lingot — Metales Preciosos",
+  title: "Análisis · Lingot — Metales Preciosos",
   description:
     "Análisis y noticias sobre el mercado del oro y la plata: tipos de interés, inflación, geopolítica y factores que mueven el precio de los metales preciosos.",
   openGraph: {
-    title: "Blog · Lingot — Metales Preciosos",
+    title: "Análisis · Lingot — Metales Preciosos",
     description: "Análisis sobre el mercado del oro y la plata. Factores macro, técnico y geopolíticos.",
   },
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-ES", {
-    year: "numeric", month: "long", day: "numeric",
-  });
+  return new Date(iso).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export default function BlogPage({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
+export default function BlogPage({ searchParams }: { searchParams: { page?: string } }) {
   const page = parseInt(searchParams.page ?? "1", 10);
   const { posts, totalPages, currentPage } = getPaginatedPosts(page);
 
   return (
-    <div style={{ background: "#F9F4EC", minHeight: "100dvh" }}>
-      <div aria-hidden className="catalog-grain-overlay" />
+    <div className="lg-scope" style={{ background: "var(--lg-paper)", minHeight: "100dvh" }}>
+      <div aria-hidden className="lg-grain" />
 
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <header
-        className="relative overflow-hidden px-6"
-        style={{
-          background:    "linear-gradient(175deg, #EDE5D4 0%, #F4EDE0 50%, #F9F4EC 100%)",
-          paddingTop:    "clamp(120px, 18vw, 180px)",
-          paddingBottom: "clamp(60px, 8vw, 96px)",
-        }}
-      >
+      {/* ── Hero bóveda ─────────────────────────────────────────────────── */}
+      <header className="relative overflow-hidden px-6 sm:px-14"
+        style={{ background: "radial-gradient(120% 100% at 22% 0%, #0f4a5c 0%, #0a3746 46%, #06272f 100%)", paddingTop: "clamp(140px, 20vw, 200px)", paddingBottom: "clamp(70px, 10vw, 110px)" }}>
         <div className="mx-auto max-w-5xl">
-          <div
-            data-reveal
-            className="mb-6 inline-flex items-center rounded-full px-4 py-1.5"
-            style={{
-              background: "rgba(10,31,43,0.05)",
-              border:     "1px solid rgba(10,31,43,0.12)",
-            }}
-          >
-            <span className="font-mono text-[9px] uppercase tracking-[0.42em]"
-              style={{ color: "rgba(10,31,43,0.40)" }}>
-              Blog · Análisis de mercado
-            </span>
+          <div data-lg-reveal className="mb-6 inline-flex items-center rounded-full px-4 py-1.5"
+            style={{ background: "rgba(238,242,244,0.05)", border: "1px solid rgba(238,242,244,0.14)" }}>
+            <span className="lg-label" style={{ fontSize: "9px", letterSpacing: "0.42em", color: "rgba(228,200,143,0.72)" }}>Análisis de mercado</span>
           </div>
-
-          <h1
-            data-reveal
-            className="font-serif font-light italic"
-            style={{
-              fontSize:      "clamp(38px, 6.5vw, 80px)",
-              color:         "#0a1f2b",
-              lineHeight:    1.05,
-              letterSpacing: "-0.02em",
-              maxWidth:      "18ch",
-              marginTop:     "12px",
-            }}
-          >
-            El mercado del oro explicado
+          <h1 data-lg-reveal className="lg-display" style={{ fontSize: "clamp(40px, 7vw, 92px)", color: "var(--lg-light)", fontWeight: 300, maxWidth: "18ch", marginTop: "12px" }}>
+            El mercado del oro, explicado.
           </h1>
-
-          <p
-            data-reveal
-            style={{
-              marginTop:  "24px",
-              fontSize:   "clamp(14px, 1.8vw, 17px)",
-              color:      "rgba(10,31,43,0.48)",
-              maxWidth:   "52ch",
-              lineHeight: 1.65,
-            }}
-          >
-            Análisis sobre los factores macroeconómicos, geopolíticos y técnicos
-            que determinan el precio del oro y la plata.
+          <p data-lg-reveal style={{ marginTop: "26px", fontSize: "clamp(14px, 1.8vw, 18px)", color: "var(--lg-light-soft)", maxWidth: "54ch", lineHeight: 1.65 }}>
+            Análisis sobre los factores macroeconómicos, geopolíticos y técnicos que determinan el precio del oro y la plata.
           </p>
-
-          {/* Stat */}
-          <div className="mt-10 flex items-center gap-4" data-reveal>
-            <span
-              className="font-editorial leading-none tracking-[-0.04em]"
-              style={{ fontSize: "48px", color: "rgba(154,114,48,0.25)" }}
-            >
-              {BLOG_POSTS.length}
-            </span>
+          <div data-lg-reveal className="mt-10 flex items-center gap-4">
+            <span className="lg-num" style={{ fontSize: "52px", fontWeight: 300, color: "rgba(228,200,143,0.55)" }}>{BLOG_POSTS.length}</span>
             <div>
-              <div className="font-mono text-[8px] uppercase tracking-[0.38em]"
-                style={{ color: "rgba(10,31,43,0.30)" }}>
-                Artículos
-              </div>
-              <div className="font-mono text-[8px] uppercase tracking-[0.38em]"
-                style={{ color: "rgba(10,31,43,0.20)" }}>
-                publicados
-              </div>
+              <div className="lg-label" style={{ fontSize: "8px", letterSpacing: "0.38em", color: "var(--lg-light-dim)" }}>Artículos</div>
+              <div className="lg-label" style={{ fontSize: "8px", letterSpacing: "0.38em", color: "var(--lg-light-faint)" }}>publicados</div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* ── Post grid ─────────────────────────────────────────────────── */}
-      <main
-        className="px-6"
-        style={{
-          paddingTop:    "clamp(60px, 8vw, 96px)",
-          paddingBottom: "clamp(80px, 12vw, 120px)",
-        }}
-      >
+      {/* ── Grid de artículos ───────────────────────────────────────────── */}
+      <main className="px-6 sm:px-14" style={{ paddingTop: "clamp(56px, 8vw, 90px)", paddingBottom: "clamp(80px, 12vw, 120px)" }}>
         <div className="mx-auto max-w-5xl">
-          <div className="grid gap-6 sm:grid-cols-2">
-            {posts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={`/catalogo/blog/${post.slug}`}
-                data-reveal
-                style={{
-                  textDecoration: "none",
-                  display: "block",
-                  gridColumn: i === 0 && currentPage === 1 ? "1 / -1" : "auto",
-                }}
-              >
-                {/* Double-Bezel card */}
-                <article
-                  className="blog-card-bezel"
-                  style={{
-                    padding:      "3px",
-                    borderRadius: "24px",
-                    background:   "rgba(154,114,48,0.03)",
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRadius: "21px",
-                      background:   "#FFFFFF",
-                      boxShadow:    "inset 0 1px 0 rgba(255,255,255,0.90)",
-                      overflow:     "hidden",
-                    }}
-                  >
-                    {/* Feature image — only on first post of page 1 */}
-                    {i === 0 && currentPage === 1 && (
-                      <div
-                        style={{ height: "clamp(200px, 30vw, 320px)", overflow: "hidden" }}
-                      >
+          <div className="grid gap-4 sm:grid-cols-2">
+            {posts.map((post, i) => {
+              const feature = i === 0 && currentPage === 1;
+              return (
+                <Link key={post.slug} href={`/catalogo/blog/${post.slug}`} data-lg-reveal
+                  style={{ textDecoration: "none", display: "block", gridColumn: feature ? "1 / -1" : "auto" }}>
+                  <article className="lg-card flex h-full flex-col overflow-hidden rounded-2xl"
+                    style={{ background: "var(--lg-surface)", border: "1px solid var(--lg-ink-faint)", transition: "border-color 0.35s var(--lg-spring), box-shadow 0.35s var(--lg-spring), transform 0.45s var(--lg-spring)" }}>
+                    {feature && (
+                      <div style={{ height: "clamp(220px, 32vw, 340px)", overflow: "hidden" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`${post.imageUrl}`}
-                          alt={post.imageAlt}
-                          style={{
-                            width:      "100%",
-                            height:     "100%",
-                            objectFit:  "cover",
-                            display:    "block",
-                            mixBlendMode: "multiply",
-                          }}
-                        />
+                        <img src={post.imageUrl} alt={post.imageAlt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                       </div>
                     )}
-
-                    <div style={{ padding: i === 0 && currentPage === 1 ? "28px 32px 32px" : "28px 28px 28px" }}>
-                      {/* Category + date */}
+                    <div className="flex flex-1 flex-col" style={{ padding: feature ? "30px 34px 34px" : "28px" }}>
                       <div className="mb-4 flex items-center gap-3">
-                        <span
-                          className="rounded-full px-3 py-1 font-mono text-[8px] uppercase tracking-[0.28em]"
-                          style={{
-                            background: "rgba(154,114,48,0.07)",
-                            border:     "1px solid rgba(154,114,48,0.16)",
-                            color:      "rgba(154,114,48,0.70)",
-                          }}
-                        >
-                          {post.category}
-                        </span>
-                        <span className="font-mono text-[8px]"
-                          style={{ color: "rgba(10,31,43,0.28)" }}>
-                          {formatDate(post.date)}
-                        </span>
+                        <span className="lg-label rounded-full px-3 py-1" style={{ fontSize: "8px", letterSpacing: "0.28em", background: "rgba(200,161,100,0.08)", border: "1px solid var(--lg-gold-line)", color: "var(--lg-gold-deep)" }}>{post.category}</span>
+                        <span className="lg-label" style={{ fontSize: "8px", letterSpacing: "0.1em", color: "var(--lg-ink-dim)" }}>{formatDate(post.date)}</span>
                       </div>
-
-                      <h2
-                        className="font-serif font-light"
-                        style={{
-                          fontSize:   i === 0 && currentPage === 1 ? "clamp(20px, 2.8vw, 28px)" : "clamp(17px, 2vw, 21px)",
-                          color:      "#0a1f2b",
-                          lineHeight: 1.2,
-                          letterSpacing: "-0.01em",
-                          marginBottom: "12px",
-                        }}
-                      >
-                        {post.title}
-                      </h2>
-
-                      <p style={{
-                        fontSize:   "13px",
-                        color:      "rgba(10,31,43,0.50)",
-                        lineHeight: 1.65,
-                      }}>
-                        {post.excerpt}
-                      </p>
-
-                      <div className="mt-5 flex items-center gap-3">
-                        <div className="h-px flex-1"
-                          style={{ background: "rgba(154,114,48,0.14)" }} />
-                        <span className="font-mono text-[8px] uppercase tracking-[0.28em]"
-                          style={{ color: "rgba(154,114,48,0.50)" }}>
-                          {post.readMinutes} min
-                        </span>
-                        <span style={{ color: "rgba(154,114,48,0.40)", fontSize: "10px" }}>→</span>
+                      <h2 className="lg-heading" style={{ fontSize: feature ? "clamp(22px, 3vw, 30px)" : "clamp(17px, 2vw, 21px)", color: "var(--lg-ink)", fontWeight: 400, lineHeight: 1.2, marginBottom: "12px" }}>{post.title}</h2>
+                      <p style={{ fontSize: "13px", color: "var(--lg-ink-soft)", lineHeight: 1.65 }}>{post.excerpt}</p>
+                      <div className="mt-6 flex items-center gap-3">
+                        <div className="h-px flex-1" style={{ background: "var(--lg-ink-faint)" }} />
+                        <span className="lg-label" style={{ fontSize: "8px", letterSpacing: "0.28em", color: "var(--lg-gold-deep)" }}>{post.readMinutes} min</span>
+                        <span style={{ color: "var(--lg-gold-deep)", fontSize: "11px" }}>→</span>
                       </div>
                     </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
+                  </article>
+                </Link>
+              );
+            })}
           </div>
 
-          {/* ── Pagination ──────────────────────────────────────────── */}
           {totalPages > 1 && (
-            <nav
-              className="mt-16 flex items-center justify-center gap-2"
-              aria-label="Paginación del blog"
-            >
+            <nav className="mt-16 flex items-center justify-center gap-2" aria-label="Paginación">
               {currentPage > 1 && (
-                <Link
-                  href={`/catalogo/blog?page=${currentPage - 1}`}
-                  className="font-mono text-[9px] uppercase tracking-[0.28em]"
-                  style={{
-                    padding:       "8px 16px",
-                    borderRadius:  "99px",
-                    background:    "rgba(10,31,43,0.05)",
-                    border:        "1px solid rgba(10,31,43,0.10)",
-                    color:         "rgba(10,31,43,0.45)",
-                    textDecoration: "none",
-                  }}
-                >
-                  ← Anterior
-                </Link>
+                <Link href={`/catalogo/blog?page=${currentPage - 1}`} className="lg-label"
+                  style={{ padding: "9px 16px", borderRadius: "99px", background: "var(--lg-surface)", border: "1px solid var(--lg-ink-faint)", color: "var(--lg-ink-soft)", fontSize: "9px", letterSpacing: "0.24em", textDecoration: "none" }}>← Anterior</Link>
               )}
-
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <Link
-                  key={p}
-                  href={`/catalogo/blog?page=${p}`}
-                  className="font-mono text-[9px]"
-                  style={{
-                    width:          "36px",
-                    height:         "36px",
-                    borderRadius:   "99px",
-                    display:        "flex",
-                    alignItems:     "center",
-                    justifyContent: "center",
-                    background:     p === currentPage ? "#0a1f2b" : "rgba(10,31,43,0.04)",
-                    border:         `1px solid ${p === currentPage ? "#0a1f2b" : "rgba(10,31,43,0.10)"}`,
-                    color:          p === currentPage ? "rgba(249,244,236,0.88)" : "rgba(10,31,43,0.45)",
-                    textDecoration: "none",
-                  }}
-                >
-                  {p}
-                </Link>
+                <Link key={p} href={`/catalogo/blog?page=${p}`} className="lg-num flex items-center justify-center"
+                  style={{ width: "38px", height: "38px", borderRadius: "99px", fontSize: "11px",
+                    background: p === currentPage ? "var(--lg-vault)" : "var(--lg-surface)",
+                    border: `1px solid ${p === currentPage ? "var(--lg-vault)" : "var(--lg-ink-faint)"}`,
+                    color: p === currentPage ? "var(--lg-light)" : "var(--lg-ink-soft)", textDecoration: "none" }}>{p}</Link>
               ))}
-
               {currentPage < totalPages && (
-                <Link
-                  href={`/catalogo/blog?page=${currentPage + 1}`}
-                  className="font-mono text-[9px] uppercase tracking-[0.28em]"
-                  style={{
-                    padding:       "8px 16px",
-                    borderRadius:  "99px",
-                    background:    "rgba(10,31,43,0.05)",
-                    border:        "1px solid rgba(10,31,43,0.10)",
-                    color:         "rgba(10,31,43,0.45)",
-                    textDecoration: "none",
-                  }}
-                >
-                  Siguiente →
-                </Link>
+                <Link href={`/catalogo/blog?page=${currentPage + 1}`} className="lg-label"
+                  style={{ padding: "9px 16px", borderRadius: "99px", background: "var(--lg-surface)", border: "1px solid var(--lg-ink-faint)", color: "var(--lg-ink-soft)", fontSize: "9px", letterSpacing: "0.24em", textDecoration: "none" }}>Siguiente →</Link>
               )}
             </nav>
           )}
         </div>
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────────── */}
-      <footer
-        className="px-6 py-16 text-center"
-        style={{ background: "#EDE5D4", borderTop: "1px solid rgba(10,31,43,0.06)" }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-px w-12"
-            style={{ background: "linear-gradient(to right, transparent, rgba(154,114,48,0.35), transparent)" }} />
-          <p className="font-serif italic text-[14px]"
-            style={{ color: "rgba(154,114,48,0.45)" }}>Lingot</p>
-          <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {[
-              { href: "/catalogo",           label: "Inicio"    },
-              { href: "/catalogo/nosotros",  label: "Nosotros"  },
-              { href: "/catalogo/blog",      label: "Blog"      },
-              { href: "/catalogo/mi-cuenta", label: "Mi cuenta" },
-            ].map((l) => (
-              <Link key={l.href} href={l.href}
-                className="font-mono text-[9px] uppercase tracking-[0.28em]"
-                style={{ color: "rgba(10,31,43,0.28)", textDecoration: "none" }}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
+      <CatalogFooter compact />
     </div>
   );
 }

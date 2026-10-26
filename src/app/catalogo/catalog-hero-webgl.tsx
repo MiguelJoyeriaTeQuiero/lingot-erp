@@ -3,21 +3,26 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+/**
+ * Campo de polvo de oro sobre la bóveda oscura.
+ * Blending aditivo → las partículas brillan como motas de metal suspendidas
+ * en la penumbra de una cámara acorazada. Parallax de ratón + fade al hacer scroll.
+ */
 export function CatalogHeroWebGL() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let animId = 0;
     let mounted = true;
 
-    const W       = window.innerWidth;
-    const H       = window.innerHeight;
-    const mobile  = W < 768;
+    const W      = window.innerWidth;
+    const H      = window.innerHeight;
+    const mobile = W < 768;
 
-    // Orthographic camera — 1 unit = 1 CSS pixel
     const scene  = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0, 2000);
     camera.position.z = 500;
@@ -28,38 +33,31 @@ export function CatalogHeroWebGL() {
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    // ── Warm gold palette ──────────────────────────────────────────────
+    // ── Paleta oro (brillante para glow aditivo sobre petróleo) ──────────
     const PAL = [
-      new THREE.Color("#9a7230"),
-      new THREE.Color("#b8923e"),
       new THREE.Color("#c8a164"),
-      new THREE.Color("#6b4e1c"),
-      new THREE.Color("#7a5c28"),
+      new THREE.Color("#e4c88f"),
+      new THREE.Color("#f0dcae"),
+      new THREE.Color("#a5813f"),
+      new THREE.Color("#d8b475"),
     ];
 
-    // ── Layer definitions ──────────────────────────────────────────────
-    // Each layer drifts at its own speed and parallax factor
+    // ── Capas con parallax y velocidad propias ───────────────────────────
     const LAYERS = [
-      // Far dust — many tiny, clearly visible on cream
-      { cnt: mobile ? 260 : 520, szMin: 0.8, szMax: 2.2, opMin: 0.16, opMax: 0.32, spd: 0.10, par: 0.006, z: -90, glint: false },
-      // Mid field — main texture
-      { cnt: mobile ? 200 : 460, szMin: 1.4, szMax: 3.5, opMin: 0.22, opMax: 0.44, spd: 0.17, par: 0.014, z:   0, glint: false },
-      // Near layer — fewer, prominent
-      { cnt: mobile ?  80 : 180, szMin: 2.2, szMax: 5.0, opMin: 0.28, opMax: 0.55, spd: 0.22, par: 0.024, z:  90, glint: false },
-      // Glints — rare, large, shimmer
-      { cnt: mobile ?  18 :  48, szMin: 4.5, szMax: 9.0, opMin: 0.42, opMax: 0.70, spd: 0.07, par: 0.018, z:  45, glint: true  },
+      { cnt: mobile ? 220 : 440, szMin: 0.8, szMax: 2.0, opMin: 0.06, opMax: 0.16, spd: 0.08, par: 0.006, z: -90, glint: false },
+      { cnt: mobile ? 170 : 380, szMin: 1.2, szMax: 3.0, opMin: 0.10, opMax: 0.24, spd: 0.14, par: 0.014, z:   0, glint: false },
+      { cnt: mobile ?  70 : 150, szMin: 2.0, szMax: 4.4, opMin: 0.14, opMax: 0.34, spd: 0.19, par: 0.024, z:  90, glint: false },
+      { cnt: mobile ?  16 :  40, szMin: 4.0, szMax: 8.5, opMin: 0.30, opMax: 0.62, spd: 0.06, par: 0.018, z:  45, glint: true  },
     ];
 
     const TOTAL = LAYERS.reduce((s, l) => s + l.cnt, 0);
 
-    // CPU-side state
     const cpuX   = new Float32Array(TOTAL);
     const cpuY   = new Float32Array(TOTAL);
     const cpuVX  = new Float32Array(TOTAL);
     const cpuVY  = new Float32Array(TOTAL);
     const cpuPar = new Float32Array(TOTAL);
 
-    // GPU buffers
     const gPos   = new Float32Array(TOTAL * 3);
     const gCol   = new Float32Array(TOTAL * 3);
     const gSiz   = new Float32Array(TOTAL);
@@ -69,7 +67,6 @@ export function CatalogHeroWebGL() {
     let idx = 0;
     for (const ld of LAYERS) {
       for (let i = 0; i < ld.cnt; i++, idx++) {
-        // Scatter evenly across the viewport
         cpuX[idx]   = (Math.random() - 0.5) * W;
         cpuY[idx]   = (Math.random() - 0.5) * H;
         cpuPar[idx] = ld.par;
@@ -118,7 +115,7 @@ export function CatalogHeroWebGL() {
         void main() {
           vColor = aColor;
           float shimmer = aGlint > 0.5
-            ? 0.50 + 0.50 * sin(uTime * 1.8 + position.x * 0.018 + position.y * 0.012)
+            ? 0.40 + 0.60 * sin(uTime * 1.6 + position.x * 0.02 + position.y * 0.014)
             : 1.0;
           vAlpha       = aOpacity * shimmer * uGlobalOp;
           gl_PointSize = aSize;
@@ -132,19 +129,18 @@ export function CatalogHeroWebGL() {
           vec2  uv = gl_PointCoord - 0.5;
           float d  = length(uv);
           if (d > 0.5) discard;
-          float soft = smoothstep(0.5, 0.06, d);
+          float soft = smoothstep(0.5, 0.02, d);
           gl_FragColor = vec4(vColor, soft * vAlpha);
         }
       `,
       transparent: true,
       depthWrite:  false,
-      blending:    THREE.NormalBlending,
+      blending:    THREE.AdditiveBlending,
     });
 
     const mesh = new THREE.Points(geo, mat);
     scene.add(mesh);
 
-    // ── Input ──────────────────────────────────────────────────────────
     let mx = 0, my = 0, scrollY = 0;
 
     const onMouse = (e: MouseEvent) => {
@@ -154,10 +150,8 @@ export function CatalogHeroWebGL() {
     const onScroll = () => { scrollY = window.scrollY; };
     const onResize = () => {
       const nW = window.innerWidth, nH = window.innerHeight;
-      camera.left   = -nW / 2;
-      camera.right  =  nW / 2;
-      camera.top    =  nH / 2;
-      camera.bottom = -nH / 2;
+      camera.left = -nW / 2; camera.right = nW / 2;
+      camera.top  =  nH / 2; camera.bottom = -nH / 2;
       camera.updateProjectionMatrix();
       renderer.setSize(nW, nH);
     };
@@ -166,13 +160,10 @@ export function CatalogHeroWebGL() {
     window.addEventListener("scroll",    onScroll, { passive: true });
     window.addEventListener("resize",    onResize, { passive: true });
 
-    // ── Pre-cache uniform references ──────────────────────────────────
     const uniTime     = mat.uniforms["uTime"]     as { value: number };
     const uniGlobalOp = mat.uniforms["uGlobalOp"] as { value: number };
 
-    // ── Render loop ────────────────────────────────────────────────────
     let t = 0;
-
     const tick = () => {
       if (!mounted) return;
       animId = requestAnimationFrame(tick);
@@ -183,19 +174,14 @@ export function CatalogHeroWebGL() {
       const hh = window.innerHeight / 2 + 14;
 
       for (let i = 0; i < TOTAL; i++) {
-        // Read with ?? 0 fallback to satisfy noUncheckedIndexedAccess
-        const x   = (cpuX[i]   ?? 0) + (cpuVX[i]  ?? 0);
-        const y   = (cpuY[i]   ?? 0) + (cpuVY[i]  ?? 0);
-        const par = cpuPar[i]  ?? 0;
+        const x   = (cpuX[i]  ?? 0) + (cpuVX[i] ?? 0);
+        const y   = (cpuY[i]  ?? 0) + (cpuVY[i] ?? 0);
+        const par = cpuPar[i] ?? 0;
 
-        // Wrap edges
         const wx = x >  hw ? -hw : x < -hw ?  hw : x;
         const wy = y >  hh ? -hh : y < -hh ?  hh : y;
 
-        cpuX[i] = wx;
-        cpuY[i] = wy;
-
-        // Mouse parallax per-layer
+        cpuX[i] = wx; cpuY[i] = wy;
         gPos[i * 3]     = wx + mx * par;
         gPos[i * 3 + 1] = wy + my * par;
       }
@@ -207,7 +193,6 @@ export function CatalogHeroWebGL() {
 
       renderer.render(scene, camera);
     };
-
     tick();
 
     return () => {

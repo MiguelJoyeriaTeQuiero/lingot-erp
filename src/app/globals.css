@@ -616,3 +616,228 @@ html:has(.catalog-dark-card) {
   from { transform: translateY(36px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LINGOT · CATÁLOGO — Rediseño premium "Cámara Acorazada"
+   Sistema dual: hero bóveda petróleo → galería clara. Oro como hilo conductor.
+   Namespace: --lg-* (tokens) · .lg-* (componentes) — aislado del ERP interno.
+═══════════════════════════════════════════════════════════════════════════ */
+
+.lg-scope {
+  --font-catalog: var(--font-catalog);
+
+  /* ── Bóveda (oscuro) ── */
+  --lg-vault:       #0a3746;   /* petróleo profundo — primario del manual */
+  --lg-vault-deep:  #06272f;
+  --lg-vault-soft:  #0f4a5c;
+  --lg-vault-line:  rgba(232, 237, 240, 0.10);
+  --lg-vault-line2: rgba(232, 237, 240, 0.055);
+
+  /* ── Oro (hilo conductor, uso puntual) ── */
+  --lg-gold:        #c8a164;   /* oro pastel del manual */
+  --lg-gold-bright: #e4c88f;
+  --lg-gold-deep:   #9c7c44;
+  --lg-gold-line:   rgba(200, 161, 100, 0.22);
+
+  /* ── Galería (claro) ── */
+  --lg-paper:       #eceff2;   /* derivado del claro de marca #e8edf0 */
+  --lg-paper-deep:  #e2e7eb;
+  --lg-surface:     #ffffff;
+
+  /* ── Tinta sobre claro ── */
+  --lg-ink:         #0a2b36;
+  --lg-ink-soft:    rgba(10, 43, 54, 0.60);
+  --lg-ink-dim:     rgba(10, 43, 54, 0.34);
+  --lg-ink-faint:   rgba(10, 43, 54, 0.14);
+
+  /* ── Luz sobre oscuro ── */
+  --lg-light:       #eef2f4;
+  --lg-light-soft:  rgba(238, 242, 244, 0.62);
+  --lg-light-dim:   rgba(238, 242, 244, 0.34);
+  --lg-light-faint: rgba(238, 242, 244, 0.12);
+
+  /* ── Movimiento ── */
+  --lg-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --lg-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --lg-over:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  font-family: var(--font-catalog), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--lg-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.lg-scope ::selection { background: var(--lg-gold); color: var(--lg-vault-deep); }
+
+/* El catálogo vive en su propio mundo cromático: el gutter del scroll no debe
+   mostrar el crema del ERP. Neutralizamos fondo y barra de scroll. */
+html:has(.lg-scope) { background: var(--lg-paper); }
+html:has(.lg-scope)::-webkit-scrollbar { width: 9px; }
+html:has(.lg-scope)::-webkit-scrollbar-track { background: var(--lg-paper); }
+html:has(.lg-scope)::-webkit-scrollbar-thumb {
+  background: rgba(10,43,54,0.22); border-radius: 99px;
+  border: 2px solid var(--lg-paper); background-clip: padding-box;
+}
+html:has(.lg-scope)::-webkit-scrollbar-thumb:hover { background: rgba(10,43,54,0.4); background-clip: padding-box; border: 2px solid var(--lg-paper); }
+
+/* ── Tipografía ─────────────────────────────────────────────────────────── */
+.lg-display {                 /* titulares monumentales */
+  font-weight: 300;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  text-wrap: balance;
+}
+.lg-heading {                 /* sub-titulares */
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.lg-label {                   /* eyebrows, ids, columnas técnicas */
+  font-weight: 500;
+  text-transform: uppercase;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+.lg-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Hilo de oro (regla decorativa) ─────────────────────────────────────── */
+.lg-goldline {
+  height: 1px;
+  background: linear-gradient(to right, var(--lg-gold), transparent);
+}
+@keyframes lg-shimmer {
+  0%   { background-position: -180% center; }
+  100% { background-position:  180% center; }
+}
+.lg-goldline-shimmer {
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(200,161,100,0.05) 0%, rgba(200,161,100,0.45) 45%,
+    rgba(228,200,143,0.85) 50%, rgba(200,161,100,0.45) 55%,
+    rgba(200,161,100,0.05) 100%);
+  background-size: 200% auto;
+  animation: lg-shimmer 4.2s linear infinite;
+}
+
+/* ── Grano de película (sutil, fijo) ────────────────────────────────────── */
+.lg-grain {
+  position: fixed; inset: 0; z-index: 60;
+  pointer-events: none; opacity: 0.035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.9 0 0 0 0 0.9 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+
+/* ── Reveal on scroll (blur + rise) ─────────────────────────────────────── */
+[data-lg-reveal] {
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(6px);
+  transition:
+    opacity   0.9s var(--lg-spring),
+    transform 0.9s var(--lg-spring),
+    filter    0.7s var(--lg-spring);
+  will-change: opacity, transform, filter;
+}
+[data-lg-reveal].is-in {
+  opacity: 1; transform: translateY(0); filter: blur(0);
+}
+[data-lg-stagger] > *          { transition-delay: 0ms; }
+[data-lg-stagger] > *:nth-child(2) { transition-delay: 70ms; }
+[data-lg-stagger] > *:nth-child(3) { transition-delay: 140ms; }
+[data-lg-stagger] > *:nth-child(4) { transition-delay: 210ms; }
+[data-lg-stagger] > *:nth-child(5) { transition-delay: 280ms; }
+[data-lg-stagger] > *:nth-child(6) { transition-delay: 350ms; }
+
+/* ── Hero: line rise (masked slide-up) ──────────────────────────────────── */
+@keyframes lg-rise {
+  from { transform: translateY(115%); }
+  to   { transform: translateY(0); }
+}
+@keyframes lg-fade-up {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lg-fade-down {
+  from { opacity: 0; transform: translateY(-18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lg-fade {
+  from { opacity: 0; } to { opacity: 1; }
+}
+
+/* ── Transición bóveda → galería (el "cofre" se abre) ────────────────────── */
+.lg-gallery-lift {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(-96px, -8vh, -56px);
+  border-top-left-radius:  clamp(28px, 5vw, 60px);
+  border-top-right-radius: clamp(28px, 5vw, 60px);
+  box-shadow: 0 -40px 80px -32px rgba(0,0,0,0.55);
+  overflow: hidden;
+}
+
+/* ── FAQ · acordeón ─────────────────────────────────────────────────────── */
+.lg-faq-q:hover .lg-heading { color: var(--lg-gold-deep); }
+
+/* ── Scroll cue ─────────────────────────────────────────────────────────── */
+@keyframes lg-cue {
+  0%, 100% { transform: scaleY(1);    opacity: 0.5; }
+  50%      { transform: scaleY(1.25); opacity: 1;   }
+}
+.lg-cue { transform-origin: top; animation: lg-cue 2.2s ease-in-out infinite; }
+
+/* ── Live dot ───────────────────────────────────────────────────────────── */
+@keyframes lg-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.7); }
+}
+.lg-live { animation: lg-pulse 2.2s ease-in-out infinite; }
+
+/* ── Ticker ─────────────────────────────────────────────────────────────── */
+@keyframes lg-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.lg-ticker-track { animation: lg-ticker 42s linear infinite; will-change: transform; }
+.lg-ticker-track:hover { animation-play-state: paused; }
+
+/* ── Tarjetas (galería, blog, contacto) ─────────────────────────────────── */
+.lg-card:hover {
+  border-color: var(--lg-gold-line) !important;
+  box-shadow: 0 22px 60px -28px rgba(10,43,54,0.22), 0 4px 14px -6px rgba(10,43,54,0.08);
+  transform: translateY(-3px);
+}
+
+/* ── Magnetic / CTA buttons ─────────────────────────────────────────────── */
+.lg-btn {
+  transition: background 0.4s var(--lg-spring), color 0.4s var(--lg-spring),
+              border-color 0.4s var(--lg-spring), transform 0.5s var(--lg-over),
+              box-shadow 0.4s var(--lg-spring);
+}
+.lg-btn:active { transform: scale(0.975); }
+
+/* ── Focus ──────────────────────────────────────────────────────────────── */
+.lg-scope a:focus-visible,
+.lg-scope button:focus-visible,
+.lg-scope input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--lg-gold);
+  border-radius: 6px;
+}
+
+/* Ocultar el FAB de acceso mientras el menú móvil está abierto (evita solaparse
+   con la barra transparente sobre el overlay bóveda). */
+@media (max-width: 640px) {
+  body.lg-menu-open .lg-access-fab { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lg-scope * ,
+  [data-lg-reveal] {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  [data-lg-reveal] { opacity: 1 !important; transform: none !important; filter: none !important; }
+}

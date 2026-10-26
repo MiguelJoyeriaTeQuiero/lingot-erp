@@ -19,209 +19,131 @@ export function ReserveModal({ product: p, onClose }: ReserveModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const priceColor = p.metal === "oro" ? "var(--lg-gold-deep)" : "var(--lg-vault-soft)";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     const result = await createReservationAction({
-      product_id: p.id,
-      product_name: p.name,
-      product_sku: p.sku,
-      quantity,
-      price_snapshot: p.price ?? 0,
-      phone,
-      note,
+      product_id: p.id, product_name: p.name, product_sku: p.sku,
+      quantity, price_snapshot: p.price ?? 0, phone, note,
     });
-
     setLoading(false);
-
-    if ("error" in result) {
-      setError(result.error);
-    } else {
-      setSuccess(true);
-    }
+    if ("error" in result) setError(result.error);
+    else setSuccess(true);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="lg-scope fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0" onClick={onClose}
+        style={{ background: "rgba(6,39,47,0.55)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)" }} />
 
-      {/* Modal */}
-      <div
-        className="relative w-full max-w-sm border border-border bg-white shadow-2xl"
-        style={{ borderColor: "rgba(10,37,48,0.10)" }}
-      >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-[rgba(10,37,48,0.35)] transition-colors hover:text-[rgba(10,37,48,0.7)]"
-          aria-label="Cerrar"
-        >
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl"
+        style={{ background: "var(--lg-surface)", border: "1px solid var(--lg-gold-line)", boxShadow: "0 40px 100px -40px rgba(6,39,47,0.5)", animation: "hero-card-in 0.5s var(--lg-expo) both" }}>
+        <div aria-hidden style={{ height: "3px", background: "linear-gradient(to right, transparent, var(--lg-gold), transparent)" }} />
+
+        <button onClick={onClose} className="absolute right-4 top-6 z-10 transition-colors"
+          style={{ color: "var(--lg-ink-dim)" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--lg-ink)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--lg-ink-dim)"; }}
+          aria-label="Cerrar">
           <X className="h-4 w-4" strokeWidth={1.5} />
         </button>
 
         <div className="p-8">
           {success ? (
             <div className="flex flex-col items-center gap-5 py-4 text-center">
-              <div
-                className="flex h-12 w-12 items-center justify-center"
-                style={{ border: "1px solid rgba(184,138,61,0.35)", background: "rgba(184,138,61,0.06)" }}
-              >
-                <span className="font-mono text-[18px]" style={{ color: "#b88a3d" }}>✓</span>
+              <div className="flex h-14 w-14 items-center justify-center rounded-full"
+                style={{ border: "1px solid var(--lg-gold-line)", background: "rgba(200,161,100,0.08)" }}>
+                <span style={{ color: "var(--lg-gold-deep)", fontSize: "22px" }}>✓</span>
               </div>
               <div>
-                <p
-                  className="font-mono text-[10px] uppercase tracking-[0.4em]"
-                  style={{ color: "#b88a3d" }}
-                >
-                  Reserva enviada
-                </p>
-                <p className="mt-2 text-[13px]" style={{ color: "rgba(10,37,48,0.55)" }}>
-                  Nos pondremos en contacto contigo pronto.
-                </p>
+                <p className="lg-label" style={{ fontSize: "10px", letterSpacing: "0.4em", color: "var(--lg-gold-deep)" }}>Reserva enviada</p>
+                <p className="mt-3 text-[13px]" style={{ color: "var(--lg-ink-soft)" }}>Nos pondremos en contacto contigo pronto.</p>
               </div>
-              <button
-                onClick={onClose}
-                className="mt-2 w-full py-3 font-mono text-[11px] uppercase tracking-[0.3em] transition-opacity hover:opacity-80"
-                style={{ background: "#0a3746", color: "#f5f1ea" }}
-              >
+              <button onClick={onClose} className="lg-btn lg-label mt-2 w-full rounded-full py-3.5"
+                style={{ background: "var(--lg-vault)", color: "var(--lg-light)", fontSize: "10px", letterSpacing: "0.3em" }}>
                 Cerrar
               </button>
             </div>
           ) : (
             <>
-              {/* Header */}
               <div className="mb-6">
-                <p
-                  className="font-mono text-[9px] uppercase tracking-[0.4em]"
-                  style={{ color: "#b88a3d" }}
-                >
-                  Reservar
-                </p>
-                <h2
-                  className="mt-2 font-display text-[18px] font-medium leading-snug tracking-tight"
-                  style={{ color: "#0a2530" }}
-                >
-                  {p.name}
-                </h2>
+                <p className="lg-label" style={{ fontSize: "9px", letterSpacing: "0.4em", color: "var(--lg-gold-deep)" }}>Reservar</p>
+                <h2 className="lg-heading mt-2" style={{ fontSize: "19px", fontWeight: 400, color: "var(--lg-ink)", lineHeight: 1.25 }}>{p.name}</h2>
                 <div className="mt-2 flex items-center justify-between">
-                  {p.sku && (
-                    <span
-                      className="font-mono text-[9px] uppercase tracking-[0.2em]"
-                      style={{ color: "rgba(10,37,48,0.35)" }}
-                    >
-                      {p.sku}
-                    </span>
-                  )}
-                  {p.price != null && (
-                    <span
-                      className="font-editorial text-[20px] leading-none"
-                      style={{ color: p.metal === "oro" ? "#9a7230" : "#1e5468" }}
-                    >
-                      {formatCurrency(p.price)}
-                    </span>
-                  )}
+                  {p.sku && <span className="lg-label" style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--lg-ink-dim)" }}>{p.sku}</span>}
+                  {p.price != null && <span className="lg-num" style={{ fontSize: "22px", fontWeight: 500, color: priceColor }}>{formatCurrency(p.price)}</span>}
                 </div>
-                <div
-                  className="mt-4 h-px w-full"
-                  style={{ background: "linear-gradient(to right, transparent, rgba(184,138,61,0.3), transparent)" }}
-                />
+                <div className="mt-4 h-px w-full" style={{ background: "linear-gradient(to right, transparent, var(--lg-gold-line), transparent)" }} />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Quantity */}
                 <div>
-                  <label
-                    className="block font-mono text-[10px] uppercase tracking-[0.22em]"
-                    style={{ color: "rgba(10,37,48,0.45)" }}
-                  >
-                    Cantidad
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={quantity}
+                  <label className="lg-label block" style={{ fontSize: "9px", letterSpacing: "0.22em", color: "var(--lg-ink-dim)" }}>Cantidad</label>
+                  <input type="number" min={1} required value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="mt-1.5 block w-full border-b py-2 text-[14px] focus:outline-none"
-                    style={{
-                      borderColor: "rgba(10,37,48,0.15)",
-                      color: "#0a2530",
-                      background: "transparent",
-                    }}
-                  />
+                    className="mt-1.5 block w-full border-b bg-transparent py-2 text-[14px] focus:outline-none"
+                    style={{ borderColor: "var(--lg-ink-faint)", color: "var(--lg-ink)" }}
+                    onFocus={(e) => { e.target.style.borderColor = "var(--lg-gold)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "var(--lg-ink-faint)"; }} />
                 </div>
 
-                {/* Phone */}
-                <div>
-                  <label
-                    className="block font-mono text-[10px] uppercase tracking-[0.22em]"
-                    style={{ color: "rgba(10,37,48,0.45)" }}
-                  >
-                    Teléfono{" "}
-                    <span style={{ color: "rgba(10,37,48,0.25)" }}>(opcional)</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1.5 block w-full border-b py-2 text-[14px] placeholder:text-[rgba(10,37,48,0.2)] focus:outline-none"
-                    style={{
-                      borderColor: "rgba(10,37,48,0.15)",
-                      color: "#0a2530",
-                      background: "transparent",
-                    }}
-                    placeholder="+34 600 000 000"
-                  />
-                </div>
+                <ReserveField label="Teléfono" optional type="tel" value={phone} onChange={setPhone} placeholder="+34 600 000 000" />
+                <ReserveTextarea label="Nota" value={note} onChange={setNote} placeholder="Indicaciones especiales…" />
 
-                {/* Note */}
-                <div>
-                  <label
-                    className="block font-mono text-[10px] uppercase tracking-[0.22em]"
-                    style={{ color: "rgba(10,37,48,0.45)" }}
-                  >
-                    Nota{" "}
-                    <span style={{ color: "rgba(10,37,48,0.25)" }}>(opcional)</span>
-                  </label>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={3}
-                    className="mt-1.5 block w-full resize-none border-b py-2 text-[14px] placeholder:text-[rgba(10,37,48,0.2)] focus:outline-none"
-                    style={{
-                      borderColor: "rgba(10,37,48,0.15)",
-                      color: "#0a2530",
-                      background: "transparent",
-                    }}
-                    placeholder="Indicaciones especiales…"
-                  />
-                </div>
+                {error && <p className="text-[12px]" style={{ color: "#c1554a" }}>{error}</p>}
 
-                {error && (
-                  <p className="text-[12px]" style={{ color: "#b14338" }}>
-                    {error}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-2 w-full py-3 font-mono text-[11px] uppercase tracking-[0.3em] transition-opacity disabled:opacity-50 hover:opacity-90"
-                  style={{ background: "#b88a3d", color: "#fff" }}
-                >
-                  {loading ? "Enviando…" : "Confirmar reserva"}
+                <button type="submit" disabled={loading}
+                  className="lg-btn lg-label mt-2 flex w-full items-center justify-between rounded-full px-6 py-3.5 disabled:opacity-50"
+                  style={{ background: "var(--lg-vault)", color: "var(--lg-light)", fontSize: "10px", letterSpacing: "0.3em", boxShadow: "0 8px 24px -10px rgba(10,43,54,0.4)" }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "var(--lg-vault-soft)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--lg-vault)"; }}>
+                  <span>{loading ? "Enviando…" : "Confirmar reserva"}</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px]" style={{ background: "rgba(238,242,244,0.14)" }}>↗</span>
                 </button>
               </form>
             </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReserveField({
+  label, optional, type, value, onChange, placeholder,
+}: { label: string; optional?: boolean; type: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div>
+      <label className="lg-label block" style={{ fontSize: "9px", letterSpacing: "0.22em", color: "var(--lg-ink-dim)" }}>
+        {label} {optional && <span style={{ color: "var(--lg-ink-faint)" }}>(opcional)</span>}
+      </label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+        className="mt-1.5 block w-full border-b bg-transparent py-2 text-[14px] focus:outline-none"
+        style={{ borderColor: "var(--lg-ink-faint)", color: "var(--lg-ink)" }}
+        onFocus={(e) => { e.target.style.borderColor = "var(--lg-gold)"; }}
+        onBlur={(e) => { e.target.style.borderColor = "var(--lg-ink-faint)"; }}
+        placeholder={placeholder} />
+    </div>
+  );
+}
+
+function ReserveTextarea({
+  label, value, onChange, placeholder,
+}: { label: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div>
+      <label className="lg-label block" style={{ fontSize: "9px", letterSpacing: "0.22em", color: "var(--lg-ink-dim)" }}>
+        {label} <span style={{ color: "var(--lg-ink-faint)" }}>(opcional)</span>
+      </label>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3}
+        className="mt-1.5 block w-full resize-none border-b bg-transparent py-2 text-[14px] focus:outline-none"
+        style={{ borderColor: "var(--lg-ink-faint)", color: "var(--lg-ink)" }}
+        onFocus={(e) => { e.target.style.borderColor = "var(--lg-gold)"; }}
+        onBlur={(e) => { e.target.style.borderColor = "var(--lg-ink-faint)"; }}
+        placeholder={placeholder} />
     </div>
   );
 }

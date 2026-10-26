@@ -16,8 +16,9 @@ export function CatalogReveal() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-            observer.unobserve(entry.target);
+            const el = entry.target as HTMLElement;
+            el.classList.add(el.hasAttribute("data-lg-reveal") ? "is-in" : "revealed");
+            observer.unobserve(el);
           }
         });
       },
@@ -26,10 +27,10 @@ export function CatalogReveal() {
 
     // Small delay so SSR content is painted before we measure
     const timer = setTimeout(() => {
-      document.querySelectorAll("[data-reveal]").forEach((el) => {
+      document.querySelectorAll("[data-reveal], [data-lg-reveal]").forEach((el) => {
         // Reset state so elements that were already revealed on a previous
         // page visit get re-revealed on the new page render
-        el.classList.remove("revealed");
+        el.classList.remove("revealed", "is-in");
         observer.observe(el);
       });
     }, 80);
