@@ -43,6 +43,9 @@ export interface ProductStockValuation {
  * La valoración de stock debe usar únicamente los lotes recibidos para ser
  * coherente con las cantidades físicas. Los lotes sin pedido asociado
  * (manuales o heredados) se consideran recibidos.
+ *
+ * Lo que está en camino no se pierde: se informa aparte como «En envío» con
+ * `onlyInTransitLots`, de modo que físico + en envío = todos los lotes.
  */
 export function excludeInTransitLots<T extends { purchase_order_id?: string | null }>(
   lots: T[],
@@ -50,6 +53,20 @@ export function excludeInTransitLots<T extends { purchase_order_id?: string | nu
 ): T[] {
   return lots.filter(
     (l) => l.purchase_order_id == null || !inTransitOrderIds.has(l.purchase_order_id)
+  );
+}
+
+/**
+ * Lotes «En envío»: los de pedidos de compra aún no recibidos. Su valor a coste
+ * es el de las unidades en camino que no se han vendido todavía (una pre-venta
+ * ya descuenta del lote y su coste va al coste de ventas, no aquí).
+ */
+export function onlyInTransitLots<T extends { purchase_order_id?: string | null }>(
+  lots: T[],
+  inTransitOrderIds: Set<string>
+): T[] {
+  return lots.filter(
+    (l) => l.purchase_order_id != null && inTransitOrderIds.has(l.purchase_order_id)
   );
 }
 

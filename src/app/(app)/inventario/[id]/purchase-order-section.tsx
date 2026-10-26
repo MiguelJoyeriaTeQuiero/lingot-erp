@@ -15,6 +15,7 @@ import {
   Receipt,
   PackageCheck,
   Clock,
+  Truck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -382,24 +383,27 @@ export function PurchaseOrderSection({
                         <PackageCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
                         Recibido
                       </span>
-                    ) : canReceive ? (
-                      receivingId === order.id ? (
-                        <span className="text-xs text-text-muted">Procesando…</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => markReceived(order.id)}
-                          className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/5 px-2 py-0.5 text-xs text-gold-deep transition-colors hover:bg-gold/10"
-                        >
-                          <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          Marcar recibido
-                        </button>
-                      )
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-text-dim">
-                        <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        En tránsito
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="inline-flex items-center gap-1 text-xs text-sky-800">
+                          <Truck className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          En envío
+                        </span>
+                        {canReceive && (
+                          receivingId === order.id ? (
+                            <span className="text-xs text-text-muted">Procesando…</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => markReceived(order.id)}
+                              className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/5 px-2 py-0.5 text-xs text-gold-deep transition-colors hover:bg-gold/10"
+                            >
+                              <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              Marcar recibido
+                            </button>
+                          )
+                        )}
+                      </div>
                     )}
                   </TD>
                 </TR>

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
-import { stockValueFromLots, excludeInTransitLots } from "@/lib/inventory";
+import { stockValueFromLots, excludeInTransitLots, onlyInTransitLots } from "@/lib/inventory";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { requireRole } from "@/lib/require-role";
 import { KpiPdfButton } from "./kpi-pdf-button";
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     supabase
       .from("document_lines")
       .select("lot_id, quantity, line_subtotal, document_id"),
-    supabase.from("purchase_orders").select("id").eq("received", false),
+    supabase.from("purchase_orders").select("id, quantity").eq("received", false),
   ]);
 
   const documents = docsRes.data ?? [];
@@ -106,6 +106,9 @@ export default async function DashboardPage() {
   const stockValue = stockValueFromLots(
     excludeInTransitLots(allLots, inTransitOrderIds)
   );
+  // «En envío»: se informa aparte del stock físico, nunca sumado a él
+  const transitValue = stockValueFromLots(onlyInTransitLots(allLots, inTransitOrderIds));
+  const transitUnits = (transitRes.data ?? []).reduce((s, o) => s + Number(o.quantity ?? 0), 0);
 
   const recent = documents.slice(0, 6);
 
@@ -151,9 +154,12 @@ export default async function DashboardPage() {
     {
       eyebrow: "Almacén",
       hint: "04",
-      label: "Stock valorado",
+      label: "Stock físico valorado",
       value: formatCurrency(stockValue),
-      sub: `${products.length} referencias`,
+      sub:
+        transitUnits > 0
+          ? `+ ${formatCurrency(transitValue)} en envío (${transitUnits} u)`
+          : `${products.length} referencias`,
     },
   ];
 

@@ -492,7 +492,7 @@ export function DocumentEditor({
                     <div className="flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium uppercase tracking-widest"
                       style={{ background: "rgba(184,138,61,0.08)", color: "#8b6628", border: "1px solid rgba(184,138,61,0.22)" }}>
                       <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: "#b88a3d" }} />
-                      {transitQty} u en tránsito
+                      {transitQty} u en envío
                     </div>
                   )}
                   {hasLots && (
