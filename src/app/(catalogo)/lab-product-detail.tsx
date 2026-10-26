@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useLabLang } from "./lab-lang";
 import type { LabProduct } from "./lab-experience";
 import { useLabSession } from "./lab-session";
+import { LabLegalBasic } from "./lab-legal";
 
 const LabIngotViewer = dynamic(() => import("./lab-ingot-viewer").then((m) => m.LabIngotViewer), {
   ssr: false,
@@ -256,6 +257,8 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
                     ? t("d.footIn")
                     : t("d.footOut")}
                 </p>
+
+                <LabLegalBasic purpose="reserve" />
               </form>
             )}
           </div>

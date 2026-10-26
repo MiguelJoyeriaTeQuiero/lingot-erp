@@ -66,7 +66,7 @@ export async function updateSession(request: NextRequest) {
   // sus páginas no piden sesión. /catalogo solo queda para redirigir a lo nuevo.
   const isCatalogRoute =
     pathname === "/" ||
-    ["/blog", "/nosotros", "/mi-cuenta", "/catalogo"].some(
+    ["/blog", "/nosotros", "/mi-cuenta", "/catalogo", "/aviso-legal", "/privacidad", "/cookies", "/condiciones"].some(
       (p) => pathname === p || pathname.startsWith(`${p}/`)
     );
 
