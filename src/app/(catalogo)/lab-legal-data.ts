@@ -19,6 +19,16 @@ export const TITULAR = {
   /** ⚠ Revisar: en company_settings la dirección lleva el CP 38296 y el campo
    *  aparte dice 38108; tampoco consta número de vía. */
   domicilio:    "Carretera General San Miguel de Geneto, 38296 San Cristóbal de La Laguna, Santa Cruz de Tenerife (España)",
+  /** El mismo domicilio por partes, para los datos estructurados (lab-seo).
+   *  Sin código postal hasta aclarar cuál es: uno equivocado resta en el SEO
+   *  local más que ninguno. */
+  direccion: {
+    calle:     "Carretera General San Miguel de Geneto",
+    localidad: "San Cristóbal de La Laguna",
+    provincia: "Santa Cruz de Tenerife",
+    pais:      "ES",
+    cp:        null as string | null,
+  },
   /** Tomo, folio y hoja del Registro Mercantil (art. 10 LSSI). */
   registro:     null as string | null,
   email:        "info@lingot.com",

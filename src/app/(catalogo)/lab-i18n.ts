@@ -51,7 +51,7 @@ const es: Dict = {
   "nav.blog": "Análisis",
   "nav.access": "Acceso privado",
 
-  "hero.eyebrow": "Metales preciosos · Alta pureza",
+  "hero.eyebrow": "Oro y plata de inversión · Tenerife",
   "hero.claim": "El metal sin ruido.",
   "hero.refs": "{n} referencias",
   "hero.custody": "Custodia con cita previa",
@@ -105,7 +105,7 @@ const es: Dict = {
 
   "col.eyebrow": "La colección",
   "col.title": "Peso, pureza, precio.",
-  "col.noteReal": "Precios calculados sobre el spot del momento. El cron de metales lo refresca cada hora.",
+  "col.noteReal": "Lingotes y monedas de oro y plata de inversión, con precio calculado sobre el spot del momento y actualizado cada hora.",
   "col.more": "Ver más · {n} {piece}",
   "col.piece": "pieza",
   "col.pieces": "piezas",
@@ -160,6 +160,8 @@ const es: Dict = {
 
   "faq.eyebrow": "Preguntas frecuentes",
   "faq.title": "Lo que conviene saber.",
+  "faq.q6": "¿Dónde comprar oro de inversión en Tenerife?",
+  "faq.a6": "En Lingot, con cita previa en Santa Cruz de Tenerife. Si ya tienes cuenta, puedes reservar cualquier pieza desde la colección; si no, llámanos al 669 39 31 97 y concertamos la primera cita.",
   "faq.q1": "¿Puedo obtener un descuento?",
   "faq.a1": "Sí. Dependiendo del volumen de compra —puntual o recurrente— siempre estamos dispuestos a negociar la prima.",
   "faq.q2": "¿Pueden enviarlo a cualquier lugar de España?",
@@ -290,6 +292,8 @@ const es: Dict = {
   "blog.next": "Siguiente",
   "blog.back": "Volver a análisis",
   "blog.more": "Más análisis",
+  "blog.ctaLead": "Lingotes y monedas de oro y plata de inversión, con certificado de pureza y precio sobre el spot.",
+  "blog.ctaBtn": "Ver la colección",
   "blog.esOnly": "Artículos disponibles solo en español",
   "ab.eyebrow": "Quiénes somos",
   "ab.title": "El metal sin la retórica.",
@@ -333,7 +337,7 @@ const en: Dict = {
   "nav.blog": "Analysis",
   "nav.access": "Private access",
 
-  "hero.eyebrow": "Precious metals · High purity",
+  "hero.eyebrow": "Investment gold & silver · Tenerife",
   "hero.claim": "Metal without the noise.",
   "hero.refs": "{n} references",
   "hero.custody": "Custody by appointment",
@@ -386,7 +390,7 @@ const en: Dict = {
 
   "col.eyebrow": "The collection",
   "col.title": "Weight, purity, price.",
-  "col.noteReal": "Prices calculated on the current spot. Our metals job refreshes it every hour.",
+  "col.noteReal": "Investment gold and silver bars and coins, priced on the current spot and updated every hour.",
   "col.more": "Show more · {n} {piece}",
   "col.piece": "piece",
   "col.pieces": "pieces",
@@ -441,6 +445,8 @@ const en: Dict = {
 
   "faq.eyebrow": "Frequently asked questions",
   "faq.title": "What's worth knowing.",
+  "faq.q6": "Where can I buy investment gold in Tenerife?",
+  "faq.a6": "At Lingot, by appointment in Santa Cruz de Tenerife. If you already have an account, you can reserve any piece from the collection; if not, call us on +34 669 39 31 97 and we will arrange your first appointment.",
   "faq.q1": "Can I get a discount?",
   "faq.a1": "Yes. Depending on the purchase volume — one-off or recurring — we are always willing to negotiate the premium.",
   "faq.q2": "Can you ship anywhere in Spain?",
@@ -569,6 +575,8 @@ const en: Dict = {
   "blog.next": "Next",
   "blog.back": "Back to analysis",
   "blog.more": "More analysis",
+  "blog.ctaLead": "Investment gold and silver bars and coins, with a purity certificate and spot-based pricing.",
+  "blog.ctaBtn": "See the collection",
   "blog.esOnly": "Articles available in Spanish only",
   "ab.eyebrow": "Who we are",
   "ab.title": "Metal without the rhetoric.",
@@ -612,7 +620,7 @@ const de: Dict = {
   "nav.blog": "Analysen",
   "nav.access": "Privater Zugang",
 
-  "hero.eyebrow": "Edelmetalle · Hohe Reinheit",
+  "hero.eyebrow": "Anlagegold & -silber · Teneriffa",
   "hero.claim": "Metall ohne Lärm.",
   "hero.refs": "{n} Referenzen",
   "hero.custody": "Verwahrung nach Terminvereinbarung",
@@ -665,7 +673,7 @@ const de: Dict = {
 
   "col.eyebrow": "Die Kollektion",
   "col.title": "Gewicht, Reinheit, Preis.",
-  "col.noteReal": "Preise auf Basis des aktuellen Spots. Unser Metallabgleich aktualisiert ihn stündlich.",
+  "col.noteReal": "Anlagebarren und -münzen aus Gold und Silber, bepreist auf Basis des aktuellen Spotkurses und stündlich aktualisiert.",
   "col.more": "Mehr anzeigen · {n} {piece}",
   "col.piece": "Stück",
   "col.pieces": "Stücke",
@@ -720,6 +728,8 @@ const de: Dict = {
 
   "faq.eyebrow": "Häufige Fragen",
   "faq.title": "Was man wissen sollte.",
+  "faq.q6": "Wo kann ich auf Teneriffa Anlagegold kaufen?",
+  "faq.a6": "Bei Lingot, nach Terminvereinbarung in Santa Cruz de Teneriffa. Mit Kundenkonto können Sie jedes Stück direkt aus der Kollektion reservieren; ohne Konto rufen Sie uns unter +34 669 39 31 97 an, und wir vereinbaren Ihren ersten Termin.",
   "faq.q1": "Kann ich einen Rabatt bekommen?",
   "faq.a1": "Ja. Je nach Kaufvolumen — einmalig oder wiederkehrend — sind wir stets bereit, über den Aufschlag zu verhandeln.",
   "faq.q2": "Versenden Sie überall in Spanien?",
@@ -848,6 +858,8 @@ const de: Dict = {
   "blog.next": "Weiter",
   "blog.back": "Zurück zu den Analysen",
   "blog.more": "Weitere Analysen",
+  "blog.ctaLead": "Anlagebarren und -münzen aus Gold und Silber, mit Reinheitszertifikat und Preis auf Spotbasis.",
+  "blog.ctaBtn": "Kollektion ansehen",
   "blog.esOnly": "Artikel nur auf Spanisch verfügbar",
   "ab.eyebrow": "Wer wir sind",
   "ab.title": "Metall ohne Rhetorik.",

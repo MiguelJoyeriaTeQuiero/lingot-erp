@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { LabLegalPage, type LegalSection } from "../lab-legal";
 import { TitularList, TitularMail } from "../lab-legal-parts";
 import { TITULAR } from "../lab-legal-data";
 import { LAB_PATHS } from "../lab-paths";
+import { pageMeta } from "../lab-seo";
 
-export const metadata: Metadata = {
-  title: "Aviso legal · Lingot",
+export const metadata = pageMeta({
+  title:       "Aviso legal",
   description: "Titular de lingot.vip, condiciones de uso de la web, propiedad intelectual y responsabilidad.",
-};
+  path:        "/aviso-legal",
+});
 
 const SECTIONS: LegalSection[] = [
   {

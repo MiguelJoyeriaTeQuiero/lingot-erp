@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { LabLegalPage, type LegalSection } from "../lab-legal";
 import { LegalTable, TitularList, TitularMail } from "../lab-legal-parts";
 import { TITULAR } from "../lab-legal-data";
 import { LAB_PATHS } from "../lab-paths";
+import { pageMeta } from "../lab-seo";
 
-export const metadata: Metadata = {
-  title: "Política de privacidad · Lingot",
+export const metadata = pageMeta({
+  title:       "Política de privacidad",
   description: "Qué datos personales trata Lingot, para qué, con qué base legal, durante cuánto tiempo y cómo ejercer tus derechos.",
-};
+  path:        "/privacidad",
+});
 
 /* Lo que se describe aquí es lo que hace el sistema: la cuenta la abre el
    equipo (no hay registro en línea), la reserva guarda pieza, cantidad, precio,

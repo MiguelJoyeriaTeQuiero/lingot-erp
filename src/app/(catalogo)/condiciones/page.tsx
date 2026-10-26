@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { LabLegalPage, type LegalSection } from "../lab-legal";
 import { Pending, TitularMail } from "../lab-legal-parts";
 import { TITULAR } from "../lab-legal-data";
 import { LAB_PATHS } from "../lab-paths";
+import { pageMeta } from "../lab-seo";
 
-export const metadata: Metadata = {
-  title: "Condiciones de reserva y venta · Lingot",
+export const metadata = pageMeta({
+  title:       "Condiciones de reserva y venta",
   description: "Cómo funcionan las reservas en Lingot y qué condiciones rigen la compraventa de oro y plata: precio, pago, entrega, desistimiento y recompra.",
-};
+  path:        "/condiciones",
+});
 
 /* El funcionamiento de la reserva sale de la propia web (lab-i18n: «Reservar
    no es comprar», pedido a fábrica si no hay existencias, reserva por
