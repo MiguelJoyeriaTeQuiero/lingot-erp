@@ -4,6 +4,8 @@ import localFont from "next/font/local";
 import { THEME_BOOTSTRAP } from "./lab-theme-boot";
 import { LANG_BOOTSTRAP } from "./lab-i18n";
 import { LabConsent } from "./lab-consent";
+import { LabHydrated } from "./lab-hydrated";
+import { FAILSAFE_SCRIPT, PAGE_ID, SNAPSHOT_SCRIPT } from "./lab-static";
 import { GOOGLE_SITE_VERIFICATION, HOME_DESCRIPTION, HOME_TITLE, OG_IMAGE, SITE_NAME, SITE_URL } from "./lab-seo";
 import "./lab.css";
 
@@ -56,7 +58,12 @@ export default function CatalogoLayout({ children }: { children: ReactNode }) {
       <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       <script dangerouslySetInnerHTML={{ __html: LANG_BOOTSTRAP }} />
       <noscript><style>{NO_JS}</style></noscript>
-      {children}
+      {/* display: contents — envuelve sin crear caja: la maquetación no cambia */}
+      <div id={PAGE_ID} style={{ display: "contents" }}>{children}</div>
+      {/* Justo después de la página y antes de que React la toque (lab-static.ts) */}
+      <script dangerouslySetInnerHTML={{ __html: SNAPSHOT_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: FAILSAFE_SCRIPT }} />
+      <LabHydrated />
       {/* Después de la página: así sabe si hay cortina de entrada que esperar */}
       <LabConsent />
     </div>

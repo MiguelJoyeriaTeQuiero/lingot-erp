@@ -601,6 +601,13 @@ html:not([data-lab-ready]) .lab-hero * { animation-play-state: paused; }
 }
 [data-lab-in].is-in { opacity: 1; transform: none; filter: blur(0); }
 
+/* Página en estático (lab-static.ts): lo mismo que sin JavaScript. Ni cortina
+   ni nada esperando a revelarse, para que todo se lea aunque React no arranque */
+.lab-static .lab-curtain { display: none !important; }
+.lab-static .lab-hero * { animation-play-state: running !important; }
+.lab-static [data-lab-in] { opacity: 1 !important; transform: none !important; filter: none !important; }
+.lab-static .lab-mask > * { transform: none !important; }
+
 .lab-mask {
   display: block;
   overflow: hidden;

@@ -53,9 +53,13 @@ export function useLabLang() {
     [locale]
   );
 
+  // Siempre en hora de Canarias, la del negocio. Con la del navegador, el
+  // servidor (UTC) escribe «10 de mayo» y quien navega desde América lee «9»:
+  // React ve un texto distinto al del HTML, tira la página y la repinta entera
+  // (error #425). Le pasaba a Googlebot, que renderiza en hora de California.
   const date = useCallback(
     (iso: string, opts: Intl.DateTimeFormatOptions) =>
-      new Date(iso).toLocaleDateString(locale, opts),
+      new Date(iso).toLocaleDateString(locale, { timeZone: "Atlantic/Canary", ...opts }),
     [locale]
   );
 
