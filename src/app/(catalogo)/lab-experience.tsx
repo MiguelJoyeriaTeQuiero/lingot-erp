@@ -187,12 +187,15 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
 
   /** Reserva de una unidad sin salir de la rejilla. Sin sesión, pide entrar. */
   const quickReserve = async (p: LabProduct) => {
+    if (!p.inStock) return;
     if (!session) { setAccess(true); return; }
     setReserving(p.id);
     setFailed(null);
     const err = await reserve(p, uds(p.id));
     setReserving(null);
-    if (err) { setFailed(p.id); return; }
+    // Agotada entretanto: la sesión repinta la página y la tarjeta pasa sola a
+    // «sin stock»; un «reintentar» invitaría a algo que ya no va a funcionar
+    if (err) { if (err !== "d.soldOut") setFailed(p.id); return; }
     setJustReserved(p.id);
     // La ficha vuelve a una unidad: dejarla en 5 invita a reservar cinco más
     setUnidades((u) => ({ ...u, [p.id]: 1 }));
@@ -457,7 +460,7 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
                       position: "absolute", top: 14, right: 14, padding: "5px 10px", borderRadius: 999,
                       background: "var(--lab-inset-2)", color: "var(--lab-ink-3)", fontSize: 8, letterSpacing: "0.24em",
                     }}>
-                      {t("col.backorder")}
+                      {t("col.soldOut")}
                     </span>
                   )}
                 </div>
@@ -474,10 +477,13 @@ export function LabExperience({ brandName, history, products, spots }: Props) {
                   </div>
 
                   <div className="lab-card-actions">
-                    {/* Sin sesión no se puede reservar, así que tampoco se
-                        ofrece: elegir unidades que no vas a poder usar es una
-                        trampa. */}
-                    {session ? (
+                    {/* Sin stock o sin sesión no se puede reservar, así que
+                        tampoco se ofrece: elegir unidades que no vas a poder
+                        usar es una trampa. Sin stock ni siquiera se pide
+                        entrar: no habría nada que hacer después. */}
+                    {!p.inStock ? (
+                      <span className="lab-card-soldout">{t("col.noReserve")}</span>
+                    ) : session ? (
                       <>
                         <div className="lab-uds" role="group" aria-label={t("col.units", { name: p.name })}>
                           <button

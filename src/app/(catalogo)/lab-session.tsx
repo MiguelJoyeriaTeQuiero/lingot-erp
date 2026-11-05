@@ -89,7 +89,15 @@ export function LabSessionProvider({
       phone:          extra?.phone ?? "",
       note:           extra?.note ?? "",
     });
-    if ("error" in result) return "d.error";
+    if ("error" in result) {
+      // Se agotó mientras la página estaba abierta: se repinta para que la
+      // ficha deje de ofrecer la reserva
+      if (result.code === "out_of_stock") {
+        router.refresh();
+        return "d.soldOut";
+      }
+      return "d.error";
+    }
     router.refresh();
     return null;
   }, [router]);

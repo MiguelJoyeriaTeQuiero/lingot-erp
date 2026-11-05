@@ -16,7 +16,8 @@ const LabIngotViewer = dynamic(() => import("./lab-ingot-viewer").then((m) => m.
 
    La reserva llama a la acción real del catálogo (createReservationAction, vía
    lab-session): queda en la tabla `reservations` y avisa por email. Sin sesión
-   se pide entrar, igual que en /catalogo.
+   se pide entrar, igual que en /catalogo. Sin stock no se ofrece la reserva
+   (y la acción la rechaza igualmente).
 
    Solo hay mapa de relieve para las piezas que lo tienen generado; el resto cae
    a su fotografía. El visor 3D no se descarga si no hace falta.
@@ -95,13 +96,20 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
     };
   }, [onClose]);
 
+  /* `p` es la foto del producto al abrir la ficha. Si al reservar el servidor
+     dice que ya no queda, la ficha pasa a «sin stock» sin esperar a cerrarla. */
+  const [soldOut, setSoldOut] = useState(false);
+  const outOfStock = !p.inStock || soldOut;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (outOfStock) return;
     if (!session) { onNeedsAccess(); return; }
     setSending(true);
     setError(null);
     const err = await reserve(p, quantity, { phone, note });
     setSending(false);
+    if (err === "d.soldOut") { setSoldOut(true); return; }
     if (err) { setError(err); return; }
     setDone(true);
   }
@@ -179,7 +187,7 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
 
           <div className="lab-detail-info">
             <span className="lab-label" style={{ color: "var(--lab-metal)" }}>
-              {t(p.metal === "oro" ? "f.gold" : "f.silver")} · {t(p.inStock ? "d.available" : "col.backorder")}
+              {t(p.metal === "oro" ? "f.gold" : "f.silver")} · {t(outOfStock ? "col.soldOut" : "d.available")}
             </span>
 
             <h2 className="lab-h" style={{ fontSize: "clamp(24px, 3.4vw, 40px)", marginTop: 14 }}>
@@ -206,6 +214,17 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
                 <p className="lab-body" style={{ fontSize: 14, marginTop: 10 }}>
                   {t("d.doneBody")}
                 </p>
+              </div>
+            ) : outOfStock ? (
+              /* Sin stock no hay formulario ni se pide entrar: no se puede
+                 reservar. Queda el teléfono para preguntar. */
+              <div className="lab-detail-gate lab-detail-gate--out">
+                <p className="lab-body" style={{ fontSize: "clamp(14px, 1.5vw, 16px)" }}>
+                  {t("d.soldOut")}
+                </p>
+                <a className="lab-detail-alt" href="tel:+34669393197">
+                  {t("d.soldOutAlt")}
+                </a>
               </div>
             ) : !session ? (
               <div className="lab-detail-gate">
@@ -253,9 +272,7 @@ export function LabProductDetail({ product: p, initialQty = 1, onClose, onNeedsA
                 </button>
 
                 <p className="lab-body" style={{ fontSize: 12, color: "var(--lab-ink-3)" }}>
-                  {p.inStock
-                    ? t("d.footIn")
-                    : t("d.footOut")}
+                  {t("d.footIn")}
                 </p>
 
                 <LabLegalBasic purpose="reserve" />

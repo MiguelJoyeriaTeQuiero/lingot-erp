@@ -12,7 +12,7 @@ export async function createReservationAction(data: {
   price_snapshot: number;
   phone: string;
   note: string;
-}): Promise<{ success: true } | { error: string }> {
+}): Promise<{ success: true } | { error: string; code?: "out_of_stock" }> {
   try {
     const supabase = createTypedClient();
     const {
@@ -34,6 +34,29 @@ export async function createReservationAction(data: {
       (profile as { full_name?: string | null } | null)?.full_name ?? null;
 
     const admin = createRawAdminClient();
+
+    /* Sin stock no se reserva. Se mira aquí y no solo en la página: la ficha
+       puede llevar un rato abierta y el stock haberse agotado entretanto.
+       Mismo criterio que `inStock` en page.tsx. */
+    const { data: stock } = await admin
+      .from("products")
+      .select("active, stock_current, catalog_out_of_stock")
+      .eq("id", data.product_id)
+      .maybeSingle();
+
+    const product = stock as {
+      active?: boolean;
+      stock_current?: number | string | null;
+      catalog_out_of_stock?: boolean | null;
+    } | null;
+
+    if (
+      !product?.active ||
+      !(Number(product.stock_current) > 0) ||
+      product.catalog_out_of_stock
+    ) {
+      return { error: "Este producto no tiene stock disponible.", code: "out_of_stock" };
+    }
 
     const { error } = await admin.from("reservations").insert({
       customer_id: user.id,
