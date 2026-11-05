@@ -12,7 +12,7 @@ export const metadata = pageMeta({
 });
 
 /* El funcionamiento de la reserva sale de la propia web (lab-i18n: «Reservar
-   no es comprar», pedido a fábrica si no hay existencias, reserva por
+   no es comprar», sin stock no se reserva, consulta y reserva por
    teléfono) y de los cuatro estados de la tabla `reservations`. Lo que la web
    no dice —formas de pago, plazos o costes de envío— no se fija aquí: se remite
    a la confirmación de cada operación. */
@@ -72,16 +72,16 @@ const SECTIONS: LegalSection[] = [
         <ol>
           <li>
             Desde la colección o desde la ficha de una pieza eliges cuántas unidades quieres y, si lo deseas, nos
-            dejas un teléfono y una nota.
+            dejas un teléfono y una nota. Solo pueden reservarse las piezas que tenemos en existencias: las que
+            aparecen «Sin stock» no admiten reserva, aunque puedes consultarnos por teléfono.
           </li>
           <li>
             Hasta que pulsas «Reservar» puedes cambiar cualquier dato. Al pulsarlo, la reserva queda registrada y
             aparece al momento en tu área privada con el estado «Pendiente».
           </li>
           <li>
-            Te llamamos para confirmarla y fijar la cita. Si la pieza está disponible, la apartamos para ti; si no
-            la tenemos en ese momento, la pedimos al proveedor al confirmar la reserva y te llamamos con la fecha.
-            La reserva pasa entonces a «Confirmada».
+            Te llamamos para confirmarla y fijar la cita, y apartamos la pieza para ti. La reserva pasa entonces a
+            «Confirmada».
           </li>
           <li>
             La operación se cierra en la cita o en la forma que acordemos, y la reserva pasa a «Entregada» cuando
