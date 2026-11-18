@@ -7,6 +7,7 @@ import {
   computeLine,
   documentMetaSchema,
   documentSchema,
+  documentSchemaFor,
   type DocumentInput,
 } from "@/lib/validations/document";
 
@@ -105,18 +106,10 @@ export async function updateDocumentDraft(
   const { supabase, user } = await requireUser();
   if (!user) return { success: false, error: "Sesión no válida" };
 
-  const parsed = documentSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: parsed.error.issues[0]?.message ?? "Datos no válidos",
-    };
-  }
-
   // Comprobar que sigue en borrador.
   const { data: existing, error: getErr } = await supabase
     .from("documents")
-    .select("id, status, doc_type")
+    .select("id, status, doc_type, rectification_of_invoice_id")
     .eq("id", id)
     .single();
 
@@ -130,12 +123,23 @@ export async function updateDocumentDraft(
     };
   }
 
+  // Los negativos solo se aceptan si el documento ES una rectificativa: lo
+  // decide la base, no lo que mande el formulario.
+  const isRectification = existing.rectification_of_invoice_id != null;
+  const parsed = documentSchemaFor(isRectification).safeParse(raw);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Datos no válidos",
+    };
+  }
+
   const totals = totalsFromLines(parsed.data);
 
   const { error: updErr } = await supabase
     .from("documents")
     .update({
-      doc_type: parsed.data.doc_type,
+      doc_type: isRectification ? "factura" : parsed.data.doc_type,
       client_id: parsed.data.client_id,
       issue_date: parsed.data.issue_date,
       due_date: parsed.data.due_date,

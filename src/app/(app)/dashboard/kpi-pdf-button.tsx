@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { fetchKpiReport, type KpiReportData } from "./kpi-actions";
+import { formatWeightByMetal } from "@/lib/inventory";
 
 // ── Brand palette ────────────────────────────────────────────────────────────
 const C = {
@@ -130,8 +131,12 @@ async function generatePdf(data: KpiReportData) {
     doc.setTextColor(C.primary);
     doc.text(value, x + 3, bY + 11);
 
-    doc.setFontSize(6);
+    // El subtítulo se encoge si no cabe en la caja (p. ej. el peso en envío)
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    const subWidth = doc.getTextWidth(sub);
+    const maxWidth = w - 6;
+    if (subWidth > maxWidth) doc.setFontSize(Math.max(4.5, (6 * maxWidth) / subWidth));
     doc.setTextColor(C.muted);
     doc.text(sub, x + 3, bY + 15.5);
   }
@@ -386,7 +391,13 @@ async function generatePdf(data: KpiReportData) {
   // suma al valor a coste ni al potencial.
   const aW = (MR - ML) / 4 - 2.25;
   kpiBox(ML, y, aW, 18, "Valor a coste", eur(data.stockValorTotal, 0), "stock físico, coste de lotes");
-  kpiBox(ML + aW + 3, y, aW, 18, "En envío", eur(data.stockEnEnvioValor, 0), `${data.stockEnEnvioUnidades} u pendientes de recibir`);
+  const enEnvioPeso = data.stockEnEnvioPeso ? formatWeightByMetal(data.stockEnEnvioPeso) : null;
+  kpiBox(
+    ML + aW + 3, y, aW, 18, "En envío", eur(data.stockEnEnvioValor, 0),
+    enEnvioPeso
+      ? `${data.stockEnEnvioUnidades} u · ${enEnvioPeso}`
+      : `${data.stockEnEnvioUnidades} u pendientes de recibir`
+  );
   kpiBox(ML + (aW + 3) * 2, y, aW, 18, "Valor a PVP", eur(data.stockPrecioTotal, 0), "stock físico a precio actual");
   kpiBox(ML + (aW + 3) * 3, y, aW, 18, "Potencial", eur(data.stockPrecioTotal - data.stockValorTotal, 0), "margen latente en stock");
   y += 26;

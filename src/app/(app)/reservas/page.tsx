@@ -19,6 +19,9 @@ export type ReservationRow = {
   phone: string | null;
   note: string | null;
   status: string;
+  /** Factura creada desde la reserva (migración 031). */
+  invoice_id?: string | null;
+  invoice?: { id: string; code: string | null; status: string } | null;
 };
 
 export default async function ReservasPage() {
@@ -32,6 +35,23 @@ export default async function ReservasPage() {
     .order("created_at", { ascending: false });
 
   const reservations = (data ?? []) as ReservationRow[];
+
+  // Facturas enlazadas: se consultan aparte para no depender de la relación
+  const invoiceIds = reservations
+    .map((r) => r.invoice_id)
+    .filter((id): id is string => Boolean(id));
+  if (invoiceIds.length > 0) {
+    const { data: invoices } = await admin
+      .from("documents")
+      .select("id, code, status")
+      .in("id", invoiceIds);
+    const byId = new Map(
+      ((invoices ?? []) as { id: string; code: string | null; status: string }[]).map((d) => [d.id, d])
+    );
+    for (const r of reservations) {
+      r.invoice = r.invoice_id ? (byId.get(r.invoice_id) ?? null) : null;
+    }
+  }
 
   return (
     <div className="space-y-8">

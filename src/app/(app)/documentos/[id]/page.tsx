@@ -122,8 +122,11 @@ export default async function DocumentoDetailPage({
     doc.doc_type === "albaran" &&
     doc.status === "emitido" &&
     !doc.converted_to_invoice_id;
+  // Una rectificativa no se vuelve a rectificar (sus cantidades negativas ya
+  // devolvieron stock); se corrige con una factura nueva.
   const canRectify =
     doc.doc_type === "factura" &&
+    !docRow.rectification_of_invoice_id &&
     (doc.status === "emitido" || doc.status === "pagado");
   const canMarkPaid =
     doc.doc_type === "factura" &&
@@ -192,6 +195,12 @@ export default async function DocumentoDetailPage({
                   client: docClient,
                   company,
                   verifactuHash: (doc as typeof doc & { verifactu_hash?: string | null }).verifactu_hash,
+                  rectifies: docRow.rectification_of_invoice_id
+                    ? {
+                        code: originalDoc?.code ?? null,
+                        issue_date: originalDoc?.issue_date ?? null,
+                      }
+                    : null,
                 }}
               />
             )}
@@ -250,6 +259,7 @@ export default async function DocumentoDetailPage({
             plata: spots.plata?.price_eur_per_g ?? null,
           }}
           globalMarkupPct={globalMarkupPct}
+          isRectification={Boolean(docRow.rectification_of_invoice_id)}
         />
       </div>
     </div>

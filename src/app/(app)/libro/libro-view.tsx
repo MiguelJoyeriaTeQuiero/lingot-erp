@@ -12,6 +12,7 @@ import {
 import { es } from "date-fns/locale";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
+import { bookSign } from "@/lib/validations/document";
 import type { DocumentRow } from "@/lib/supabase/typed";
 
 type Period = "dia" | "semana" | "mes" | "anio";
@@ -97,8 +98,9 @@ export function LibroView({
       }
       const g = map.get(key)!;
       g.docs.push(doc);
-      // Las rectificativas son abonos — restan del período
-      const sign = doc.rectification_of_invoice_id ? -1 : 1;
+      // Las rectificativas son abonos — restan del período (las nuevas ya
+      // vienen en negativo; las antiguas, en positivo, se restan con el signo)
+      const sign = bookSign(doc);
       g.total    += Number(doc.total ?? 0) * sign;
       g.igic     += Number(doc.igic_total ?? 0) * sign;
       g.subtotal += Number(doc.subtotal ?? 0) * sign;
@@ -221,7 +223,7 @@ export function LibroView({
                       </span>
                       <span className="font-mono text-[10px] tabular text-text-dim sm:hidden">
                         {doc.rectification_of_invoice_id
-                          ? <span className="text-danger">−{formatCurrency(Number(doc.total ?? 0))}</span>
+                          ? <span className="text-danger">−{formatCurrency(Math.abs(Number(doc.total ?? 0)))}</span>
                           : format(new Date(doc.issue_date), "dd/MM")}
                       </span>
                     </div>
@@ -236,17 +238,18 @@ export function LibroView({
                     </div>
                     <div className="hidden sm:block sm:col-span-2 text-right">
                       {(() => {
-                        const sign = doc.rectification_of_invoice_id ? -1 : 1;
+                        const sign = bookSign(doc);
                         const total = Number(doc.total ?? 0) * sign;
                         const igic = Number(doc.igic_total) * sign;
+                        const negative = total < 0;
                         return (
                           <>
-                            <span className={`font-mono text-[13px] tabular ${sign < 0 ? "text-danger" : "text-primary"}`}>
-                              {sign < 0 ? "−" : ""}{formatCurrency(Math.abs(total))}
+                            <span className={`font-mono text-[13px] tabular ${negative ? "text-danger" : "text-primary"}`}>
+                              {negative ? "−" : ""}{formatCurrency(Math.abs(total))}
                             </span>
                             {Math.abs(igic) > 0 && (
                               <div className="font-mono text-[10px] text-text-dim">
-                                {sign < 0 ? "−" : "+"}{formatCurrency(Math.abs(igic))} IGIC
+                                {igic < 0 ? "−" : "+"}{formatCurrency(Math.abs(igic))} IGIC
                               </div>
                             )}
                           </>

@@ -78,6 +78,46 @@ export function stockValueFromLots(lots: StockLotLite[]): number {
   );
 }
 
+/** Gramos (peso bruto de la pieza) separados por metal. */
+export interface WeightByMetal {
+  oro: number;
+  plata: number;
+}
+
+/**
+ * Peso que va a llegar con los pedidos de reposición pendientes:
+ *     Σ unidades pedidas × peso de la pieza, separado por metal.
+ *
+ * Cuenta todas las unidades pedidas, también las ya vendidas por adelantado:
+ * es lo que físicamente viene en el envío.
+ */
+export function transitWeightByMetal(
+  orders: { product_id: string | null; quantity: number | string | null }[],
+  products: { id: string; metal: string; weight_g: number | string | null }[]
+): WeightByMetal {
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const out: WeightByMetal = { oro: 0, plata: 0 };
+  for (const o of orders) {
+    const p = o.product_id ? productById.get(o.product_id) : undefined;
+    if (!p || (p.metal !== "oro" && p.metal !== "plata")) continue;
+    out[p.metal] += Number(o.quantity ?? 0) * Number(p.weight_g ?? 0);
+  }
+  return out;
+}
+
+const gramsFormatter = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+/** «1.250 g oro · 3.400,5 g plata». Omite el metal sin peso; null si no hay ninguno. */
+export function formatWeightByMetal(w: WeightByMetal): string | null {
+  const parts: string[] = [];
+  if (w.oro > 0) parts.push(`${gramsFormatter.format(w.oro)} g oro`);
+  if (w.plata > 0) parts.push(`${gramsFormatter.format(w.plata)} g plata`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 /** Desglose de la valoración a coste por producto (a partir de sus lotes). */
 export function stockValuationByProduct(
   lots: StockLotLite[]

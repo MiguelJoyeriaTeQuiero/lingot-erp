@@ -4,7 +4,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
-import { stockValueFromLots, excludeInTransitLots, onlyInTransitLots } from "@/lib/inventory";
+import {
+  stockValueFromLots,
+  excludeInTransitLots,
+  onlyInTransitLots,
+  transitWeightByMetal,
+  formatWeightByMetal,
+} from "@/lib/inventory";
+import { bookSign } from "@/lib/validations/document";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { requireRole } from "@/lib/require-role";
 import { KpiPdfButton } from "./kpi-pdf-button";
@@ -27,7 +34,7 @@ export default async function DashboardPage() {
     supabase
       .from("document_lines")
       .select("lot_id, quantity, line_subtotal, document_id"),
-    supabase.from("purchase_orders").select("id, quantity").eq("received", false),
+    supabase.from("purchase_orders").select("id, product_id, quantity").eq("received", false),
   ]);
 
   const documents = docsRes.data ?? [];
@@ -48,6 +55,8 @@ export default async function DashboardPage() {
         (d) =>
           d.status !== "borrador" &&
           d.status !== "cancelado" &&
+          // El albarán convertido ya se cuenta en su factura
+          d.status !== "convertido" &&
           !(d as typeof d & { rectification_of_invoice_id?: string | null })
             .rectification_of_invoice_id
       )
@@ -97,8 +106,9 @@ export default async function DashboardPage() {
       d.status !== "cancelado" &&
       new Date(d.issue_date) >= monthStart
   );
+  // Las rectificativas restan (mismo criterio que el Libro)
   const monthRevenue = monthInvoices.reduce(
-    (sum, d) => sum + Number(d.total ?? 0),
+    (sum, d) => sum + Number(d.total ?? 0) * bookSign(d),
     0
   );
   const issuedCount = documents.filter((d) => d.status !== "borrador").length;
@@ -109,6 +119,7 @@ export default async function DashboardPage() {
   // «En envío»: se informa aparte del stock físico, nunca sumado a él
   const transitValue = stockValueFromLots(onlyInTransitLots(allLots, inTransitOrderIds));
   const transitUnits = (transitRes.data ?? []).reduce((s, o) => s + Number(o.quantity ?? 0), 0);
+  const transitWeight = formatWeightByMetal(transitWeightByMetal(transitRes.data ?? [], products));
 
   const recent = documents.slice(0, 6);
 
@@ -158,7 +169,7 @@ export default async function DashboardPage() {
       value: formatCurrency(stockValue),
       sub:
         transitUnits > 0
-          ? `+ ${formatCurrency(transitValue)} en envío (${transitUnits} u)`
+          ? `+ ${formatCurrency(transitValue)} en envío (${transitUnits} u${transitWeight ? ` · ${transitWeight}` : ""})`
           : `${products.length} referencias`,
     },
   ];

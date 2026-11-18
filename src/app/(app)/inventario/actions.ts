@@ -380,7 +380,18 @@ export async function markPurchaseOrderReceivedAction(
     p_invoice_url: order.invoice_urls?.[0] ?? order.invoice_url ?? null,
   });
 
-  if (movErr) return { success: false, error: `Estado actualizado pero error en stock: ${movErr.message}` };
+  if (movErr) {
+    // Sin la entrada de stock el pedido no puede quedar como recibido: se
+    // deshace el cambio de estado para que siga «en envío» y se pueda reintentar.
+    await staff
+      .from("purchase_orders")
+      .update({ received: false, received_at: null })
+      .eq("id", orderId);
+    return {
+      success: false,
+      error: `No se ha podido sumar el stock (${movErr.message}). El pedido sigue en envío.`,
+    };
+  }
 
   // El lote se crea al registrar el pedido. Solo crearlo aquí si no existe
   // (backward compat con pedidos anteriores a esta migración)
