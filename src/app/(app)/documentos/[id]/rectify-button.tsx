@@ -15,7 +15,7 @@ export function RectifyButton({ documentId }: { documentId: string }) {
   async function handleRectify() {
     if (
       !window.confirm(
-        "Se creará una factura rectificativa en borrador con las mismas líneas que esta factura. La factura original quedará marcada como rectificada y no podrá volver a emitirse. ¿Continuar?"
+        "Se creará una factura rectificativa en borrador (serie FRR) con las líneas de esta factura en negativo. Ajusta o borra las líneas que no se rectifican antes de emitirla. La factura original quedará marcada como rectificada. ¿Continuar?"
       )
     )
       return;
@@ -36,7 +36,7 @@ export function RectifyButton({ documentId }: { documentId: string }) {
     toast({
       variant: "success",
       title: "Factura rectificativa creada",
-      description: "Revisa y ajusta las líneas antes de emitirla.",
+      description: "Las líneas van en negativo: ajústalas antes de emitirla.",
     });
 
     if (result.id && result.id !== documentId) {

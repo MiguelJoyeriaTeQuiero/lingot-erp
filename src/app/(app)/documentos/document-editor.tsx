@@ -13,7 +13,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { computeUnitPrice } from "@/lib/pricing";
 import {
   computeLine,
-  documentSchema,
+  documentSchemaFor,
   type DocumentInput,
 } from "@/lib/validations/document";
 import type {
@@ -42,6 +42,8 @@ interface DocumentEditorProps {
   pendingByProduct?: Record<string, number>;
   spotByMetal: { oro: number | null; plata: number | null };
   globalMarkupPct: number;
+  /** Factura rectificativa: admite cantidades y precios en negativo. */
+  isRectification?: boolean;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -81,6 +83,7 @@ export function DocumentEditor({
   pendingByProduct = {},
   spotByMetal,
   globalMarkupPct,
+  isRectification = false,
 }: DocumentEditorProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -99,7 +102,7 @@ export function DocumentEditor({
     setValue,
     formState: { errors, isDirty },
   } = useForm<DocumentInput>({
-    resolver: zodResolver(documentSchema),
+    resolver: zodResolver(documentSchemaFor(isRectification)),
     mode: "onBlur",
     defaultValues: defaultValues ?? emptyDoc(),
   });
@@ -162,6 +165,8 @@ export function DocumentEditor({
   }, [lots]);
 
   // Precio según spot vigente — depende sólo del producto, no del cliente.
+  // Incluye los gastos de envío/logística (cost_price), igual que el catálogo,
+  // el inventario y el informe de KPIs.
   function priceForProduct(p: ProductRow): number | null {
     const spot = spotByMetal[p.metal];
     if (spot == null) return null;
@@ -171,6 +176,7 @@ export function DocumentEditor({
       metal: p.metal,
       markup_per_gram: Number(p.markup_per_gram),
       markup_per_piece: Number(p.markup_per_piece),
+      cost_price: Number(p.cost_price ?? 0),
       spot_eur_per_g: spot,
       global_markup_pct: globalMarkupPct,
     });
@@ -309,7 +315,9 @@ export function DocumentEditor({
     if (!documentId) return;
     if (
       !window.confirm(
-        "Vas a emitir este borrador. Se le asignará número y se descontará el stock de los productos físicos. ¿Continuar?"
+        isRectification
+          ? "Vas a emitir la rectificativa. Se le asignará número de la serie de rectificativas y las piezas con cantidad negativa volverán al stock. ¿Continuar?"
+          : "Vas a emitir este borrador. Se le asignará número y se descontará el stock de los productos físicos. ¿Continuar?"
       )
     ) {
       return;
@@ -372,7 +380,7 @@ export function DocumentEditor({
                     type="button"
                     key={t}
                     onClick={() => field.onChange(t)}
-                    disabled={readOnly}
+                    disabled={readOnly || isRectification}
                     className={
                       "flex-1 rounded-md border px-3 py-2 text-xs uppercase tracking-widest transition-colors " +
                       (field.value === t
@@ -437,6 +445,15 @@ export function DocumentEditor({
             Añadir línea
           </Button>
         </div>
+
+        {isRectification && !readOnly && (
+          <p className="rounded-md border border-purple-700/20 bg-purple-50/50 px-4 py-2.5 text-xs leading-relaxed text-purple-900">
+            Rectificativa: los importes van en negativo. <strong className="font-medium">Cantidad negativa</strong>{" "}
+            = devolución de piezas, vuelven al stock al emitir.{" "}
+            <strong className="font-medium">Precio negativo con cantidad positiva</strong> = rebaja sin
+            devolución, no mueve stock. Borra las líneas que no se rectifican.
+          </p>
+        )}
 
         <div className="rounded-md border border-border bg-surface">
           <div className="hidden grid-cols-[1.4fr_2fr_90px_120px_90px_90px_120px_40px] gap-2 border-b border-border bg-surface-raised/60 px-3 py-2 text-[10px] font-medium uppercase tracking-widest text-text-muted md:grid">

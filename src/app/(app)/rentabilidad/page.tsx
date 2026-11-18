@@ -69,8 +69,10 @@ export default async function RentabilidadPage() {
       .select("id, name"),
   ]);
 
+  // Un albarán convertido ya se cuenta en su factura: contarlo también
+  // duplicaría la venta
   const docs = (docsResult.data ?? []).filter(
-    (d) => d.status !== "borrador" && d.status !== "cancelado"
+    (d) => d.status !== "borrador" && d.status !== "cancelado" && d.status !== "convertido"
   );
   const emittedDocMap = new Map(docs.map((d) => [d.id, d]));
   const lotMap = new Map((lotsResult.data ?? []).map((l) => [l.id, l]));

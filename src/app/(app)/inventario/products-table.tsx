@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { computeUnitPrice } from "@/lib/pricing";
+import { formatWeightByMetal, transitWeightByMetal } from "@/lib/inventory";
 import type {
   ProductRow,
   ProductCategoryRow,
@@ -56,7 +57,13 @@ export function ProductsTable({
       value += transitValueByProductId[p.id] ?? 0;
       refs += 1;
     }
-    return { units, value, refs };
+    const weight = formatWeightByMetal(
+      transitWeightByMetal(
+        Object.entries(pendingByProductId).map(([product_id, quantity]) => ({ product_id, quantity })),
+        products
+      )
+    );
+    return { units, value, refs, weight };
   }, [products, pendingByProductId, transitValueByProductId]);
 
   const categoryById = useMemo(() => {
@@ -119,6 +126,9 @@ export function ProductsTable({
             <strong className="font-medium tabular">{transit.units} u</strong> pendientes de recibir
             {" "}en {transit.refs} {transit.refs === 1 ? "referencia" : "referencias"}
           </span>
+          {transit.weight && (
+            <span className="tabular text-primary">{transit.weight}</span>
+          )}
           <span className="text-text-muted">
             {formatCurrency(transit.value)} a coste
           </span>

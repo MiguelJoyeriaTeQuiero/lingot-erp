@@ -3,11 +3,14 @@
 import { createTypedClient } from "@/lib/supabase/typed";
 import { getLatestSpots } from "@/lib/metal-prices";
 import { computeCatalogPricing } from "@/lib/pricing";
+import { bookSign } from "@/lib/validations/document";
 import {
   stockValueFromLots,
   stockValuationByProduct,
   excludeInTransitLots,
   onlyInTransitLots,
+  transitWeightByMetal,
+  type WeightByMetal,
 } from "@/lib/inventory";
 
 export interface KpiReportData {
@@ -71,6 +74,8 @@ export interface KpiReportData {
   /** Totales «En envío», aparte del stock físico (nunca sumados a él). */
   stockEnEnvioUnidades: number;
   stockEnEnvioValor: number;
+  /** Gramos que llegan con los pedidos pendientes, por metal. */
+  stockEnEnvioPeso: WeightByMetal;
 
   // Spots
   spotOro: number | null;
@@ -141,16 +146,20 @@ export async function fetchKpiReport(
     const facturas = emittedDocs.filter((d) => d.doc_type === "factura");
     const albaranes = emittedDocs.filter((d) => d.doc_type === "albaran");
 
-    const libroBase = facturas.reduce((s, d) => s + Number(d.subtotal ?? 0), 0);
-    const libroIgic = facturas.reduce((s, d) => s + Number(d.igic_total ?? 0), 0);
-    const libroTotal = facturas.reduce((s, d) => s + Number(d.total ?? 0), 0);
+    // Las rectificativas restan (mismo criterio que el Libro)
+    const libroBase = facturas.reduce((s, d) => s + Number(d.subtotal ?? 0) * bookSign(d), 0);
+    const libroIgic = facturas.reduce((s, d) => s + Number(d.igic_total ?? 0) * bookSign(d), 0);
+    const libroTotal = facturas.reduce((s, d) => s + Number(d.total ?? 0) * bookSign(d), 0);
     const libroPagado = facturas
       .filter((d) => d.status === "pagado")
-      .reduce((s, d) => s + Number(d.total ?? 0), 0);
+      .reduce((s, d) => s + Number(d.total ?? 0) * bookSign(d), 0);
     const libroPendiente = libroTotal - libroPagado;
 
     // ── RENTABILIDAD ─────────────────────────────────────────────────────────
-    const emittedIds = new Set(emittedDocs.map((d) => d.id));
+    // Ventas: el albarán convertido ya se cuenta en su factura
+    const emittedIds = new Set(
+      emittedDocs.filter((d) => d.status !== "convertido").map((d) => d.id)
+    );
     const rectIds = new Set(
       emittedDocs
         .filter(
@@ -271,6 +280,7 @@ export async function fetchKpiReport(
     );
     const stockEnEnvioUnidades = transitOrders.reduce((s, o) => s + Number(o.quantity), 0);
     const stockEnEnvioValor = stockValueFromLots(transitLots);
+    const stockEnEnvioPeso = transitWeightByMetal(transitOrders, products);
 
     return {
       data: {
@@ -294,6 +304,7 @@ export async function fetchKpiReport(
         stockPrecioTotal,
         stockEnEnvioUnidades,
         stockEnEnvioValor,
+        stockEnEnvioPeso,
         spotOro: spots.oro?.price_eur_per_g ?? null,
         spotPlata: spots.plata?.price_eur_per_g ?? null,
         globalMarkupPct,

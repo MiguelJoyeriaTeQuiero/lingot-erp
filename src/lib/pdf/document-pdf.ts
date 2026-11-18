@@ -44,10 +44,12 @@ export interface DocumentPdfPayload {
   client: ClientRow;
   company: CompanySettingsRow | null;
   verifactuHash?: string | null;
+  /** Si es una factura rectificativa: la factura que rectifica. */
+  rectifies?: { code: string | null; issue_date: string | null } | null;
 }
 
 export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<jsPDF> {
-  const { document: doc, lines, client, company, verifactuHash } = payload;
+  const { document: doc, lines, client, company, verifactuHash, rectifies } = payload;
   const isFactura = doc.doc_type === "factura";
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -179,6 +181,22 @@ export async function generateDocumentPdf(payload: DocumentPdfPayload): Promise<
   pdf.setFontSize(8.5);
   pdf.setTextColor(...C_TEXT);
   pdf.text(fmtDate(doc.issue_date), lx + col1 + 3, nbxTop + rH + 4.8);
+
+  // Rectificativa: tiene que decirlo y citar la factura que rectifica
+  // (RD 1619/2012, art. 15)
+  if (rectifies) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...C_PRIMARY);
+    pdf.text("FACTURA RECTIFICATIVA", W - mr, nbxTop + 5, { align: "right" });
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C_MUTED);
+    const ref = rectifies.code
+      ? `Rectifica la factura ${rectifies.code}${rectifies.issue_date ? ` del ${fmtDate(rectifies.issue_date)}` : ""}`
+      : "Rectifica una factura anterior";
+    pdf.text(ref, W - mr, nbxTop + rH + 4.8, { align: "right" });
+  }
 
   y = nbxTop + rH * 2 + 8;
 

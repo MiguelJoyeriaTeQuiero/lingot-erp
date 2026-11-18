@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { updateReservationStatusAction } from "./actions";
+import {
+  createInvoiceFromReservationAction,
+  updateReservationStatusAction,
+} from "./actions";
 import { RESERVATIONS_CHANGED } from "@/components/layout/reservation-watcher";
 import type { ReservationRow } from "./page";
 
@@ -48,7 +55,9 @@ interface Props {
 export function ReservasClient({ rows }: Props) {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [isPending, startTransition] = useTransition();
+  const [invoicingId, setInvoicingId] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   const filtered = useMemo(
     () =>
@@ -75,6 +84,28 @@ export function ReservasClient({ rows }: Props) {
     });
     // El contador de pendientes del menú se actualiza sin esperar al sondeo
     window.dispatchEvent(new Event(RESERVATIONS_CHANGED));
+  }
+
+  async function handleInvoice(id: string) {
+    setInvoicingId(id);
+    const result = await createInvoiceFromReservationAction(id);
+    if ("error" in result) {
+      setInvoicingId(null);
+      toast({
+        variant: "error",
+        title: "No se pudo crear la factura",
+        description: result.error,
+      });
+      return;
+    }
+    toast({
+      variant: "success",
+      title: result.existing ? "Esta reserva ya tiene factura" : "Factura creada en borrador",
+      description: result.existing
+        ? undefined
+        : "Revisa el cliente y el lote antes de emitirla.",
+    });
+    router.push(`/documentos/${result.id}`);
   }
 
   const filterLabels: Record<FilterStatus, string> = {
@@ -139,7 +170,7 @@ export function ReservasClient({ rows }: Props) {
             Sin reservas en esta categoría.
           </div>
         ) : (
-          <table className="w-full min-w-[900px] border-collapse text-[13px]">
+          <table className="w-full min-w-[1020px] border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-border">
                 {[
@@ -152,6 +183,7 @@ export function ReservasClient({ rows }: Props) {
                   "Teléfono",
                   "Nota",
                   "Estado",
+                  "Factura",
                 ].map((h) => (
                   <th
                     key={h}
@@ -222,6 +254,31 @@ export function ReservasClient({ rows }: Props) {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.invoice ? (
+                        <Link
+                          href={`/documentos/${r.invoice.id}`}
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+                        >
+                          <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          {r.invoice.code ?? "Borrador"}
+                        </Link>
+                      ) : r.status === "cancelada" ? (
+                        <span className="text-text-dim">—</span>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          loading={invoicingId === r.id}
+                          disabled={invoicingId !== null}
+                          onClick={() => handleInvoice(r.id)}
+                        >
+                          <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          Facturar
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 );

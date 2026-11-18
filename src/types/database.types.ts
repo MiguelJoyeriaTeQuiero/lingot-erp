@@ -247,6 +247,10 @@ export interface Database {
           created_at: string;
           updated_at: string;
           verifactu_hash: string | null;
+          /** Momento de la emisión (migración 032). Null en los emitidos antes. */
+          emitted_at: string | null;
+          /** Factura desde albarán que solo movió la diferencia de stock (032). */
+          albaran_stock_diff: boolean;
         };
         Insert: {
           id?: string;
